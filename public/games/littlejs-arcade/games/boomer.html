@@ -1,0 +1,959 @@
+<!DOCTYPE html><head>
+<title>Boomer</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+#littlejs-menus {
+    --menu-bg:           rgba(10, 8, 24, 0.92);
+    --menu-fg:           #fff;
+    --menu-accent:       #ffd23a;
+    --menu-font:         'Courier New', monospace;
+    --menu-border-width: 4px;
+    --menu-radius:       10px;
+}
+#littlejs-menus .ljs-menu-panel[data-menu-id="title"] .ljs-menu-title {
+    letter-spacing: 0.18em;
+}
+</style>
+</head>
+<script src="../templates/engineLoader.js?1780767748506"></script>
+<script src="../templates/menus.js?1780767748506"></script>
+<script src="../templates/gameFx.js?1780767748506"></script>
+<script src="../templates/textureGenerator.js?1780767748506"></script>
+<script>
+'use strict';
+
+// engine settings
+gravity = vec2(0, -0.01);
+cameraScale = 38;
+
+// Attract mode: the title screen IS a live self-playing demo. While the title
+// menu is up (isPlaying() === false) the full game simulates behind it — bombs
+// drop, the bomber paces, and an auto-player sweeps the buckets. On death it
+// loops (reset + keep going) WITHOUT the game-over menu or score submit. Press
+// PLAY and isPlaying() flips true, handing control to the human; the auto-player
+// stands down and the normal game-over -> menu path resumes. The arcade cabinet
+// simply hides the menu chrome over this same live title.
+let attractRestartTimer = 0;   // seconds to linger on the wreckage before looping
+
+///////////////////////////////////////////////////////////////////////////////
+// Kaboom! — classic Activision paddle-catcher style.
+// Mad Bomber paces the rooftop dropping bombs. Sweep stacked buckets to catch
+// every bomb. Miss one and the bottom bucket explodes (and so do the rest of
+// the wave). Run out of buckets — game over.
+
+// World layout (world units; cameraScale=38 → ~50 wide x ~28 tall at 1920x1080)
+const FIELD_LEFT   = -13;
+const FIELD_RIGHT  =  13;
+const ROOF_Y          =  8;     // bomber's feet (low enough that his head fits on screen)
+const FLOOR_Y         = -11.5;  // ground line (where misses explode)
+const BUCKET_BOTTOM_Y = -11;    // y of the BOTTOM bucket center (sits on ground)
+const BUCKET_GAP      =  1.1;   // vertical gap between stacked buckets
+const BOMBER_RANGE    =  9.5;   // bomber wander range — kept ≤ bucket max reach
+const BOMB_R          =  0.45;  // bomb radius (collision)
+
+// Difficulty curve
+const bombsPerWave   = w => 10 + (w - 1) * 5;
+const bombFallSpeed  = w => 7 + (w - 1) * 1.4;           // world units / sec
+const bombInterval   = w => max(0.18, 0.85 - (w - 1) * 0.07);
+const bomberSpeed    = w => 4 + (w - 1) * 0.9;
+const bomberFlipProb = w => 0.005 + (w - 1) * 0.002;     // chance/frame of reversing
+const bucketHalfW    = w => max(1.2, 2.8 - (w - 1) * 0.15);
+
+// Bomb types — each has its own color + movement, introduced one per wave then
+// mixed randomly. body/rim/hi are [h,s,l] components fed to hsl() in drawBomb.
+//   normal — falls straight down (classic)
+//   fast   — red, drops much faster
+//   drift  — blue, slides sideways and bounces off the inner screen edges
+//   wavy   — purple, weaves in a sine wave around a fixed (clamped) column
+const BOMB_TYPES = {
+    normal: { body:[0,   0,  .08], rim:[0,   0,  .30], hi:[0,  0,  .30] },
+    fast:   { body:[.00, .70, .34], rim:[.02, 1,  .60], hi:[.04, .9, .72] },
+    drift:  { body:[.58, .70, .42], rim:[.55, 1,  .70], hi:[.55, .8, .82] },
+    wavy:   { body:[.77, .55, .42], rim:[.80, .9, .70], hi:[.80, .7, .85] },
+};
+// Roster grows by one type each wave; spawnBomb picks uniformly from it.
+function bombRoster(w) {
+    const r = ['normal'];
+    if (w >= 2) r.push('fast');
+    if (w >= 3) r.push('drift');
+    if (w >= 4) r.push('wavy');
+    return r;
+}
+// State
+let score, wave, lives, bucketsAwarded;
+let bucketX, bucketTargetX;
+let bomber;          // {x, vx, dropTimer, laughTimer}
+let bombs;           // [{pos, vel, fuse, type, smokeEmitter, fuseEmitter}]
+let starField;       // stable star positions for the night sky
+let treeField;       // foreground trees/bushes on the sides of the building
+let windowSeeds;     // stable blink seeds for windows
+let bombsSpawned, bombsCaught, bombsInWave;
+let gameOverShown;
+let pendingGameOver = false;   // a REAL game just died, awaiting the game-over modal
+let waveSpawnTimer;  // seconds until next bomb in current wave
+let waveStartDelay;  // seconds before first bomb of wave
+let waveClearTimer;  // seconds remaining until next wave starts (0 = not waiting)
+let missFreezeTimer; // brief pause after a miss
+let missShakeTimer = 0; // remaining seconds of post-miss shake (gates game-over dialog)
+let gameOverDelay = 0;  // counts down after a fatal miss so the explosion plays before the modal
+let waveBannerText, waveBannerTimer;
+
+// Sounds
+let sfxCatch, sfxMiss, sfxFuse, sfxClear, sfxBucketUp;
+
+// Default-atlas icons (name -> TileInfo), baked in gameInit. Tinted per-instance
+// via drawTile's color arg. Names: circle, glow, ring, roundSquare, triangle,
+// diamond, pentagon, hexagon, heart, droplet, plus, arrow, spark, star, burst, bolt.
+let ICON;
+
+///////////////////////////////////////////////////////////////////////////////
+// HELPERS
+
+// Particles are built on the engine's ParticleEmitter. particleBurst() fires a
+// one-shot puff: a short emitTime means the emitter auto-destroys once finished.
+// NOTE: emitter `speed` is world units PER FRAME (the engine does NOT multiply by
+// timeDelta) — 0.1-0.5 is a normal range, ~1 is explosive.
+function particleBurst(pos, tile, count, colorA, colorB, opts={}) {
+    const o = {
+        size: 0.5, sizeEnd: 0, speed: 0.3, particleTime: 0.6, gravityScale: 0.2,
+        emitSize: 0.3, additive: true, angleSpeed: 0.4, damping: 0.92,
+        fadeRate: 0.2, randomness: 0.4, ...opts,
+    };
+    const fade = c => new Color(c.r, c.g, c.b, 0);   // same color, alpha 0 (fade out)
+    const emitTime = 0.1;                            // one-shot window
+    return new ParticleEmitter(
+        pos, 0, o.emitSize, emitTime, count / emitTime, PI, tile,
+        colorA, colorB, fade(colorA), fade(colorB),
+        o.particleTime, o.size, o.sizeEnd, o.speed, o.angleSpeed,
+        o.damping, 1, o.gravityScale, PI, o.fadeRate, o.randomness,
+        0, o.additive, false);
+}
+
+// Each bomb owns a smoke-trail + fuse-spark emitter that follow it (created in
+// spawnBomb). Destroy them whenever the bomb leaves play so they stop emitting.
+function destroyBombFx(b) {
+    b.smokeEmitter && b.smokeEmitter.destroy();
+    b.fuseEmitter  && b.fuseEmitter.destroy();
+    b.smokeEmitter = b.fuseEmitter = undefined;
+}
+
+function clearBombs() {
+    if (bombs) for (const b of bombs) destroyBombFx(b);
+    bombs = [];
+}
+
+// clearParticles() lives in gameFx.js (shared).
+
+// Stack is anchored at BUCKET_BOTTOM_Y so when a bucket is lost the catching
+// bucket moves DOWN — the bottom of the stack sits on the ground regardless of
+// how many lives remain. i=0 is the bottom; i=lives-1 is the catching bucket.
+function bucketCenterY(i) { return BUCKET_BOTTOM_Y + i * BUCKET_GAP; }
+function bucketTopY()     { return BUCKET_BOTTOM_Y + (lives - 1) * BUCKET_GAP; }
+
+///////////////////////////////////////////////////////////////////////////////
+// GAME FLOW
+
+// Resets all gameplay state and starts wave 1. Does NOT touch setPlaying — the
+// caller owns that: real play (title PLAY / gameover PLAY AGAIN) flips it true
+// first; the attract loop calls this while isPlaying() stays false.
+function startGame() {
+    score = 0;
+    lives = 3;
+    bucketsAwarded = 0;
+    bucketX = 0;
+    bucketTargetX = 0;
+    clearParticles();
+    clearBombs();
+    bomber = { x: -BOMBER_RANGE * 0.5, vx: bomberSpeed(1), dropTimer: 0, laughTimer: 0 };
+    gameOverShown = false;
+    pendingGameOver = false;
+    gameOverDelay = 0;
+    waveBannerText = '';
+    waveBannerTimer = 0;
+    startWave(1);
+}
+
+function startWave(w) {
+    wave = w;
+    bombsSpawned = 0;
+    bombsCaught = 0;
+    bombsInWave = bombsPerWave(w);
+    waveSpawnTimer = 0;
+    waveStartDelay = 1.2;
+    waveClearTimer = 0;
+    bomber.vx = (bomber.vx >= 0 ? 1 : -1) * bomberSpeed(w);
+    waveBannerText = `WAVE ${w}`;
+    waveBannerTimer = 2.0;
+}
+
+function spawnBomb() {
+    const facing = bomber.vx >= 0 ? 1 : -1;
+    // Spawn from the throwing hand — must match the dropping pose in
+    // drawBomber so the bomb visibly comes OUT OF his hand.
+    const handX = bomber.x + facing * 1.4;
+    const handY = ROOF_Y + 1.7 - 0.5;     // bodyY - 0.5 (dropping arm dip)
+    const roster = bombRoster(wave);
+    const type = roster[randInt(roster.length)];
+    const fall = bombFallSpeed(wave);
+
+    const b = {
+        pos: vec2(handX, handY),
+        vel: vec2(0, -fall),
+        fuse: rand(0, PI * 2),
+        type,
+    };
+    if (type === 'fast') {
+        b.vel.y = -fall * 1.5;                          // noticeably quicker drop
+    } else if (type === 'drift') {
+        b.vel.x = (rand() < 0.5 ? -1 : 1) * (2.5 + (wave - 3) * 0.4);  // sideways
+    } else if (type === 'wavy') {
+        b.waveAmp   = 3.0;                              // sway half-width (world units)
+        b.waveFreq  = 2.0 + (wave - 4) * 0.15;          // sway speed (rad/sec)
+        b.wavePhase = rand(0, PI * 2);
+        // Clamp the sway center so the full swing always stays inside the field.
+        const lim = FIELD_RIGHT - BOMB_R - 0.2 - b.waveAmp;
+        b.centerX = clamp(handX, -lim, lim);
+    }
+    // Smoke trail (soft gray, drifts up) + additive fuse spark, both following
+    // the bomb. emitTime 0 = emit forever until destroyed.
+    b.smokeEmitter = new ParticleEmitter(
+        b.pos, 0, 0.15, 0, 30, PI, ICON.glow,
+        hsl(0, 0, .6, .4), hsl(0, 0, .72, .4),
+        hsl(0, 0, .5, 0), hsl(0, 0, .6, 0),
+        0.55, 0.4, 0.85, 0.015, 0.1, 0.96, 1, -0.05, PI, 0.3, 0.5,
+        0, false, false, 0);
+    b.fuseEmitter = new ParticleEmitter(
+        b.pos, 0, 0.05, 0, 18, PI, ICON.spark,
+        hsl(.12, 1, .78), hsl(.08, 1, .8),
+        hsl(.12, 1, .7, 0), hsl(.08, 1, .8, 0),
+        0.3, 0.28, 0, 0.06, 0.8, 0.95, 1, 0.15, PI, 0.2, 0.4,
+        0, true, false);
+
+    bombs.push(b);
+    bomber.dropTimer = 0.18;
+    sfxFuse?.play(undefined, 0.35, 0.9 + wave * 0.04, 0.1);
+    bombsSpawned++;
+}
+
+function catchBomb(b) {
+    bombsCaught++;
+    const points = wave;
+    score += points;
+    sfxCatch?.play(undefined, 0.45, 1 + min(0.6, bombsCaught * 0.006), 0.15);
+    // Green star pop on a clean catch + a couple of bright spark flecks.
+    particleBurst(b.pos, ICON.star, 6, hsl(.33, 1, .6), hsl(.42, 1, .7),
+        { size: 0.7, sizeEnd: 0.1, speed: 0.12, particleTime: 0.5, gravityScale: 0.15 });
+    particleBurst(b.pos, ICON.spark, 6, hsl(.15, 1, .8), hsl(.1, 1, .85),
+        { size: 0.35, sizeEnd: 0, speed: 0.2, particleTime: 0.4, gravityScale: 0.15, angleSpeed: 0.6 });
+
+    // Classic Kaboom: get a bucket back every 1000 points.
+    const earned = floor(score / 1000);
+    if (earned > bucketsAwarded && lives < 3) {
+        bucketsAwarded = earned;
+        lives++;
+        sfxBucketUp?.play(undefined, 0.6);
+        showMenuToast({
+            icon: '🪣', title: 'BUCKET BONUS!',
+            text: '+1 bucket', duration: 2200, position: 'bottom-right',
+        });
+    } else if (earned > bucketsAwarded) {
+        bucketsAwarded = earned;
+    }
+}
+
+function missBomb(missedBomb) {
+    lives--;
+    addScreenShake(0.7, 28/60);
+    missShakeTimer = 28/60;
+    sfxMiss?.play(undefined, 0.95);
+    missFreezeTimer = 0.9;
+
+    // Big ground explosion at the miss point — fireball, bright sparks, a soft
+    // glow flash, and dark rising smoke.
+    const groundPos = vec2(missedBomb.pos.x, FLOOR_Y + 0.2);
+    particleBurst(groundPos, ICON.burst, 26, hsl(.04, 1, .6), hsl(.09, 1, .6),
+        { size: 1.1, sizeEnd: 0.2, speed: 0.4, particleTime: 0.9, gravityScale: 0.3, emitSize: 0.6 });
+    particleBurst(groundPos, ICON.spark, 22, hsl(.11, 1, .75), hsl(.07, 1, .7),
+        { size: 0.45, sizeEnd: 0, speed: 0.55, particleTime: 0.7, gravityScale: 0.25, angleSpeed: 0.7 });
+    particleBurst(groundPos, ICON.glow, 8, hsl(.07, .9, .8), hsl(.02, 1, .6),
+        { size: 2.4, sizeEnd: 0.5, speed: 0.12, particleTime: 0.4, gravityScale: 0, emitSize: 0.4 });
+    particleBurst(groundPos, ICON.glow, 12, hsl(0, 0, .18), hsl(0, 0, .28),
+        { size: 1.4, sizeEnd: 2.6, speed: 0.1, particleTime: 1.2, gravityScale: -0.06,
+          additive: false, fadeRate: 0.35, emitSize: 0.6 });
+
+    // Detonate every other in-flight bomb harmlessly (classic mechanic).
+    for (const b of bombs) {
+        if (b !== missedBomb) {
+            particleBurst(b.pos, ICON.burst, 8, hsl(.05, 1, .55), hsl(.1, 1, .6),
+                { size: 0.6, sizeEnd: 0.1, speed: 0.25, particleTime: 0.6, gravityScale: 0.3 });
+            particleBurst(b.pos, ICON.spark, 6, hsl(.13, 1, .7), hsl(.1, 1, .75),
+                { size: 0.3, sizeEnd: 0, speed: 0.3, particleTime: 0.5, angleSpeed: 0.6 });
+        }
+    }
+    clearBombs();
+
+    if (lives <= 0) {
+        if (isPlaying()) {
+            setPlaying(false);
+            // Defer the game-over dialog until the explosion settles so the
+            // player sees the shake before the modal eats the screen.
+            gameOverShown = false;
+            pendingGameOver = true;
+            gameOverDelay = 1.2;
+        } else {
+            // Attract loop: linger on the wreckage, then restart (no menu/score).
+            attractRestartTimer = 2.0;
+        }
+    }
+}
+
+function checkWaveClear() {
+    if (waveClearTimer > 0) return;
+    if (bombsSpawned >= bombsInWave && bombs.length === 0) {
+        const bonus = wave * 50 + bombsCaught * wave * 2;
+        score += bonus;
+        sfxClear?.play(undefined, 0.7);
+        waveBannerText = `WAVE ${wave} CLEAR  +${bonus}`;
+        waveBannerTimer = 2.0;
+        waveClearTimer = 2.0;
+    }
+}
+
+function showGameOver() {
+    gameOverShown = true;
+    submitBestScore(score);
+    const summary = getMenu('gameover').getItem('summary');
+    summary.setLabel(`SCORE  ${score}\nBEST  ${getBestScore()}\nWAVE  ${wave}`);
+    showMenu('gameover');
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// UPDATE
+
+function updateBomber(dt) {
+    if (waveClearTimer > 0) return;       // bomber takes a breather between waves
+    if (waveStartDelay > 0) return;
+
+    // Pace back and forth with random flips. Speed scales with wave.
+    bomber.x += bomber.vx * dt;
+    if (bomber.x > BOMBER_RANGE)  { bomber.x = BOMBER_RANGE;  bomber.vx = -abs(bomber.vx); }
+    if (bomber.x < -BOMBER_RANGE) { bomber.x = -BOMBER_RANGE; bomber.vx =  abs(bomber.vx); }
+    if (rand() < bomberFlipProb(wave)) bomber.vx = -bomber.vx;
+
+    if (bomber.dropTimer > 0)  bomber.dropTimer  -= dt;
+    if (bomber.laughTimer > 0) bomber.laughTimer -= dt;
+}
+
+function updateBucket(dt) {
+    const maxX = FIELD_RIGHT - bucketHalfW(wave) - 0.3;
+    // Attract auto-player: while at the title (not playing) the demo drives the
+    // bucket toward the lowest in-flight bomb (the most urgent catch). The bucket
+    // EASES toward the target instead of teleporting, so it glides smoothly.
+    if (!isPlaying()) {
+        if (bombs.length) {
+            let target = bombs[0];
+            for (const b of bombs)
+                if (b.pos.y < target.pos.y) target = b;
+            bucketTargetX = clamp(target.pos.x, -maxX, maxX);
+        }
+        // Frame-rate-independent smoothing toward the target column.
+        bucketX = clamp(lerp(bucketX, bucketTargetX, 1 - Math.pow(0.001, dt)), -maxX, maxX);
+        return;
+    }
+    // One-axis steering: keyboard arrows/WASD or gamepad left stick / d-pad.
+    let kx = keyDirection().x;                              // gamepad
+    const sx = gamepadStick(0).x;                           // gamepad: merge left stick / d-pad
+    if (sx) kx = clamp(kx + sx, -1, 1);
+    // Follow whichever device is active. Mouse only drives while it's the most
+    // recently used device, so keyboard/gamepad steering doesn't snap back to
+    // the cursor; when keyboard/gamepad are idle, kx is 0 and the bucket holds.
+    if (usingMouseInput())
+        bucketTargetX = clamp(mousePos.x, -maxX, maxX);
+    else
+        bucketTargetX = clamp(bucketTargetX + kx * 28 * dt, -maxX, maxX);
+    // Direct assignment — paddle games live on instant response.
+    bucketX = bucketTargetX;
+}
+
+function updateBombs(dt) {
+    if (missFreezeTimer > 0) return;
+    if (waveClearTimer > 0) return;
+
+    // Spawn cadence
+    if (waveStartDelay > 0) {
+        waveStartDelay -= dt;
+    } else if (bombsSpawned < bombsInWave) {
+        waveSpawnTimer -= dt;
+        if (waveSpawnTimer <= 0) {
+            spawnBomb();
+            waveSpawnTimer = bombInterval(wave) * rand(0.75, 1.25);
+        }
+    }
+
+    const halfW = bucketHalfW(wave);
+    const catchY = bucketTopY();
+    const bucketHalfH = 0.5;
+
+    for (let i = bombs.length; i--;) {
+        const b = bombs[i];
+        b.pos.y += b.vel.y * dt;
+        b.fuse += dt * 12;
+
+        // Horizontal motion by type. Drift slides + bounces off the inner walls;
+        // wavy weaves as a sine around its clamped center (so it can't exit).
+        if (b.type === 'wavy') {
+            b.wavePhase += dt * b.waveFreq;
+            b.pos.x = b.centerX + sin(b.wavePhase) * b.waveAmp;
+        } else if (b.type === 'drift') {
+            b.pos.x += b.vel.x * dt;
+            const lim = FIELD_RIGHT - BOMB_R - 0.2;
+            if (b.pos.x < -lim) { b.pos.x = -lim; b.vel.x =  abs(b.vel.x); }
+            if (b.pos.x >  lim) { b.pos.x =  lim; b.vel.x = -abs(b.vel.x); }
+        }
+
+        // The smoke-trail + fuse-spark emitters ride along with the bomb.
+        if (b.smokeEmitter) b.smokeEmitter.pos = b.pos.copy();
+        if (b.fuseEmitter)  b.fuseEmitter.pos  = b.pos.add(vec2(0, BOMB_R + 0.42));
+
+        // Catch test: only the TOP (highest) bucket catches. Lower buckets
+        // are visual lives only — classic Kaboom rules.
+        const dx = abs(b.pos.x - bucketX);
+        const dy = b.pos.y - catchY;
+        if (dx < halfW + BOMB_R && abs(dy) < bucketHalfH + BOMB_R && b.vel.y < 0) {
+            catchBomb(b);
+            destroyBombFx(b);
+            bombs.splice(i, 1);
+            continue;
+        }
+
+        // Floor hit = miss.
+        if (b.pos.y < FLOOR_Y) {
+            missBomb(b);
+            return;     // bombs was wiped inside missBomb
+        }
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// RENDER
+
+function drawSkyAndStars() {
+    drawRect(vec2(0, 0), vec2(120, 60), hsl(.66, .35, .08));
+    starField.draw();
+}
+
+function drawBuilding() {
+    const bw = 22;
+    const bx = 0;
+    const buildingTop = ROOF_Y - 0.2;
+    const buildingBot = FLOOR_Y;
+    const buildingMid = (buildingTop + buildingBot) / 2;
+    const buildingH = buildingTop - buildingBot;
+
+    // Body
+    drawRect(vec2(bx, buildingMid), vec2(bw, buildingH), hsl(0, 0, .13));
+    // Vertical edge shading
+    drawRect(vec2(bx - bw/2 + 0.3, buildingMid), vec2(0.6, buildingH), hsl(0, 0, .09));
+    drawRect(vec2(bx + bw/2 - 0.3, buildingMid), vec2(0.6, buildingH), hsl(0, 0, .17));
+    // Roof ledge / parapet
+    drawRect(vec2(bx, buildingTop + 0.15), vec2(bw + 0.6, 0.5), hsl(0, 0, .22));
+    drawRect(vec2(bx, buildingTop + 0.4), vec2(bw + 1.0, 0.2), hsl(0, 0, .28));
+
+    // Windows
+    const cols = 9, rows = 7;
+    const padX = 1.5, padY = 1.5;
+    const left = bx - bw/2 + padX;
+    const top  = buildingTop - padY;
+    const colStep = (bw - padX * 2) / (cols - 1);
+    const rowStep = (buildingH - padY * 2 - 1) / (rows - 1);
+    const winW = 1.3, winH = 0.85;
+
+    for (let r = 0; r < rows; r++)
+    for (let c = 0; c < cols; c++) {
+        const x = left + c * colStep;
+        const y = top - r * rowStep;
+        const seed = windowSeeds[r * cols + c];
+        const phase = (timeReal * 0.35 + seed) % 5;
+        const lit = phase < 2;
+        // Frame
+        drawRect(vec2(x, y), vec2(winW + 0.18, winH + 0.18), hsl(0, 0, .07));
+        // Glass
+        drawRect(vec2(x, y), vec2(winW, winH), lit ? hsl(.13, .85, .58) : hsl(.62, .25, .1));
+        // Crossbars
+        drawRect(vec2(x, y), vec2(0.08, winH), hsl(0, 0, .06));
+        drawRect(vec2(x, y), vec2(winW, 0.08), hsl(0, 0, .06));
+    }
+
+    // Ground — extends well below the visible area so any aspect ratio
+    // shows pavement instead of sky under the building.
+    drawRect(vec2(0, FLOOR_Y - 6), vec2(80, 12), hsl(.08, .2, .12));
+    drawRect(vec2(0, FLOOR_Y - 0.05), vec2(80, 0.12), hsl(0, 0, .25));
+}
+
+function drawPineTree(x, y, size) {
+    // Trunk
+    const trunkW = size * 0.2;
+    const trunkH = size * 0.7;
+    drawRect(vec2(x, y + trunkH/2), vec2(trunkW, trunkH), hsl(.08, .55, .12));
+
+    // Foliage — 3 stacked triangles tapering up, pine-silhouette style
+    const foliageColor = hsl(.32, .5, .14);
+    for (let i = 0; i < 3; i++) {
+        const fy = y + trunkH * 0.4 + size * (0.4 + i * 0.55);
+        const fw = size * (1.3 - i * 0.3);
+        const fh = size * 0.95;
+        // Upward triangle from the atlas. Its centroid sits at the tile
+        // centre, matching this triangle's centroid (fy + fh/3); the size
+        // factors compensate for the icon's padding inside the tile.
+        drawTile(vec2(x, fy + fh/3), vec2(fw * 1.33, fh * 1.5),
+                 ICON.triangle, foliageColor);
+    }
+}
+
+function drawBush(x, y, size) {
+    // Overlapping circles — rounded shrub silhouette.
+    const c1 = hsl(.32, .45, .15);
+    const c2 = hsl(.32, .55, .18);
+    drawTile(vec2(x - size*0.4, y + size*0.5), vec2(size*1.2), ICON.circle, c1);
+    drawTile(vec2(x + size*0.4, y + size*0.5), vec2(size*1.2), ICON.circle, c1);
+    drawTile(vec2(x,            y + size*0.9), vec2(size*1.3), ICON.circle, c2);
+}
+
+function drawTrees() {
+    for (const t of treeField) {
+        if (t.type === 'pine') drawPineTree(t.x, FLOOR_Y, t.size);
+        else                   drawBush(t.x, FLOOR_Y, t.size);
+    }
+}
+
+function drawBomber() {
+    // The bomber paces via the real updateBomber both in play AND at the title
+    // (the attract demo runs the full sim), so just draw at his live position.
+    const x = bomber.x;
+    const y = ROOF_Y;
+    const moving = waveClearTimer <= 0 && waveStartDelay <= 0;
+    const facing = bomber.vx >= 0 ? 1 : -1;
+    const walkPhase = time * 6 * (moving ? 1 : 0);
+    const stepBob = abs(sin(walkPhase)) * 0.08;
+
+    // Rounded body part — the atlas roundSquare gives the bomber soft, organic
+    // edges. The icon now fills its tile, so each part keeps the same footprint
+    // a drawRect would have had.
+    const limb = (pos, size, color) =>
+        drawTile(pos, size, ICON.roundSquare, color);
+
+    // Legs (striped red/white pants) — each leg bobs on its own phase so one
+    // foot lifts while the other plants, giving a natural walking gait. Leg +
+    // stripes + foot share the same per-side offset so they stay attached.
+    const baseLegY = y + 0.55;
+    for (const side of [-1, 1]) {
+        const lx = x + side * 0.32;
+        // max(0, sin) (NOT abs) so each foot lifts on only its half of the
+        // cycle — abs(sin(x+PI)) == abs(sin(x)), which would keep them in sync.
+        // Opposite phase per side: one foot is up while the other is planted.
+        // 0 when not walking (walkPhase is 0 while idle).
+        const bob = max(0, sin(walkPhase + (side > 0 ? PI : 0))) * 0.22;
+        const lY = baseLegY + bob;
+        limb(vec2(lx, lY), vec2(0.45, 1.1), hsl(0, .8, .5));
+        for (let i = 0; i < 4; i++) {
+            const sy = lY + 0.4 - i * 0.3;
+            drawRect(vec2(lx, sy), vec2(0.45, 0.08), hsl(0, 0, .95));
+        }
+        // Foot (rounded)
+        limb(vec2(x + side * 0.4, lY - 0.6), vec2(0.7, 0.25), hsl(0, 0, .08));
+    }
+
+    // Body (yellow shirt)
+    const bodyY = y + 1.7 + stepBob * 0.3;
+    limb(vec2(x, bodyY), vec2(1.5, 1.2), hsl(.14, .85, .55));
+    limb(vec2(x, bodyY + 0.55), vec2(1.7, 0.2), hsl(.14, .9, .65));     // shoulder line
+    // Belt
+    limb(vec2(x, bodyY - 0.6), vec2(1.55, 0.18), hsl(.05, .3, .4));
+    limb(vec2(x, bodyY - 0.6), vec2(0.3, 0.18), hsl(.13, .0, .9));      // buckle
+
+    // Throwing arm — extends forward, dips down + reaches further when
+    // dropping. Hand position MUST match spawnBomb's handX/handY so the
+    // bomb visibly leaves his hand.
+    const throwShoulder = vec2(x + facing * 0.5, bodyY + 0.4);
+    const throwReach    = bomber.dropTimer > 0 ? 1.4 : 1.0;
+    const throwDip      = bomber.dropTimer > 0 ? -0.5 : -0.1;
+    const throwHand     = vec2(x + facing * throwReach, bodyY + throwDip);
+    drawLine(throwShoulder, throwHand, 0.22, hsl(.08, .5, .8));
+    drawTile(throwHand, vec2(0.36), ICON.circle, hsl(.08, .5, .8));
+
+    // Holding arm — bent at elbow, cradles the pile against his chest on
+    // the side OPPOSITE to facing.
+    const holdShoulder = vec2(x - facing * 0.5, bodyY + 0.4);
+    const holdElbow    = vec2(x - facing * 0.65, bodyY - 0.1);
+    const holdHand     = vec2(x - facing * 0.2, bodyY - 0.3);
+    drawLine(holdShoulder, holdElbow, 0.22, hsl(.08, .5, .8));
+    drawLine(holdElbow,    holdHand,  0.22, hsl(.08, .5, .8));
+    drawTile(holdHand, vec2(0.36), ICON.circle, hsl(.08, .5, .8));
+
+    // Pile of remaining bombs in his off-hand — shrinks as he drops them.
+    // The wave sim runs at the title too, so this count is live in both modes.
+    const remainingBombs = max(0, bombsInWave - bombsSpawned);
+    drawBombPile(holdHand.x, holdHand.y + 0.22, min(remainingBombs, 5));
+
+    // Head (yellow with mustache + wicked grin)
+    const headY = y + 3.0 + stepBob * 0.4;
+    // Dark outline circle behind the face (atlas circles have no stroke arg).
+    drawTile(vec2(x, headY), vec2(1.3 + 0.12), ICON.circle, hsl(0, 0, .05));
+    drawTile(vec2(x, headY), vec2(1.3), ICON.circle, hsl(.11, .75, .68));
+    // Hat
+    limb(vec2(x, headY + 0.5), vec2(1.5, 0.3), hsl(0, .3, .25));
+    limb(vec2(x, headY + 0.7), vec2(0.8, 0.3), hsl(0, .3, .25));
+    // Eyes
+    drawTile(vec2(x - 0.35, headY + 0.05), vec2(0.38), ICON.circle, hsl(0, 0, 1));
+    drawTile(vec2(x + 0.35, headY + 0.05), vec2(0.38), ICON.circle, hsl(0, 0, 1));
+    drawTile(vec2(x - 0.35 + facing * 0.05, headY + 0.05), vec2(0.15), ICON.circle, hsl(0, 0, .05));
+    drawTile(vec2(x + 0.35 + facing * 0.05, headY + 0.05), vec2(0.15), ICON.circle, hsl(0, 0, .05));
+    // Eyebrows — angry slant
+    drawLine(vec2(x - 0.55, headY + 0.3),
+             vec2(x - 0.15, headY + 0.15), 0.1, hsl(0, 0, .05));
+    drawLine(vec2(x + 0.55, headY + 0.3),
+             vec2(x + 0.15, headY + 0.15), 0.1, hsl(0, 0, .05));
+    // Big bulbous nose — pinker than the yellow skin tone
+    drawTile(vec2(x, headY - 0.05), vec2(0.5), ICON.circle, hsl(.02, .6, .62));
+    drawTile(vec2(x - 0.1, headY + 0.05), vec2(0.2), ICON.circle, hsl(.02, .55, .8));
+    // Mustache
+    limb(vec2(x, headY - 0.3), vec2(0.9, 0.2), hsl(0, 0, .05));
+}
+
+// Layouts for the held bomb pile. Each entry positions bombs so the pile
+// looks balanced at every count (a single bomb sits centered; a full pile
+// is a 3-on-bottom, 2-on-top triangle).
+function bombPilePositions(n) {
+    if (n <= 0) return [];
+    if (n === 1) return [[0, 0.1]];
+    if (n === 2) return [[-0.25, 0], [0.25, 0]];
+    if (n === 3) return [[-0.3, 0], [0, 0], [0.3, 0]];
+    if (n === 4) return [[-0.28, 0], [0.28, 0], [-0.14, 0.4], [0.14, 0.4]];
+    return [[-0.3, 0], [0, 0], [0.3, 0], [-0.15, 0.4], [0.15, 0.4]];
+}
+
+function drawBombPile(cx, cy, count) {
+    if (count <= 0) return;
+    const positions = bombPilePositions(min(count, 5));
+    const r = 0.22;
+    for (const p of positions) {
+        const px = cx + p[0], py = cy + p[1];
+        drawTile(vec2(px, py), vec2(r * 2.3), ICON.circle, hsl(0, 0, .3));    // rim
+        drawTile(vec2(px, py), vec2(r * 2), ICON.circle, hsl(0, 0, .08));     // body
+        drawTile(vec2(px - r * 0.25, py + r * 0.25), vec2(r * 0.8), ICON.circle, hsl(0, 0, .45));
+        drawLine(vec2(px, py + r),
+                 vec2(px + 0.05, py + r + 0.12), 0.05, hsl(.08, .4, .4));
+    }
+}
+
+function drawBomb(b) {
+    const t = BOMB_TYPES[b.type] || BOMB_TYPES.normal;
+    // Colored bombs get a soft glow halo so the type reads at a glance.
+    if (b.type !== 'normal')
+        drawTile(b.pos, vec2(BOMB_R * 5), ICON.glow,
+                 hsl(t.rim[0], t.rim[1], t.rim[2], .4), 0, false,
+                 hsl(t.rim[0], t.rim[1], t.rim[2], 0));
+    // Rim ring — a slightly larger circle behind the body reads as an outline.
+    drawTile(b.pos, vec2(BOMB_R * 2.3), ICON.circle, hsl(...t.rim));
+    // Body
+    drawTile(b.pos, vec2(BOMB_R * 2), ICON.circle, hsl(...t.body));
+    // Highlight
+    drawTile(b.pos.add(vec2(-BOMB_R * 0.3, BOMB_R * 0.3)), vec2(BOMB_R * 0.8),
+             ICON.circle, hsl(...t.hi));
+    // Fuse stick
+    drawLine(b.pos.add(vec2(0, BOMB_R)),
+             b.pos.add(vec2(0.08, BOMB_R + 0.4)), 0.07, hsl(.08, .4, .4));
+    // Spark — a spinning additive spark with a white-hot core.
+    const sparkPos = b.pos.add(vec2(0.08, BOMB_R + 0.42));
+    const sparkSize = 0.5 + 0.2 * sin(b.fuse);
+    drawTile(sparkPos, vec2(sparkSize), ICON.spark,
+             hsl(.12, 1, .75), b.fuse * 3, false, hsl(.12, 1, .75, 0));
+    drawTile(sparkPos, vec2(sparkSize * 0.4), ICON.circle, WHITE);
+}
+
+function drawBuckets() {
+    if (lives <= 0) return;
+    const halfW = bucketHalfW(wave);
+    const h = 1.0;
+
+    for (let i = 0; i < lives; i++) {
+        const cy = bucketCenterY(i);
+        const isTop = i === lives - 1;     // highest bucket catches
+        // Soft glow on the active (catching) bucket so players read which one
+        // grabs bombs — gently pulses.
+        if (isTop) {
+            const pulse = 0.22 + 0.1 * sin(time * 4);
+            drawTile(vec2(bucketX, cy + h/2 + 0.1), vec2(halfW * 2 + 1.8, 1.8),
+                     ICON.glow, hsl(.55, .9, .72, pulse), 0, false, hsl(.55, .9, .72, 0));
+        }
+        // Trapezoidal body (rect + triangular sides via lines)
+        drawRect(vec2(bucketX, cy), vec2(halfW * 2 * 0.85, h), hsl(.55, .55, .55));
+        drawRect(vec2(bucketX, cy - 0.1), vec2(halfW * 2 * 0.75, h - 0.2), hsl(.55, .5, .42));
+        // Rim
+        drawRect(vec2(bucketX, cy + h/2), vec2(halfW * 2 + 0.2, 0.2), hsl(.55, .65, .72));
+        drawRect(vec2(bucketX, cy + h/2 + 0.05), vec2(halfW * 2 + 0.3, 0.08), hsl(.55, .75, .88));
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// LITTLEJS CALLBACKS
+
+async function gameInit() {
+    saveDataInit('kaboom');
+    canvasClearColor = new Color().setHex('#06061a');
+    setSoundVolume(0.6);
+
+    // Bake the 16 built-in white icons into the atlas (tiles 0-15). Everything
+    // round/sparkly in this game — bombs, fuse sparks, stars, particles — is now
+    // a tinted default-atlas sprite instead of a raw primitive.
+    ICON = initDefaultAtlas();
+
+    // Pause only during REAL play (a menu over a live game). At the title the
+    // menu is up but isPlaying() is false, so this leaves the game UNPAUSED —
+    // the attract demo keeps simulating behind the visible title menu.
+    installAutoPause(() => isPlaying());
+    setSilentAttract(true);   // mute all game audio at the title; menu clicks still play
+
+    // ---- sounds ----
+    sfxCatch    = new SoundGenerator({ frequency: 700, release: 0.05, volume: 0.5, shapeCurve: 0.6 });
+    sfxFuse     = new SoundGenerator({ frequency: 200, release: 0.04, volume: 0.35, noise: 0.4, shapeCurve: 0.1 });
+    sfxMiss     = new SoundGenerator({ frequency: 90, release: 0.4, volume: 1, noise: 0.5, slide: -0.5, shapeCurve: 0 });
+    sfxClear    = new SoundGenerator({ frequency: 440, release: 0.25, volume: 0.7, slide: 4, shapeCurve: 0.5 });
+    sfxBucketUp = new SoundGenerator({ frequency: 660, release: 0.2, volume: 0.7, slide: 3, shapeCurve: 0.7 });
+
+    // ---- stable backdrop seeds ----
+    // Stateless seeded night sky (gameFx.js Starfield): 3 left-drifting parallax
+    // layers of circle tiles, unpaused so it animates at the title. White-on-dark
+    // grayscale; the old lightness+alpha twinkle is folded into one alpha pulse
+    // (.3..1 x per-layer brightness). Wraps in x = +/-35.
+    starField = new Starfield({
+        unpaused: true,
+        tile: ICON.circle,
+        color: WHITE,
+        center: vec2(0, 1),
+        area: vec2(35, 12),
+        drift: vec2(-1, 0),
+        twinkleBase: 0.3, twinkleAmp: 0.7,
+        layers: [
+            { count:50, driftSpeedMin:.25, driftSpeedMax:.25, alphaMin:.5,  alphaMax:.5,  sizeMin:.048, sizeMax:.088, twSpeedMin:.318, twSpeedMax:.318 }, // far
+            { count:50, driftSpeedMin:.55, driftSpeedMax:.55, alphaMin:.75, alphaMax:.75, sizeMin:.096, sizeMax:.136, twSpeedMin:.318, twSpeedMax:.318 }, // mid
+            { count:50, driftSpeedMin:1.1, driftSpeedMax:1.1, alphaMin:1,   alphaMax:1,   sizeMin:.144, sizeMax:.184, twSpeedMin:.318, twSpeedMax:.318 }, // near
+        ],
+    });
+
+    // ---- foreground silhouettes on the sides of the building ----
+    // Stable positions/sizes so the skyline doesn't change between frames.
+    treeField = [
+        { x: -28,   size: 1.0,  type: 'pine' },
+        { x: -23,   size: 1.4,  type: 'pine' },
+        { x: -19,   size: 0.85, type: 'bush' },
+        { x: -16,   size: 1.15, type: 'pine' },
+        { x: -13.5, size: 0.7,  type: 'bush' },
+        { x: 13.5,  size: 0.8,  type: 'bush' },
+        { x: 16,    size: 1.2,  type: 'pine' },
+        { x: 19,    size: 1.0,  type: 'bush' },
+        { x: 23,    size: 1.5,  type: 'pine' },
+        { x: 28,    size: 0.95, type: 'pine' },
+    ];
+    windowSeeds = [];
+    for (let i = 0; i < 9 * 7; i++) windowSeeds.push(rand(0, 5));
+
+    // ---- menus ----
+    createOptionsMenu();
+
+    setMenuTheme({accent:'#ff5a1f'});
+    createMenu({
+        id: 'help',
+        title: 'HELP',
+        onHide: popMenu,
+        items: [
+            { type: 'text', text:
+                'The Mad Bomber drops bombs from the rooftop — move your buckets to catch every one. ' +
+                'Miss a bomb and your bottom bucket explodes, wiping out the rest of the wave. ' +
+                'Clear a full wave for a bonus; earn a bucket back every 1000 points.' },
+            { type: 'text', text:
+                'Mouse or Arrows / WASD move bucket' },
+            { type: 'separator' },
+            { type: 'button', label: 'BACK', onClick: () => hideMenu('help') },
+        ],
+    });
+
+    createPauseMenu({
+        onQuit: () => {
+            clearSubmenuStack();
+            hideAllMenus();
+            setPlaying(false);
+            // Restart a clean attract demo so the title is live again.
+            startGame();
+            showMenu('title');
+        },
+        extraItems: [
+            { type: 'button', label: 'OPTIONS', onClick: () => pushMenu('options') },
+            { type: 'button', label: 'HELP',    onClick: () => pushMenu('help') },
+        ],
+    });
+
+    createTitleMenu({
+        id: 'title',
+        title: 'BOOMER',
+        titleFx: {fill:'fire', motion:'heartbeat'},
+        subtitle: 'Catch the Mad Bomber’s bombs',
+        revealOnClick: false,
+        onPlay: () => { setPlaying(true); startGame(); },
+        canReveal: () => !isPlaying(),
+        showBest: true,
+        formatBest: n => 'BEST: ' + n,
+        items: [
+            { type: 'button', label: 'OPTIONS', onClick: () => pushMenu('options') },
+            { type: 'button', label: 'HELP',    onClick: () => pushMenu('help') },
+        ],
+    });
+
+    // Game over — non-dismissable so the player can't strand themselves on a
+    // black canvas by hitting Esc. The summary label is rewritten by
+    // showGameOver() each time.
+    createMenu({
+        id: 'gameover',
+        title: 'GAME OVER',
+        dismissable: false,
+        initialItemId: 'again',
+        items: [
+            { type: 'text', id: 'summary', text: '' },
+            { type: 'separator' },
+            { type: 'button', id: 'again', label: 'PLAY AGAIN', onClick: () => {
+                hideMenu('gameover');
+                setPlaying(true);
+                startGame();
+            }},
+            { type: 'button', label: 'TITLE', onClick: () => {
+                hideMenu('gameover');
+                // isPlaying() is already false — restart a clean attract demo.
+                startGame();
+                showMenu('title');
+            }},
+        ],
+    });
+
+    // ---- HUD toolbar ----
+    installDefaultToolbar();
+
+    // ---- initial state ----
+    // Spin up a full live game so the title screen IS the attract demo: bombs
+    // drop, the bomber paces, and the auto-player sweeps the buckets behind the
+    // menu. setPlaying stays false, so installAutoPause leaves it unpaused while
+    // the title menu is up, the auto-player drives, and a death loops the demo.
+    setPlaying(false);
+    missShakeTimer = 0;
+    gameOverDelay = 0;
+    attractRestartTimer = 0;
+    startGame();
+    showMenu('title');
+}
+
+function gameUpdate() {
+    if (bindPauseKey({ when: () => isPlaying() && lives > 0 })) return;
+
+    // Reset camera each frame so the gameFx screen-shake plugin (which adds
+    // to cameraPos after gameUpdate) can nudge cleanly.
+    setCameraPos(vec2(0, 0));
+
+    const dt = 1/60;     // LittleJS fixed-step
+    if (waveBannerTimer > 0) waveBannerTimer -= dt;
+    if (missShakeTimer > 0) missShakeTimer = max(0, missShakeTimer - dt);
+
+    // While not playing we're either (a) a REAL game that just ended — surface
+    // the game-over modal once the shake/explosion settle — or (b) the attract
+    // demo at the title, which keeps simulating below and loops on death (no
+    // modal, no score submit).
+    if (!isPlaying()) {
+        if (gameOverDelay > 0) gameOverDelay -= dt;
+        if (pendingGameOver) {
+            // Real game over: show the modal after the explosion plays out.
+            if (!gameOverShown && missShakeTimer <= 0 && gameOverDelay <= 0)
+                showGameOver();
+            return;     // freeze the wreckage under the game-over modal
+        }
+        if (lives <= 0 && missShakeTimer <= 0 && gameOverDelay <= 0) {
+            attractRestartTimer -= dt;
+            if (attractRestartTimer <= 0) startGame();
+            return;
+        }
+        // else: attract demo still alive — fall through and simulate it.
+    }
+
+    if (missFreezeTimer > 0) {
+        missFreezeTimer -= dt;
+        updateBucket(dt);
+        return;
+    }
+
+    if (waveClearTimer > 0) {
+        waveClearTimer -= dt;
+        if (waveClearTimer <= 0) startWave(wave + 1);
+        updateBucket(dt);
+        updateBomber(dt);
+        return;
+    }
+
+    updateBucket(dt);
+    updateBomber(dt);
+    updateBombs(dt);
+    checkWaveClear();
+}
+
+function gameUpdatePost() {
+    // Auto-fit camera so the play area shows on any aspect ratio (portrait
+    // phones, ultrawide, etc.). Field uses ~26w x ~28h of world units
+    // (taller side fits bomber's head + sky margin).
+    // The gameFx screen-shake plugin runs between gameUpdate and here and has
+    // already nudged cameraPos (base reset to 0,0 at the top of gameUpdate), so
+    // keep our shaken position and take only cameraFit's fitted scale.
+    const camPos = cameraPos;
+    cameraFit(vec2(0, 0), vec2(26, 28));
+    cameraPos = camPos;
+}
+
+function gameRender() {
+    drawSkyAndStars();
+    drawBuilding();
+    drawTrees();
+    drawBomber();
+    for (const b of bombs) drawBomb(b);
+    drawBuckets();
+}
+
+function gameRenderPost() {
+    // HUD only when actually playing.
+    if (!isPlaying()) return;
+
+    const cx = mainCanvasSize.x / 2;
+    drawTextScreen(`SCORE  ${score}`,
+        vec2(24, 36), 32, hsl(0, 0, 1), 5, hsl(0, 0, 0), 'left');
+    drawTextScreen(`BEST  ${getBestScore()}`,
+        vec2(24, 72), 20, hsl(0, 0, .8), 4, hsl(0, 0, 0), 'left');
+
+    drawTextScreen(`WAVE ${wave}`,
+        vec2(cx, 36), 28, hsl(.13, 1, .7), 5, hsl(0, 0, 0), 'center');
+    if (bombsInWave > 0) {
+        drawTextScreen(`${bombsCaught} / ${bombsInWave}`,
+            vec2(cx, 68), 20, hsl(0, 0, .9), 4, hsl(0, 0, 0), 'center');
+    }
+
+    // Cinematic wave banner (replaces the corner toasts that fought the HUD)
+    if (waveBannerTimer > 0) {
+        const t = waveBannerTimer;
+        // Fade in over the first 0.2s, fade out over the last 0.5s.
+        const fadeIn  = clamp((2.0 - t) / 0.2, 0, 1);
+        const fadeOut = clamp(t / 0.5, 0, 1);
+        const a = fadeIn * fadeOut;
+        const grow = 1 + 0.15 * (1 - fadeIn);    // small pop-in
+        const size = 80 * grow;
+        drawTextScreen(waveBannerText,
+            vec2(cx, mainCanvasSize.y / 2 - 40),
+            size, hsl(.04, .9, .6, a), 8, hsl(0, 0, 0, a * 0.9), 'center');
+    }
+}
+
+engineInit(gameInit, gameUpdate, gameUpdatePost, gameRender, gameRenderPost);
+</script></body></html>

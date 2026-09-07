@@ -1,0 +1,1129 @@
+<!DOCTYPE html><head>
+<title>Klondike</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+/* Override any CSS variable on #littlejs-menus to re-skin all menus
+   and toolbars. Uncomment to try a different look — the helper itself
+   never needs to change. */
+/*
+#littlejs-menus {
+    --menu-bg:           rgba(20, 0, 30, 0.92);
+    --menu-fg:           #fff;
+    --menu-accent:       #f0a;
+    --menu-font:         sans-serif;
+    --menu-border-width: 4px;
+    --menu-radius:       18px;
+}
+*/
+</style>
+</head>
+<script src="../templates/engineLoader.js?1780767748506"></script>
+<script src="../templates/menus.js?1780767748506"></script>
+<script src="../templates/gameFx.js?1780767748506"></script>
+<script src="../templates/textureGenerator.js?1780767748506"></script>
+<script src="../templates/cards.js?1780767748506"></script>
+<script>
+'use strict';
+
+// engine settings
+canvasClearColor = new Color().setHex('#264d40');   // felt green
+
+///////////////////////////////////////////////////////////////////////////////
+// Layout (world units, Y-up)
+// CARD_SIZE comes from templates/cards.js (default vec2(6, 8.5)).
+const COL_COUNT       = 7;          // Klondike: 7 tableau columns
+const COL_PITCH_X     = 7;          // horizontal distance between column anchors
+const CARD_PITCH_Y    = 1.6;        // vertical gap below a FACE-UP cascade card
+const CARD_PITCH_DOWN = 0.65;       // tighter gap below a FACE-DOWN cascade card
+const TOP_MARGIN      = 1;        // empty felt above the top row of stacks
+const MAX_CASCADE_DEPTH = 13;       // height budget (face-up pitches) for camera fit
+const FLIP_TIME       = 0.2;        // card flip-over animation length, seconds (lower = snappier)
+const DEAL_STAGGER    = 0.025;      // delay between each card popping off the deck (lower = faster)
+const DEAL_FLIGHT     = 0.25;       // how long each dealt card takes to fly (and flip) to its spot
+
+///////////////////////////////////////////////////////////////////////////////
+// Card model
+//
+// Card, CardStack, shuffledDeck, drawCardSlot, updateCardTweens and CardHistory
+// come from templates/cards.js. This game only defines its own stack types and
+// cascade fan layout.
+//
+// suit: 0=♥ (red), 1=♠ (black), 2=♦ (red), 3=♣ (black)   — `suit % 2 === 0` is red
+// value: 0..12 (Ace..King)
+
+const StackType = { Cascade: 0, Stock: 1, Waste: 2, Foundation: 3 };
+
+// Cascade fan: each card drops below the one above by a tight gap if that
+// upper card is face-down, a wide gap if it's face-up (Y-up world).
+function cascadeOffset(index, cards)
+{
+    let y = 0;
+    for (let i = 0; i < index; ++i)
+        y -= cards[i].faceUp ? CARD_PITCH_Y : CARD_PITCH_DOWN;
+    return vec2(0, y);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Board layout — recomputed in gameInit (and again on canvas size change).
+let layoutTopRowY     = 8;       // anchor y for the top row (stock / waste / foundations)
+let layoutColLeftX    = -21;     // anchor x for column 0
+let layoutCascadeTopY = -2;      // anchor y for the topmost card of every cascade
+
+function setupLayout()
+{
+    // Total width: COL_COUNT columns at COL_PITCH_X apart, centered on x=0.
+    layoutColLeftX    = -((COL_COUNT - 1) * COL_PITCH_X) / 2;
+    layoutTopRowY     = 8;             // arbitrary positive y for the top row
+    layoutCascadeTopY = layoutTopRowY - CARD_SIZE.y - 1;  // gap below top row
+
+    // Frame the whole table (top row + deepest cascade budget) with a unit of
+    // felt on three sides and TOP_MARGIN above (room for the toolbar).
+    // cameraFit letterbox-fits the rect; in portrait, where the camera is
+    // width-limited, it centers the spare height evenly above and below. In
+    // landscape the fit is height-bound and top-anchors exactly as before.
+    const topY    = layoutTopRowY + CARD_SIZE.y/2;
+    const bottomY = layoutCascadeTopY - CARD_PITCH_Y * MAX_CASCADE_DEPTH - CARD_SIZE.y/2;
+    const cardsW  = (COL_COUNT - 1) * COL_PITCH_X + CARD_SIZE.x;
+    cameraFit(vec2(0, (topY + bottomY)/2), vec2(cardsW, topY - bottomY),
+        { top: TOP_MARGIN, right: 1, bottom: 1, left: 1 });
+}
+
+function newGame(deck)
+{
+    cardStacks = [];
+    won = false;
+
+    // Top row: Stock (col 0), Waste (col 1), gap (col 2), Foundations (col 3-6).
+    const stock = new CardStack(vec2(layoutColLeftX + 0 * COL_PITCH_X, layoutTopRowY), StackType.Stock);
+    const waste = new CardStack(vec2(layoutColLeftX + 1 * COL_PITCH_X, layoutTopRowY), StackType.Waste);
+    cardStacks.push(stock, waste);
+    for (let i = 0; i < 4; ++i)
+        cardStacks.push(new CardStack(vec2(layoutColLeftX + (3 + i) * COL_PITCH_X, layoutTopRowY), StackType.Foundation));
+
+    // Bottom: 7 tableau cascades.
+    const cascades = [];
+    for (let i = 0; i < COL_COUNT; ++i)
+    {
+        const c = new CardStack(vec2(layoutColLeftX + i * COL_PITCH_X, layoutCascadeTopY), StackType.Cascade, cascadeOffset);
+        cascades.push(c);
+        cardStacks.push(c);
+    }
+    stockStack = stock;
+    wasteStack = waste;
+
+    deck = deck || shuffledDeck();           // demo passes a specific solved deck
+
+    // Deal tableau: column c gets c+1 cards; only the last (top) is face-up.
+    let idx = 0;
+    for (let col = 0; col < COL_COUNT; ++col)
+        for (let row = 0; row <= col; ++row)
+        {
+            const card = deck[idx++];
+            card.faceUp = (row === col);
+            cascades[col].putCardOnTop(card);
+        }
+    // Remaining 24 cards form the face-down stock.
+    while (idx < deck.length)
+    {
+        const card = deck[idx++];
+        card.faceUp = false;
+        stock.putCardOnTop(card);
+    }
+
+    handStack    = new CardStack(vec2(0, 0), StackType.Cascade);  // off-screen until pickup
+    pickupOrigin = null;
+    recyclesUsed = 0;
+    history.reset();   // clear undo/redo and seed the initial snapshot
+
+    // Deal-out animation: tableau cards fly off the face-down stock (top-left
+    // deck) and flip face-up while flying; the 24 stock cards stay as the deck.
+    // Cosmetic only — the board is already logically dealt. Returns its length.
+    return dealCards(cardStacks, stock.pos, {perCard: DEAL_STAGGER, duration: DEAL_FLIGHT, flip: true});
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// KLONDIKE
+
+let cardStacks  = [];
+let handStack   = null;
+let pickupOrigin = null;
+let mouseHoldPos = vec2();
+let won = false;
+let hintsEnabled = true;     // toggled by OPTIONS → HINTS; gates the green legal-drop tint
+let stockDrawCount = 1;      // 1 or 3, toggled by OPTIONS → DRAW 3
+let limitPasses = false;     // toggled by OPTIONS → LIMIT PASSES (Vegas-style redeal cap)
+let recyclesUsed = 0;        // times the waste has been recycled this game (part of game state)
+let stockStack, wasteStack;  // stock (face-down deck) + waste piles; built during the deal, read across the file
+let lastClick = { card: null, time: -1 };
+let history = null;          // CardHistory (created in gameInit)
+let demoPlayer = null;       // CardDemoPlayer (created in gameInit only when #demo)
+
+// SoundGenerator options (from templates/gameFx.js):
+//   volume, randomness, frequency, attack, release, shapeCurve, slide,
+//   pitchJump, pitchJumpTime, repeatTime, noise, bitCrush, delay
+// Module-level so the rest of the file (and the demo-triggered game code) can
+// reach them; constructed in setupSounds (called from gameInit). Tune by ear.
+let sndPickup, sndPlace, sndFlip, sndInvalid, sndFoundation, sndWin;
+function setupSounds()
+{
+    // Match the engine's master volume to whatever the options slider starts at,
+    // so the very first menu sound plays at the user-visible volume.
+    setSoundVolume(.8);
+    sndPickup     = new SoundGenerator({ frequency: 400, attack: 0, release: 0.005, volume: 0.4, noise:2 });
+    sndPlace      = new SoundGenerator({ frequency: 200, attack: 0, release: 0.01, volume: 0.4, noise:2 });
+    sndFlip       = new SoundGenerator({ frequency: 600, attack: 0, release: 0.02, volume: 0.35, noise:1 });
+    sndInvalid    = new SoundGenerator({ frequency: 110, attack: 0.005, release: 0.14, shapeCurve: 2, noise: 0.4, slide: -2, volume: 0.4 });
+    sndFoundation = new SoundGenerator({ frequency: 880, attack: 0.002, release: 0.08, volume: 0.4 });
+    sndWin        = new SoundGenerator({ frequency: 440, attack: 0.02, release: 0.5, pitchJump: 660, pitchJumpTime: 0.2, repeatTime: 0.25, volume: 0.5 });
+}
+
+async function gameInit()
+{
+    saveDataInit('klondike');
+    setupLayout();
+    initCardAtlas();
+
+    // Undo/redo + autosave. snapshot()/loadState() are the game-specific hooks.
+    history = new CardHistory({ serialize: snapshot, deserialize: loadState });
+
+    setupSounds();   // builds sndPickup..sndWin — used by both normal play and demo
+
+    // Attract / hero-cabinet mode (#demo): a self-playing AI solves a fresh
+    // random deal and plays it out, looping forever. It never reads or writes
+    // save data and shows no menus (menus.js already hides chrome in #demo).
+    if (isDemoMode())
+    {
+        history.save = () => {};   // belt-and-suspenders: zero persistence in demo
+        stockDrawCount = 1;        // demo always plays draw-1 (highest solve rate)
+        limitPasses    = false;    // unlimited recycles
+        setupDemo();               // build the self-player (deals lazily once solved)
+        return;
+    }
+
+    // Read any in-progress saved game BEFORE newGame() — newGame calls
+    // saveState() at the end which overwrites the save data with the
+    // fresh-deal snapshot, so we'd otherwise lose the previous session.
+    let savedSnap = null;
+    const raw = getSaveData().saveState;
+    if (raw) savedSnap = raw;
+
+    newGame();
+
+    let resumedGame = false;    // true when an unfinished saved game was restored
+    if (savedSnap)
+    {
+        loadState(savedSnap);   // also recomputes the `won` flag
+        if (won)
+            newGame();          // saved game was already finished — deal fresh
+        else
+        {
+            // Re-seed history + save data with the restored game (newGame
+            // just clobbered it with the fresh-deal snapshot).
+            history.reset();
+            resumedGame = true;
+        }
+    }
+
+    // Pause whenever a menu is up during a run. Title menu sits over the
+    // canvas without freezing anything.
+    installAutoPause();
+
+    // ----- title menu -----
+    // True only while the title sits over a restored in-progress game (set at
+    // startup; cleared once QUIT deals a fresh board). Drives CONTINUE vs PLAY.
+    let canResume = resumedGame;
+    const playFromTitle = () => { setPlaying(true); hideMenu('title'); };
+    setMenuTheme({accent:'#22aa88', font:'Georgia, serif'});
+    const titleMenu = createTitleMenu({
+        id: 'title',
+        title: 'KLONDIKE',
+        titleFx: {fill:'hardshadow', color:'#2a8', shadow:'#fff'},
+        onPlay: playFromTitle,
+        // the resumed board is already loaded behind the title, so PLAY just
+        // starts it — label it CONTINUE when that board is a restored game, and
+        // surface NEW GAME beside it so a fresh deal doesn't require continuing
+        onShow: () =>
+        {
+            titleMenu.getItem('play').setLabel(canResume ? 'CONTINUE' : 'PLAY');
+            titleMenu.getItem('newGame').setVisible(canResume);
+        },
+        canReveal: () => !isPlaying(),
+        revealOnClick: false,
+        items: [
+            {type:'button', id:'newGame', label:'NEW GAME',
+                onClick: () => { newGame(); canResume = false; setPlaying(true); hideMenu('title'); }},
+            {type:'button', label:'OPTIONS', onClick: () => pushMenu('options')},
+            {type:'button', label:'HELP',    onClick: () => pushMenu('help')},
+        ],
+    });
+    // NEW GAME only appears alongside CONTINUE; hide it until onShow decides.
+    titleMenu.getItem('newGame').setVisible(false);
+
+    // ----- options menu -----
+    createOptionsMenu({
+        persistKey: 'volume',
+        extraItems: [
+            {type:'checkbox', id:'draw3', label:'DRAW 3', value: false,
+                persist: 'draw3',
+                onChange: v => { stockDrawCount = v ? 3 : 1; }},
+            {type:'checkbox', id:'limitPasses', label:'LIMIT PASSES', value: false,
+                persist: 'limitPasses',
+                onChange: v => { limitPasses = v; }},
+            {type:'checkbox', id:'hints', label:'HINTS', value: true,
+                persist: 'hints',
+                onChange: v => { hintsEnabled = v; }},
+        ],
+    });
+
+    // ----- about menu -----
+    createMenu({
+        id: 'help',
+        title: 'HELP',
+        onHide: popMenu,
+        items: [
+            {type:'text', text:
+                'Build the four foundations up from Ace to King by suit. Stack tableau ' +
+                'columns down in alternating color — only a King may start an empty column. ' +
+                'Click the stock to deal more cards when stuck.'},
+            {type:'text', text:'Click cards to select · Drag to move · Z undo · Shift+Z redo'},
+            {type:'separator'},
+            {type:'button', label:'BACK', onClick: () => hideMenu('help')},
+        ],
+    });
+
+    // ----- HUD toolbar -----
+    // Extra game-specific buttons (undo / redo / new) live before the
+    // default mute / fullscreen / hamburger trio. They're hidden while
+    // at title since there's no game in progress to undo or restart.
+    installDefaultToolbar({
+        landscapeStack:true,
+        extraItemsBefore: [
+            {type:'button', id:'undo', label:'↶', title:'Undo (Z)', onClick: undoState},
+            {type:'button', id:'redo', label:'↷', title:'Redo (Y)', onClick: redoState},
+            {type:'button', id:'new',  label:'⟳', title:'New game', onClick: () =>
+                showConfirmDialog({
+                    message: 'Abandon this game and start a new one?',
+                    onYes: () => newGame(),
+                })},
+        ],
+    });
+    addPlayingListener(p =>
+    {
+        const hud = getToolbar('hud');
+        if (!hud) return;
+        for (const id of ['undo', 'redo', 'new'])
+            hud.getItem(id).setVisible(p);
+    });
+
+    // ----- pause menu -----
+    createPauseMenu({
+        onQuit: () =>
+        {
+            clearSubmenuStack();
+            hideAllMenus();
+            newGame();             // reset board so title backdrop is clean
+            canResume = false;     // fresh deal behind the title -> PLAY, not CONTINUE
+            setPlaying(false);
+            showMenu('title');
+        },
+        extraItems: [
+            {type:'button', label:'NEW GAME', onClick: () =>
+                showConfirmDialog({
+                    message: 'Abandon this game and start a new one?',
+                    onYes: () => { newGame(); canResume = false; clearSubmenuStack(); hideAllMenus(); },
+                })},
+            {type:'button', label:'OPTIONS', onClick: () => pushMenu('options')},
+        ],
+    });
+
+    // Always surface the title now (no auto-resume). The play button reads
+    // CONTINUE over a restored game, or PLAY over the fresh deal.
+    showMenu('title');
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Input helpers
+
+// Topmost card / empty stack under `worldPoint` (see cardAtPoint in cards.js).
+function stackUnderPoint(worldPoint) { return cardAtPoint(cardStacks, worldPoint); }
+
+function isMoveLegal(target)
+{
+    if (!target || handStack.isEmpty()) return false;
+    const bottom = handStack.bottomCard();
+
+    if (target.type === StackType.Foundation)
+    {
+        if (handStack.cards.length !== 1) return false;            // one card at a time
+        const top = target.topCard();
+        if (!top) return bottom.value === RANK_ACE;                // Ace on empty
+        return top.suit === bottom.suit && top.value + 1 === bottom.value;
+    }
+
+    if (target.type === StackType.Cascade)
+    {
+        if (target.isEmpty()) return bottom.value === RANK_KING;   // only King on empty
+        const top = target.topCard();
+        return (top.suit % 2) !== (bottom.suit % 2) && top.value === bottom.value + 1;
+    }
+
+    // Stock / Waste are never drop targets.
+    return false;
+}
+
+// Is the tail of `stack` starting at `card` a valid alternating-color
+// descending run of FACE-UP cards? Always true for a single face-up card.
+function tailIsValidRun(stack, card)
+{
+    const i = stack.cards.indexOf(card);
+    if (i < 0 || !stack.cards[i].faceUp) return false;
+    for (let k = i; k < stack.cards.length - 1; ++k)
+    {
+        const a = stack.cards[k], b = stack.cards[k + 1];
+        if (!b.faceUp)                      return false;
+        if ((a.suit % 2) === (b.suit % 2))  return false;
+        if (a.value !== b.value + 1)        return false;
+    }
+    return true;
+}
+
+// Cards that would be picked up if the player clicked on `hit` right now.
+// Returns [] if the hit isn't legal to grab. Used by both the hover-tint
+// highlight and the grab-cursor logic.
+function pickableTail(hit)
+{
+    if (!hit || !hit.card) return [];
+    if (hit.stack.type === StackType.Cascade)
+    {
+        if (!tailIsValidRun(hit.stack, hit.card)) return [];
+        return hit.stack.cards.slice(hit.stack.cards.indexOf(hit.card));
+    }
+    if (hit.stack.type === StackType.Stock) return [];   // stock is click-to-deal only
+    return hit.card === hit.stack.topCard() ? [hit.card] : [];
+}
+
+// After cards leave a tableau column, reveal a newly-exposed face-down top
+// card. Only the top of a cascade can ever be face-down post-move, so a
+// single pass suffices. Returns how many cards flipped.
+function flipExposedCards()
+{
+    let flipped = 0;
+    for (const s of cardStacks)
+    {
+        if (s.type !== StackType.Cascade) continue;
+        const top = s.topCard();
+        if (top && !top.faceUp) { top.flipTo(true, FLIP_TIME); ++flipped; }   // animated reveal
+    }
+    return flipped;
+}
+
+// How many times the waste may be recycled this game. Vegas-style cap tied
+// to draw mode when LIMIT PASSES is on; otherwise unlimited.
+//   Draw 1 → 1 pass  → 0 redeals
+//   Draw 3 → 3 passes → 2 redeals
+function maxRecycles()
+{
+    if (!limitPasses) return Infinity;
+    return stockDrawCount === 3 ? 2 : 0;
+}
+
+// Deal from stock to waste, or recycle the waste back into the stock when
+// the stock is empty (subject to the redeal cap).
+function drawFromStock()
+{
+    if (!stockStack.isEmpty())
+    {
+        const n = min(stockDrawCount, stockStack.cards.length);
+        for (let i = 0; i < n; ++i)
+        {
+            const card = stockStack.cards.pop();
+            card.flipTo(true, FLIP_TIME);   // animated flip-over reveal
+            wasteStack.putCardOnTop(card, true);
+        }
+        sndPickup.play(wasteStack.pos);
+    }
+    else if (!wasteStack.isEmpty())
+    {
+        if (recyclesUsed >= maxRecycles())   // pass limit reached — stock is dead
+        {
+            sndInvalid.play(stockStack.pos);
+            return;
+        }
+        while (!wasteStack.isEmpty())
+        {
+            const card = wasteStack.cards.pop();
+            card.flipTo(false, FLIP_TIME);   // animated flip back to face-down
+            stockStack.putCardOnTop(card);
+        }
+        ++recyclesUsed;
+        sndPlace.play(stockStack.pos);
+    }
+    else return;   // nothing to do (both empty)
+
+    saveState();
+}
+
+// Run flip + sound after a successful move, then persist and check for a win.
+function afterMove()
+{
+    if (flipExposedCards())
+        sndFlip.play();
+    saveState();
+    checkWin();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Total cards currently on the four foundations (52 = a complete game).
+function foundationTotal()
+{
+    let total = 0;
+    for (const s of cardStacks)
+        if (s.type === StackType.Foundation) total += s.cards.length;
+    return total;
+}
+
+function checkWin()
+{
+    if (won) return;
+    if (foundationTotal() < 52) return;
+
+    won = true;
+    sndWin.play();
+    showMenuToast({
+        icon:     '🎉',
+        title:    'You Win!',
+        text:     'Press NEW GAME to play again.',
+        duration: 5,
+    });
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function snapshot()
+{
+    return {
+        stacks: cardStacks.map(s => s.cards.map(c => [c.value, c.suit, c.faceUp ? 1 : 0])),
+        recycles: recyclesUsed,
+    };
+}
+
+function loadState(snap)
+{
+    if (!snap || !snap.stacks) return;
+    for (let i = 0; i < cardStacks.length; ++i)
+    {
+        const stack = cardStacks[i];
+        stack.cards = snap.stacks[i].map(([v, s, f]) => new Card(v, s, !!f));
+        stack.relayout();
+    }
+    recyclesUsed = snap.recycles || 0;
+    // Clear any in-flight tweens — restored positions are authoritative.
+    for (const s of cardStacks) for (const c of s.cards) c.tweenFrom = null;
+    // Recompute win state from foundation counts (snapshot doesn't store it).
+    won = foundationTotal() >= 52;
+}
+
+// Thin delegators to the shared CardHistory (cards.js).
+function saveState() { history.save(); }
+function undoState() { history.undoMove(); }
+function redoState() { history.redoMove(); }
+
+///////////////////////////////////////////////////////////////////////////////
+function gameUpdate()
+{
+    // Attract mode drives everything through the self-player; no human input.
+    if (isDemoMode()) { demoPlayer && demoPlayer.update(); return; }
+
+    if (bindPauseKey({ when: () => isPlaying() && !won })) return;
+    if (!isPlaying() || won) return;
+
+    if (mouseWasPressed(0) && handStack.isEmpty())
+    {
+        const hit = stackUnderPoint(mousePos);
+
+        // Stock click: deal to waste (or recycle when empty).
+        if (hit && hit.stack.type === StackType.Stock)
+        {
+            drawFromStock();
+            return;
+        }
+
+        if (hit && hit.card)
+        {
+            // Double-click shortcut: top card → first foundation that accepts it.
+            if (hit.card === hit.stack.topCard())
+            {
+                const now = time;
+                const isDouble = lastClick.card === hit.card && (now - lastClick.time) < 0.3;
+                lastClick = { card: hit.card, time: now };
+                if (isDouble)
+                {
+                    // Move the single top card into the hand temporarily so isMoveLegal works.
+                    const savedType = handStack.type;
+                    handStack.type = hit.stack.type;
+                    hit.stack.moveTopCard(handStack);
+                    let placedTarget = null;
+                    for (const f of cardStacks)
+                    {
+                        if (f.type === StackType.Foundation && isMoveLegal(f))
+                        {
+                            handStack.moveManyToStack(f, undefined, true);
+                            placedTarget = f;
+                            break;
+                        }
+                    }
+                    if (!placedTarget) handStack.moveManyToStack(hit.stack);   // put it back
+                    handStack.type = savedType;
+                    if (placedTarget)
+                    {
+                        sndFoundation.play(placedTarget.topCard().pos);
+                        afterMove();
+                    }
+                    return;
+                }
+            }
+            // For cascades, allow picking up a tail-run starting at `hit.card`.
+            // For waste / foundation, only the top card is pickable.
+            const canPick = hit.stack.type === StackType.Cascade
+                ? tailIsValidRun(hit.stack, hit.card)
+                : (hit.card === hit.stack.topCard());
+            if (canPick)
+            {
+                pickupOrigin = hit.stack;
+                mouseHoldPos = hit.card.pos.subtract(mousePos);
+                handStack.type = hit.stack.type;
+                // Play BEFORE moveManyToStack so hit.card.pos is still the
+                // original slot, not the new handStack position.
+                sndPickup.play(hit.card.pos);
+                hit.stack.moveManyToStack(handStack, hit.card);
+            }
+        }
+    }
+
+    // Drag
+    if (!handStack.isEmpty())
+    {
+        const head = mousePos.add(mouseHoldPos);
+        for (let i = 0; i < handStack.cards.length; ++i)
+            handStack.cards[i].pos = head.add(vec2(0, -CARD_PITCH_Y * i));
+    }
+
+    if (mouseWasReleased(0) && !handStack.isEmpty())
+    {
+        // Use the top-of-hand card center as the hit point for target search.
+        const head = mousePos.add(mouseHoldPos);
+        let target = null, bestArea = 0;
+        for (const s of cardStacks)
+        {
+            if (s === pickupOrigin || !isMoveLegal(s)) continue;
+            const targetPos = s.topCard() ? s.topCard().pos : s.pos;
+            // Overlap area: width and height of intersection rectangle.
+            const dx = CARD_SIZE.x - abs(head.x - targetPos.x);
+            const dy = CARD_SIZE.y - abs(head.y - targetPos.y);
+            if (dx > 0 && dy > 0 && dx * dy > bestArea)
+            {
+                bestArea = dx * dy;
+                target = s;
+            }
+        }
+        const placed = target !== null;
+        // Snap-back tweens; drops on a valid target snap instantly because the
+        // card is already where the cursor left it.
+        handStack.moveManyToStack(target || pickupOrigin, undefined, !placed);
+        pickupOrigin = null;
+        if (placed)
+        {
+            sndPlace.play(target.topCard().pos);
+            afterMove();
+        }
+        else
+        {
+            sndInvalid.play(mousePos);
+        }
+    }
+
+    const shift = keyIsDown('ShiftLeft') || keyIsDown('ShiftRight');
+    if (keyWasPressed('KeyZ')) shift ? redoState() : undoState();
+    if (keyWasPressed('KeyY')) redoState();
+}
+function gameUpdatePost()
+{
+    // Recompute camera scale every frame so the table refits if the canvas
+    // resizes. setupLayout is cheap — just trig-less arithmetic.
+    setupLayout();
+
+    // Release finished tweens (deferred sweep — see cards.js).
+    updateCardTweens(cardStacks);
+
+    // Cursor feedback: open hand over a pickable card, closed hand while
+    // dragging, default otherwise. setCursor is a LittleJS built-in.
+    let cursor = 'default';
+    if (isPlaying() && !won)
+    {
+        if (!handStack.isEmpty())
+            cursor = 'grabbing';
+        else
+        {
+            const hit = stackUnderPoint(mousePos);
+            if (pickableTail(hit).length || (hit && hit.stack.type === StackType.Stock))
+                cursor = 'grab';
+        }
+    }
+    setCursor(cursor);
+}
+
+// Draws a card face-up or face-down depending on its state. `tint` is an
+// optional highlight veil. Mid-flip (flipTo): squeeze the width toward 0 and
+// show the old face until the thin point, the new face after.
+function drawAnyCard(c, pos, tint)
+{
+    const opts = {tint};
+    let faceUp = c.faceUp;
+    if (c.isFlipping()) { opts.squashX = c.flipScaleX(); faceUp = c.flipFaceUp(); }
+    if (faceUp) drawCard(pos, c.value, c.suit, opts);
+    else        drawCardBack(pos, opts);
+}
+
+function gameRender()
+{
+    if (!cardStacks.length) return;
+
+    // Empty-slot outlines (back layer): every cascade slot, plus the top-row
+    // stacks (stock / waste / foundations) whether or not they hold cards. See
+    // cardSlotVisible() in cards.js.
+    for (const s of cardStacks)
+        if (cardSlotVisible(s))
+            drawCardSlot(s.pos, s.type === StackType.Foundation);
+
+    // Dead-stock indicator: the pass limit is reached and the stock can no
+    // longer be recycled. Draw a red ✕ over the empty stock slot.
+    if (stockStack && stockStack.isEmpty() && recyclesUsed >= maxRecycles())
+    {
+        const x = new Color(1, 0.3, 0.3, 0.7);
+        const len = CARD_SIZE.x * 0.55, t = 0.45;
+        drawRect(stockStack.pos, vec2(len, t), x, PI / 4);
+        drawRect(stockStack.pos, vec2(len, t), x, -PI / 4);
+    }
+
+    // Compute per-card tint for this frame. Color-coded:
+    //   blue  = "this would lift if you click" (hover, hand empty)
+    //   green = "this is a legal drop target" (dragging)
+    const HOVER_TINT = new Color(0.55, 0.8, 1.0, 0.4);
+    const DROP_TINT  = new Color(0.3, 1.0, 0.4, 0.4);
+    const hoverSet   = (handStack.isEmpty() && isPlaying() && !won)
+        ? new Set(pickableTail(stackUnderPoint(mousePos))) : null;
+    const dropTops   = new Set();
+    if (hintsEnabled && !handStack.isEmpty())
+    {
+        for (const s of cardStacks)
+        {
+            if (s === pickupOrigin || !isMoveLegal(s)) continue;
+            const top = s.topCard();
+            if (top) dropTops.add(top);
+        }
+    }
+    const tintFor = c =>
+        dropTops.has(c) ? DROP_TINT :
+        (hoverSet && hoverSet.has(c)) ? HOVER_TINT :
+        null;
+
+    // Stack cards — non-tweening pass. Tint is applied inside drawCard,
+    // immediately after the card content, so each card carries its own
+    // highlight instead of relying on a global second pass.
+    for (const s of cardStacks)
+        for (const c of s.cards)
+            if (!c.isTweening())
+                drawAnyCard(c, c.pos, tintFor(c));
+
+    // Empty legal-drop slots still need a phantom tint because there's
+    // no card to draw the overlay on.
+    if (hintsEnabled && !handStack.isEmpty())
+    {
+        for (const s of cardStacks)
+        {
+            if (s === pickupOrigin || !isMoveLegal(s) || !s.isEmpty()) continue;
+            drawCardShape(s.pos, CARD_SIZE, DROP_TINT);
+        }
+    }
+
+    // Tweening cards (stock deal, snap-back, auto-send-home, the opening deal)
+    // drawn last so flight paths stay on top. Ordered so the deal peels off the
+    // TOP of the deck (next-to-fly card on top).
+    for (const c of tweeningCardsInDealOrder(cardStacks))
+        drawAnyCard(c, c.drawnPos(), null);
+
+    // Hand cards on top with a rounded-card shadow.
+    const shadow = new Color(0, 0, 0, 0.35);
+    for (const c of handStack.cards)
+        drawCardShape(c.pos.add(vec2(0.25, -0.25)),
+            CARD_SIZE.add(vec2(0.1, 0.1)), shadow);
+    for (const c of handStack.cards)
+        drawAnyCard(c, c.pos, null);
+}
+function gameRenderPost() {}
+
+///////////////////////////////////////////////////////////////////////////////
+// DEMO / ATTRACT MODE — self-playing AI (only active when the URL has #demo)
+//
+// KlondikeSolver is a pure, engine-independent Klondike (draw-1, unlimited
+// recycles) solver: weighted-A* best-first search with a transposition table
+// and an expansion budget, exposed as a stepper so the search spreads across
+// frames. It plays with FULL INFORMATION — it peeks at the face-down cards
+// (fine, since the demo holds the whole deal in memory); cards still flip on
+// screen only as play uncovers them, so it looks like normal play.
+//
+// Abstract state mirrors cardStacks' index order so the move list replays 1:1:
+//   STOCK=0  WASTE=1  FOUND 2..5  TABLEAU 6..12
+//   move = { draw:true }            (deal 1 stock->waste, or recycle when empty)
+//        | { from, count, to }      (global indices; `count` cards off the top)
+// Card flips of newly-exposed tableau cards are applied deterministically after
+// every move by BOTH the solver (normalize) and the replay (flipExposedCards),
+// so they're never part of the move list.
+//
+// Card code 0..51: suit=code/13|0 (0=H,1=S,2=D,3=C), value=code%13, color=suit%2.
+//
+// Verified headlessly (local/temp/klondikeSolver.js): at weight 5 / cap 15000,
+// ~60% of random deals solve in a median ~1400 nodes (~135 moves incl. draws),
+// every "won" plan replayed to a real 52-card finish (zero false wins). The demo
+// silently discards the unsolvable minority and reshuffles.
+///////////////////////////////////////////////////////////////////////////////
+const KlondikeSolver = (function()
+{
+    const STOCK = 0, WASTE = 1, FOUND0 = 2, NFOUND = 4, TAB0 = 6, NTAB = 7;
+    const RANK_ACE = 0, RANK_KING = 12;
+    const val   = c => c % 13;
+    const suit  = c => (c / 13) | 0;
+    const color = c => ((c / 13) | 0) % 2;
+
+    function cloneState(st)
+    {
+        return {
+            stock: st.stock.slice(),
+            waste: st.waste.slice(),
+            found: st.found.map(p => p.slice()),
+            tab:   st.tab.map(col => ({ d: col.d, cards: col.cards.slice() })),
+        };
+    }
+    function foundationCount(st)
+    {
+        let n = 0;
+        for (let f = 0; f < NFOUND; ++f) n += st.found[f].length;
+        return n;
+    }
+    function isSolved(st) { return foundationCount(st) === 52; }
+    function foundValueOfSuit(st, s)
+    {
+        for (let f = 0; f < NFOUND; ++f)
+        {
+            const p = st.found[f];
+            if (p.length && suit(p[p.length - 1]) === s) return val(p[p.length - 1]);
+        }
+        return -1;
+    }
+    function foundTargetFor(st, code)
+    {
+        for (let f = 0; f < NFOUND; ++f)
+        {
+            const p = st.found[f];
+            if (p.length && suit(p[p.length - 1]) === suit(code) && val(p[p.length - 1]) + 1 === val(code))
+                return f;
+        }
+        if (val(code) === RANK_ACE)
+            for (let f = 0; f < NFOUND; ++f) if (!st.found[f].length) return f;
+        return -1;
+    }
+    function canPlaceTab(st, t, bottom)
+    {
+        const col = st.tab[t];
+        if (!col.cards.length) return val(bottom) === RANK_KING;
+        const top = col.cards[col.cards.length - 1];
+        return color(top) !== color(bottom) && val(top) === val(bottom) + 1;
+    }
+    function normalize(st)
+    {
+        for (let i = 0; i < NTAB; ++i)
+        {
+            const col = st.tab[i];
+            if (col.cards.length && col.d === col.cards.length) --col.d;
+        }
+    }
+    function safeToAutoplay(st, code)
+    {
+        const v = val(code);
+        if (v <= 1) return true;
+        const c = color(code), s = suit(code);
+        let oppMin = 99, sameOther = -1;
+        for (let sl = 0; sl < 4; ++sl)
+        {
+            if (sl === s) continue;
+            const fv = foundValueOfSuit(st, sl);
+            if ((sl % 2) !== c) oppMin = min(oppMin, fv);
+            else                sameOther = fv;
+        }
+        return oppMin >= v - 1 && sameOther >= v - 2;
+    }
+    function applyMoveToState(st, m)
+    {
+        if (m.draw)
+        {
+            if (st.stock.length) st.waste.push(st.stock.pop());
+            else while (st.waste.length) st.stock.push(st.waste.pop());
+            normalize(st);
+            return;
+        }
+        const src = m.from === WASTE ? st.waste : st.tab[m.from - TAB0].cards;
+        const moving = src.splice(src.length - m.count);
+        if (m.to >= FOUND0 && m.to < FOUND0 + NFOUND)
+            for (const c of moving) st.found[m.to - FOUND0].push(c);
+        else
+            for (const c of moving) st.tab[m.to - TAB0].cards.push(c);
+        normalize(st);
+    }
+    function autoplay(st)
+    {
+        const moves = [];
+        let progressed = true;
+        while (progressed)
+        {
+            progressed = false;
+            if (st.waste.length)
+            {
+                const card = st.waste[st.waste.length - 1];
+                const f = foundTargetFor(st, card);
+                if (f >= 0 && safeToAutoplay(st, card))
+                {
+                    const m = { from: WASTE, count: 1, to: FOUND0 + f };
+                    applyMoveToState(st, m); moves.push(m); progressed = true; continue;
+                }
+            }
+            for (let i = 0; i < NTAB; ++i)
+            {
+                const col = st.tab[i];
+                if (!col.cards.length || col.d === col.cards.length) continue;
+                const card = col.cards[col.cards.length - 1];
+                const f = foundTargetFor(st, card);
+                if (f >= 0 && safeToAutoplay(st, card))
+                {
+                    const m = { from: TAB0 + i, count: 1, to: FOUND0 + f };
+                    applyMoveToState(st, m); moves.push(m); progressed = true; break;
+                }
+            }
+        }
+        return moves;
+    }
+    function generateMoves(st)
+    {
+        const moves = [];
+        if (st.stock.length || st.waste.length) moves.push({ draw: true });
+
+        let firstEmptyTab = -1;
+        for (let t = 0; t < NTAB; ++t) if (!st.tab[t].cards.length) { firstEmptyTab = t; break; }
+
+        if (st.waste.length)
+        {
+            const card = st.waste[st.waste.length - 1];
+            const f = foundTargetFor(st, card);
+            if (f >= 0) moves.push({ from: WASTE, count: 1, to: FOUND0 + f });
+            for (let t = 0; t < NTAB; ++t)
+            {
+                if (st.tab[t].cards.length)
+                { if (canPlaceTab(st, t, card)) moves.push({ from: WASTE, count: 1, to: TAB0 + t }); }
+                else if (t === firstEmptyTab && val(card) === RANK_KING)
+                    moves.push({ from: WASTE, count: 1, to: TAB0 + t });
+            }
+        }
+        for (let i = 0; i < NTAB; ++i)
+        {
+            const col = st.tab[i], n = col.cards.length;
+            const faceUpLen = n - col.d;
+            if (faceUpLen <= 0) continue;
+
+            const top = col.cards[n - 1];
+            const f = foundTargetFor(st, top);
+            if (f >= 0) moves.push({ from: TAB0 + i, count: 1, to: FOUND0 + f });
+
+            for (let L = 1; L <= faceUpLen; ++L)
+            {
+                const bottom = col.cards[n - L];
+                for (let j = 0; j < NTAB; ++j)
+                {
+                    if (j === i) continue;
+                    if (st.tab[j].cards.length)
+                    { if (canPlaceTab(st, j, bottom)) moves.push({ from: TAB0 + i, count: L, to: TAB0 + j }); }
+                    else if (j === firstEmptyTab && val(bottom) === RANK_KING)
+                    {
+                        // moving a King already at the column bottom to another empty
+                        // column is pointless churn — skip it
+                        if (col.d > 0 || L < faceUpLen) moves.push({ from: TAB0 + i, count: L, to: TAB0 + j });
+                    }
+                }
+            }
+        }
+        return moves;
+    }
+    function orderMoves(moves, st)
+    {
+        const scoreOf = m =>
+        {
+            let s = 0;
+            if (m.draw) return -20;
+            if (m.to >= FOUND0 && m.to < FOUND0 + NFOUND) s += 1000;
+            if (m.from >= TAB0)
+            {
+                const col = st.tab[m.from - TAB0];
+                if (col.d > 0 && (col.cards.length - col.d) === m.count) s += 250;
+                if (col.cards.length === m.count && col.d === 0) s += 30;
+            }
+            if (m.from === WASTE) s += 40;
+            if (m.to >= TAB0) s += 20;
+            return s;
+        };
+        return moves.map(m => [scoreOf(m), m]).sort((a, b) => b[0] - a[0]).map(p => p[1]);
+    }
+    const HASH_SEP = String.fromCharCode(252), HASH_GRP = String.fromCharCode(253), HASH_D = String.fromCharCode(254);
+    function canonicalHash(st)
+    {
+        const fcc = String.fromCharCode;
+        const tab = [];
+        for (let i = 0; i < NTAB; ++i)
+            tab.push(fcc(st.tab[i].d) + HASH_D + fcc.apply(null, st.tab[i].cards));
+        tab.sort();
+        const found = [];
+        for (let f = 0; f < NFOUND; ++f) found.push(fcc.apply(null, st.found[f]));
+        found.sort();
+        return fcc.apply(null, st.stock) + HASH_GRP + fcc.apply(null, st.waste) + HASH_GRP +
+               tab.join(HASH_SEP) + HASH_GRP + found.join(HASH_SEP);
+    }
+
+    // Greedy rollout — NO search, NO backtracking, so it's effectively instant
+    // (sub-ms) and the demo can play the FIRST deal it's handed right away. One
+    // linear pass: each step take the highest-ranked move whose resulting state
+    // we haven't already seen (simple cycle avoidance), apply safe-autoplay,
+    // repeat until solved or stuck. Returns the move list (always played, win or
+    // not) and whether it happened to win. ~32% of deals win outright; the rest
+    // play a long line then the demo just deals a fresh board.
+    function greedyPlan(initial, { maxMoves = 400, stallLimit = Infinity } = {})
+    {
+        let st = cloneState(initial);
+        const moves = [];
+        const visited = new Set();
+        for (const m of autoplay(st)) moves.push(m);
+        visited.add(canonicalHash(st));
+
+        let homed = foundationCount(st);
+        let stall = 0;   // committed moves since the last card went home
+
+        while (!isSolved(st) && moves.length < maxMoves)
+        {
+            const cands = orderMoves(generateMoves(st), st);
+            let advanced = false;
+            for (const cand of cands)
+            {
+                const ns = cloneState(st);
+                applyMoveToState(ns, cand);
+                const auto = autoplay(ns);
+                const h = canonicalHash(ns);
+                if (visited.has(h)) continue;          // would cycle — try the next-best move
+                moves.push(cand);
+                for (const a of auto) moves.push(a);
+                visited.add(h);
+                st = ns;
+                advanced = true;
+                break;
+            }
+            if (!advanced) break;                      // stuck: every move repeats a state
+
+            const nowHomed = foundationCount(st);
+            if (nowHomed > homed) { homed = nowHomed; stall = 0; }
+            else if (++stall >= stallLimit) break;     // optional: bail out of long no-progress runs
+        }
+        return { moves, won: isSolved(st) };
+    }
+
+    // Build the abstract state from a klondike deck (array of 52 Card), dealt
+    // exactly as newGame does: tableau col c gets c+1 cards (last face-up), the
+    // remaining 24 form the face-down stock.
+    function abstractFromDeck(deck)
+    {
+        const st = { stock: [], waste: [], found: [[], [], [], []], tab: [] };
+        let idx = 0;
+        for (let col = 0; col < NTAB; ++col)
+        {
+            const cards = [];
+            for (let row = 0; row <= col; ++row)
+            {
+                const c = deck[idx++];
+                cards.push(c.suit * 13 + c.value);
+            }
+            st.tab.push({ d: col, cards });
+        }
+        while (idx < deck.length)
+        {
+            const c = deck[idx++];
+            st.stock.push(c.suit * 13 + c.value);
+        }
+        return st;
+    }
+
+    return { greedyPlan, abstractFromDeck };
+})();
+
+// --- Demo pacing (seconds) — tweak these to taste -------------------------
+//   DEMO_TWEEN_TIME — how long a card takes to SLIDE to its spot (raise = slower
+//                     glide). Keep it <= DEMO_MOVE_DELAY.
+//   DEMO_MOVE_DELAY — the gap between moves. The greedy demo plays a long,
+//                     variable line (often 150-250 moves incl. stock draws), so
+//                     keep this modest or a game runs minutes; lower to speed up.
+const DEMO_TWEEN_TIME  = 1.0;
+const DEMO_MOVE_DELAY  = 1.5;
+const DEMO_DEAL_PAUSE  = 1.8;
+const DEMO_START_DELAY = 0.7;
+
+// Wire up the attract self-player. Called once from gameInit when #demo is set.
+function setupDemo()
+{
+    let curDeck = null;
+
+    // Demo planning is a GREEDY rollout (no search, no full solution). It's
+    // effectively instant, so we just take the first deal, plan it, and play it
+    // out — win or stuck. When the line ends the harness pauses and we deal a
+    // fresh board. ~32% of deals win; the rest play a long line then restart.
+    const planStep = () =>
+    {
+        curDeck = shuffledDeck();
+        return KlondikeSolver.greedyPlan(KlondikeSolver.abstractFromDeck(curDeck)).moves;
+    };
+
+    // Deal the solved deck onto the live board, and slow every card's slide for
+    // the demo (one set covers later moves and stock draws of those same cards).
+    const deal = () =>
+    {
+        const dealTime = newGame(curDeck);
+        for (const s of cardStacks) for (const c of s.cards) c.tweenDuration = DEMO_TWEEN_TIME;
+        // hold the AI until the opening deal animation finishes
+        demoPlayer.startDelay = dealTime + 0.3;
+    };
+
+    // Execute one planned move, animated. A draw routes through the game's own
+    // drawFromStock (deal-1 / recycle) so stock/waste behave exactly as in play.
+    const applyMove = m =>
+    {
+        if (m.draw) { drawFromStock(); return; }
+        const from = cardStacks[m.from], to = cardStacks[m.to];
+        if (!from || !to) return;
+        const startCard = from.cards[from.cards.length - m.count];
+        if (!startCard) return;
+        from.moveManyToStack(to, startCard, true);
+        if (flipExposedCards()) sndFlip.play();
+        const snd = to.type === StackType.Foundation ? sndFoundation : sndPlace;
+        const land = to.topCard();
+        if (snd && land) snd.play(land.pos);
+    };
+
+    demoPlayer = new CardDemoPlayer({ planStep, deal, applyMove,
+        moveDelay: DEMO_MOVE_DELAY, dealPause: DEMO_DEAL_PAUSE, startDelay: DEMO_START_DELAY });
+}
+
+///////////////////////////////////////////////////////////////////////////////
+engineInit(gameInit, gameUpdate, gameUpdatePost, gameRender, gameRenderPost);
+</script></body></html>

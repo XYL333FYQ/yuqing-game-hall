@@ -1,0 +1,16 @@
+services:
+  scribble:
+    image: biosmarcel/scribble.rs:latest
+    restart: unless-stopped
+    environment:
+      PORT: "8080"
+      NETWORK_ADDRESS: "0.0.0.0"
+      CORS_ALLOWED_ORIGINS: "https://games.example.com"
+    ports:
+      - "127.0.0.1:8080:8080"
+
+  tosios:
+    image: halftheopposite/tosios
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3001:3001"

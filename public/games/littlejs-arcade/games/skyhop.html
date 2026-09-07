@@ -1,0 +1,518 @@
+<!DOCTYPE html><head>
+<title>Skyhop</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head><body>
+<script src="../templates/engineLoader.js?1780767748506"></script>
+<script src="../templates/gameFx.js?1780767748506"></script>
+<script src="../templates/textureGenerator.js?1780767748506"></script>
+<script src="../templates/menus.js?1780767748506"></script>
+<script>
+'use strict';
+
+///////////////////////////////////////////////////////////////////////////////
+// SKYHOP — a Doodle Jump-style endless vertical hopper.
+// No jump button: the doodle bounces automatically off platforms. The player
+// only steers left/right (keyboard / gamepad stick / touch tilt) and the screen
+// wraps horizontally. Climb as high as you can; falling below the view ends it.
+
+// engine settings
+gravity = vec2(0, -15);
+
+// on-screen touch gamepad: analog left stick steers, no fire button
+touchGamepadEnable = true;
+touchGamepadAnalog = true;
+touchGamepadButtonCount = 0;
+
+///////////////////////////////////////////////////////////////////////////////
+// tuning constants (world units, seconds)
+const ARENA_W   = 18;            // horizontal wrap width (x from -9 .. +9)
+const VIEW_H    = 26;            // target visible world height (drives camera zoom)
+
+const GRAVITY   = 42;            // downward accel
+const JUMP_VEL  = 25;            // bounce velocity (jump height = v^2/2g ~= 7.4 units)
+const AIR_ACCEL = 60;            // horizontal acceleration from input
+const MAX_SPEED = 16;            // horizontal speed cap
+const H_DAMP    = 5;             // horizontal damping coefficient
+
+const PLAYER_R  = 0.9;           // player half-size / radius
+const PLAT_HW   = 1.7;           // platform half-width
+const PLAT_HH   = 0.35;          // platform half-height
+
+const MIN_GAP   = 3.5;           // vertical spacing between platforms
+const MAX_GAP   = 5.5;           // (well under jump height so every gap is reachable)
+const MAX_DX    = 10;            // max horizontal placement delta from previous platform
+const PLAT_X_MAX = ARENA_W/2 - PLAT_HW - 0.1;  // keep platforms fully inside the arena
+
+const SCORE_SCALE = 10;          // height -> score multiplier
+
+const SPRING_MULT = 1.8;         // spring bounce multiplier on JUMP_VEL
+const MOVE_SPEED  = 4;           // moving platform horizontal speed (units/s)
+const DIFF_HEIGHT = 300;         // height (world units) to reach full difficulty
+
+// colors
+const SKY_TOP    = hsl(.62, .55, .10);
+const SKY_BOT    = hsl(.57, .55, .26);
+const COLUMN_COL = hsl(.57, .5, .5, .10);
+const WALL_TOP   = hsl(.64, .45, .05);   // dark side walls framing the play column
+const WALL_BOT   = hsl(.60, .45, .11);
+const WALL_EDGE  = hsl(.55, .7, .65, .28);   // glowing seam on the wrap boundary
+const PLAT_COL   = hsl(.33, .7, .5);
+const PLAT_GLOW  = hsl(.33, .85, .6, .30);
+const MOVE_COL   = hsl(.55, .75, .55);   // moving platforms
+const MOVE_GLOW  = hsl(.55, .85, .6, .30);
+const BROKEN_COL = hsl(.07, .5, .42);    // broken / one-use platforms
+const BROKEN_GLOW= hsl(.07, .6, .5, .25);
+const SPRING_COL = hsl(.15, .95, .6);    // spring marker
+const PLAYER_COL = hsl(.10, .9, .55);
+const PLAYER_GLOW= hsl(.10, .95, .6, .35);
+
+///////////////////////////////////////////////////////////////////////////////
+// game state
+let icons;
+let bounceSound, gameOverSound, springSound, breakSound;
+let gameMedals;
+
+const player = { pos: vec2(), vel: vec2(), prevY: 0, squash: 0 };
+let platforms = [];
+let highestPlatY = 0;
+let lastPlatX = 0;
+let lastType = 'normal';
+let maxY = 0;
+let gameAlive = false;
+
+function getScore() { return max(0, floor(maxY * SCORE_SCALE)); }
+
+// 0 at the start, ramps to 1 by DIFF_HEIGHT — drives spawn probabilities
+function difficulty() { return clamp(maxY / DIFF_HEIGHT, 0, 1); }
+
+///////////////////////////////////////////////////////////////////////////////
+function updateCameraScale()
+{
+    if (!mainCanvasSize || !mainCanvasSize.x) return;
+    // height-constrained on landscape (portrait play column with side margins),
+    // width-constrained on portrait (arena fills the screen).
+    cameraScale = min(mainCanvasSize.x / ARENA_W, mainCanvasSize.y / VIEW_H);
+}
+
+// wrapped horizontal distance across the screen-wrap boundary
+function wrapDist(a, b)
+{
+    let d = abs(a - b);
+    return min(d, ARENA_W - d);
+}
+
+function spawnPlatform(y)
+{
+    const x = clamp(lastPlatX + rand(-MAX_DX, MAX_DX), -PLAT_X_MAX, PLAT_X_MAX);
+    const t = difficulty();
+
+    // Pick a type. Fairness rules: keep the first few hops all-normal, never put
+    // two breakables in a row (so a broken platform is never the only way up),
+    // and hold moving platforms back until the player knows the basic loop.
+    let type = 'normal';
+    const r = rand();
+    const pBroken = (maxY > 25 && lastType !== 'broken') ? lerp(.03, .22, t) : 0;
+    const pMoving = (maxY > 45) ? lerp(.05, .26, t) : 0;
+    if      (r < pBroken)           type = 'broken';
+    else if (r < pBroken + pMoving) type = 'moving';
+
+    // Springs ride safe (non-broken) platforms; a touch more common early as help.
+    const spring = type !== 'broken' && rand() < lerp(.16, .10, t);
+
+    platforms.push({
+        pos:    vec2(x, y),
+        type,
+        spring,
+        broken: false,           // becomes true once a broken platform is triggered
+        alpha:  1,               // fades out while a broken platform falls away
+        vx:     type === 'moving' ? (rand() < .5 ? 1 : -1) * MOVE_SPEED : 0,
+    });
+    lastPlatX = x;
+    lastType = type;
+    highestPlatY = y;
+}
+
+function generateAhead()
+{
+    const top = cameraPos.y + getCameraSize().y;   // spawn buffer above the view
+    while (highestPlatY < top)
+        spawnPlatform(highestPlatY + rand(MIN_GAP, MAX_GAP));
+}
+
+function cullBelow()
+{
+    const cutoff = cameraPos.y - getCameraSize().y/2 - 4;
+    platforms = platforms.filter(p => p.pos.y > cutoff && p.alpha > 0);
+}
+
+function newGame()
+{
+    updateCameraScale();
+    player.pos = vec2(0, 1.5);
+    player.vel = vec2(0, JUMP_VEL * .7);
+    player.prevY = player.pos.y;
+    player.squash = 0;
+    maxY = player.pos.y;
+    gameAlive = true;
+
+    // a safe starter platform right under the doodle, then fill upward
+    platforms = [{ pos: vec2(0, 0), type:'normal', spring:false, broken:false, alpha:1, vx:0 }];
+    highestPlatY = 0;
+    lastPlatX = 0;
+    lastType = 'normal';
+    cameraPos = vec2(0, player.pos.y + 0.08 * VIEW_H);
+    generateAhead();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function bounce()
+{
+    player.vel.y = JUMP_VEL;
+    player.squash = 1;
+    bounceSound.play(player.pos);
+    addScreenShake(.12, .12);
+    spawnBounceParticles(player.pos);
+}
+
+function springBounce(pos)
+{
+    player.vel.y = JUMP_VEL * SPRING_MULT;
+    player.squash = 1;
+    springSound.play(pos);
+    addScreenShake(.28, .2);
+    spawnBounceParticles(pos);
+    if (gameMedals) gameMedals.spring.unlock();
+}
+
+function spawnBounceParticles(pos)
+{
+    new ParticleEmitter(
+        pos, 0,              // position, angle
+        .6,                  // emit size
+        .08,                 // emit time (one quick burst)
+        50,                  // emit rate
+        PI,                  // emit cone angle (full spread)
+        icons.circle,        // particle sprite
+        PLAYER_COL, hsl(.14,.9,.7),         // color start A / B
+        hsl(.10,.9,.55,0), hsl(.14,.9,.7,0),// color end A / B (fade to transparent)
+        .4,                  // particle lifetime
+        .35, .05,            // size start / end
+        .12,                 // speed (per frame)
+        0,                   // angle speed
+        .92,                 // damping
+        1,                   // angle damping
+        .6,                  // gravity scale
+        PI/2,                // particle cone angle (puff sideways/down)
+        .1,                  // fade rate
+        .3                   // randomness
+    );
+}
+
+function gameOver()
+{
+    if (!gameAlive) return;
+    gameAlive = false;
+    gameOverSound.play();
+    addScreenShake(.6, .4);
+    setPlaying(false);
+    showGameOverDialog({
+        score: getScore(),
+        onContinue: () => quitToTitle(newGame),
+    });
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function updatePlayer()
+{
+    const dt = timeDelta;
+    player.prevY = player.pos.y;
+
+    // ----- horizontal: input + inertia + damping, then wrap -----
+    const inX = clamp(keyDirection().x + gamepadStick(0).x, -1, 1);
+    player.vel.x += inX * AIR_ACCEL * dt;
+    player.vel.x -= player.vel.x * H_DAMP * dt;
+    player.vel.x = clamp(player.vel.x, -MAX_SPEED, MAX_SPEED);
+    player.pos.x += player.vel.x * dt;
+    if (player.pos.x >  ARENA_W/2) player.pos.x -= ARENA_W;
+    if (player.pos.x < -ARENA_W/2) player.pos.x += ARENA_W;
+
+    // ----- moving platforms drift and bounce off the arena walls -----
+    for (const p of platforms)
+    {
+        if (p.type === 'moving' && !p.broken)
+        {
+            p.pos.x += p.vx * dt;
+            if (p.pos.x >  PLAT_X_MAX) { p.pos.x =  PLAT_X_MAX; p.vx *= -1; }
+            if (p.pos.x < -PLAT_X_MAX) { p.pos.x = -PLAT_X_MAX; p.vx *= -1; }
+        }
+        if (p.broken) { p.pos.y -= 16 * dt; p.alpha -= dt * 2.2; }  // crumble away
+    }
+
+    // ----- vertical: gravity integration -----
+    player.vel.y -= GRAVITY * dt;
+    player.pos.y += player.vel.y * dt;
+
+    // ----- one-way platform landing (only while falling) -----
+    if (player.vel.y < 0)
+    {
+        const prevBottom = player.prevY - PLAYER_R;
+        const curBottom  = player.pos.y - PLAYER_R;
+        for (const p of platforms)
+        {
+            if (p.broken) continue;             // already crumbling — not solid
+            const top = p.pos.y + PLAT_HH;
+            if (prevBottom >= top - .1 && curBottom <= top &&
+                wrapDist(player.pos.x, p.pos.x) < PLAT_HW + PLAYER_R * .5)
+            {
+                player.pos.y = top + PLAYER_R;
+                if (p.spring) springBounce(p.pos);
+                else          bounce();
+                if (p.type === 'broken')
+                {
+                    // give one normal bounce, then it crumbles and falls away
+                    p.broken = true;
+                    breakSound.play(p.pos);
+                }
+                break;
+            }
+        }
+    }
+
+    // squash/stretch decay
+    player.squash = max(0, player.squash - dt / .15);
+
+    // ----- score + camera (upward only) -----
+    maxY = max(maxY, player.pos.y);
+    if (gameMedals && getScore() >= 1000) gameMedals.height.unlock();
+    const viewH = getCameraSize().y;
+    cameraPos.y = max(cameraPos.y, player.pos.y + 0.08 * viewH);
+    cameraPos.x = 0;
+
+    generateAhead();
+    cullBelow();
+
+    // ----- death: fell below the view -----
+    if (player.pos.y < cameraPos.y - viewH/2 - 2)
+        gameOver();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function drawBackdrop()
+{
+    drawRectGradient(cameraPos, getCameraSize(), SKY_TOP, SKY_BOT);
+    // brighter play column so the wrap arena reads as intentional on wide screens
+    drawRect(vec2(0, cameraPos.y), vec2(ARENA_W, getCameraSize().y + 2), COLUMN_COL);
+}
+
+function drawPlatform(p)
+{
+    let col = PLAT_COL, glow = PLAT_GLOW;
+    if      (p.type === 'moving') { col = MOVE_COL;   glow = MOVE_GLOW; }
+    else if (p.type === 'broken') { col = BROKEN_COL; glow = BROKEN_GLOW; }
+    const a = p.alpha;
+    drawTile(p.pos, vec2(5, 2.4), icons.glow, glow.scale(1, a));
+    drawTile(p.pos, vec2(PLAT_HW*2, PLAT_HH*2 + .5), icons.roundSquare, col.scale(1, a));
+    if (p.spring)
+    {
+        const sp = p.pos.add(vec2(0, PLAT_HH + .75));
+        drawTile(sp, vec2(2.6), icons.glow, SPRING_COL.scale(1, .6));
+        drawTile(p.pos.add(vec2(0, PLAT_HH + .25)), vec2(1.1, .5), icons.roundSquare,
+            hsl(.13, .9, .45).scale(1, a));                         // coil base
+        drawTile(sp.add(vec2(0, .2)), vec2(1.5, 1.6), icons.triangle,
+            SPRING_COL.scale(1, a));                               // up arrow
+    }
+}
+
+function drawPlayerAt(x)
+{
+    const f = player.squash;
+    const sx = 1 + .3*f, sy = 1 - .3*f;
+    const pos = vec2(x, player.pos.y);
+    drawTile(pos, vec2(PLAYER_R*3), icons.glow, PLAYER_GLOW);
+    drawTile(pos, vec2(PLAYER_R*2*sx, PLAYER_R*2*sy), icons.circle, PLAYER_COL);
+
+    // eyes look toward movement direction
+    const shift = clamp(player.vel.x * .02, -.25, .25);
+    for (const sgn of [-1, 1])
+    {
+        const eye = pos.add(vec2(sgn*.35 + shift, .2*sy));
+        drawTile(eye, vec2(.5), icons.circle, WHITE);
+        drawTile(eye.add(vec2(shift*.4, -.04)), vec2(.24), icons.circle, BLACK);
+    }
+}
+
+function drawPlayer()
+{
+    drawPlayerAt(player.pos.x);
+    // ghost near the wrap edges so crossing reads continuously
+    const edge = ARENA_W/2 - (PLAYER_R + .6);
+    if (player.pos.x >  edge) drawPlayerAt(player.pos.x - ARENA_W);
+    if (player.pos.x < -edge) drawPlayerAt(player.pos.x + ARENA_W);
+}
+
+// On wide screens the visible area is wider than the wrap column, so the wrap
+// ghost (and bounce particles) can poke into the side margins. Cover each margin
+// with a dark wall on top of everything — this both masks anything outside the
+// column and frames the play area so the wrap edge reads as a clear boundary.
+function drawSideMasks()
+{
+    const view = getCameraSize();
+    const marginW = view.x/2 - ARENA_W/2;
+    if (marginW <= 0) return;                 // arena fills the screen (portrait)
+    const w = marginW + 6;                    // extend past the screen edge
+    const inner = ARENA_W/2;                  // inner edge sits exactly on the wrap boundary
+    drawRectGradient(vec2( inner + w/2, cameraPos.y), vec2(w, view.y), WALL_TOP, WALL_BOT);
+    drawRectGradient(vec2(-inner - w/2, cameraPos.y), vec2(w, view.y), WALL_TOP, WALL_BOT);
+    // glowing seam on the wrap boundary so the edge is obvious
+    drawRect(vec2( inner, cameraPos.y), vec2(.15, view.y), WALL_EDGE);
+    drawRect(vec2(-inner, cameraPos.y), vec2(.15, view.y), WALL_EDGE);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+async function gameInit()
+{
+    icons = initDefaultAtlas();
+    updateCameraScale();
+
+    bounceSound   = new SoundGenerator({ frequency: 300, release: .12, slide: .3 });
+    springSound   = new SoundGenerator({ frequency: 500, release: .2, slide: .9, pitchJump: 400, pitchJumpTime: .06 });
+    breakSound    = new SoundGenerator({ frequency: 200, release: .2, slide: -.5, noise: .3, shapeCurve: .5 });
+    gameOverSound = new SoundGenerator({ frequency: 240, release: .4, slide: -.6, noise: .1 });
+
+    saveDataInit('Skyhop');
+    setMenuVisibilityCallback(v => paused = v);
+
+    // ----- medals -----
+    gameMedals = {
+        spring: new MenuMedal(0, 'Boing!',   'Ride a spring.',         '🌀'),
+        height: new MenuMedal(1, 'Sky High', 'Reach a score of 1000.', '☁️'),
+    };
+    medalsInit('Skyhop');
+
+    // wire menu nav sounds (construct once, not per nav)
+    const sndSelect   = new Sound([,,520,,,.05,,,,,,,,,,,,,,5]);
+    const sndActivate = new Sound([,,300,,.05,.12,,,,,,,,,.3]);
+    setMenuSounds({
+        select:   () => sndSelect.play(undefined, .4),
+        activate: () => sndActivate.play(undefined, .5),
+    });
+
+    // ----- title -----
+    setMenuTheme({accent:'#88ccff'});
+    createTitleMenu({
+        title:    'SKYHOP',
+        titleFx: {fill:'shine', color:'#8cf', motion:'float'},
+        subtitle: 'How high can you hop?',
+        showBest: true,
+        formatBest: n => 'BEST ' + n,
+        canReveal: () => !isPlaying(),
+        onPlay:   () => { newGame(); setPlaying(true); },
+        items: [
+            { type:'button', label:'HOW TO PLAY', onClick: () => pushMenu('help') },
+            { type:'button', label:'MEDALS',      onClick: () => pushMenu('medals') },
+            { type:'button', label:'OPTIONS',     onClick: () => pushMenu('options') },
+        ],
+    });
+
+    // ----- medals menu (grid re-synced on open) -----
+    const medalList = [gameMedals.spring, gameMedals.height];
+    createMenu({
+        id: 'medals',
+        title: 'MEDALS',
+        onShow: () =>
+        {
+            const grid = getMenu('medals').getItem('grid');
+            medalList.forEach((m, i) => grid.setCell(i, { earned: m.unlocked }));
+        },
+        onHide: popMenu,
+        items: [
+            { type:'grid', id:'grid', columns:2, cells: medalList.map(m => ({
+                icon: m.icon, label: m.name, title: m.description, earned: m.unlocked,
+                onClick: () => showAlertDialog({ title:m.name, icon:m.icon, message:m.description }),
+            })) },
+            { type:'separator' },
+            { type:'button', label:'BACK', onClick: () => hideMenu('medals') },
+        ],
+    });
+
+    // ----- options (volume + screen shake + reset best) -----
+    createOptionsMenu({
+        showResetBest: true,
+        extraItems: [
+            { type:'separator' },
+            { type:'checkbox', id:'shake', label:'SCREEN SHAKE', value:true,
+                persist:'shake', onChange: v => setScreenShakeEnabled(v) },
+        ],
+    });
+
+    // ----- how to play -----
+    createMenu({
+        id: 'help',
+        title: 'HOW TO PLAY',
+        onHide: popMenu,
+        items: [
+            { type:'text', text:'You bounce automatically — just steer.\n\n' +
+                'LEFT / RIGHT or A / D to move. On a gamepad use the stick; on ' +
+                'touch, drag the on-screen stick. Fly off one side and you ' +
+                'reappear on the other.\n\n' +
+                'GREEN platforms are safe. BLUE ones slide. BROWN ones crumble ' +
+                'away right after you bounce off them — keep moving! Yellow ' +
+                'springs launch you extra high.\n\nClimb as high as you can. ' +
+                'Fall off the bottom and the run is over.' },
+            { type:'separator' },
+            { type:'button', label:'BACK', onClick: () => hideMenu('help') },
+        ],
+    });
+
+    // ----- pause -----
+    createMenu({
+        id: 'pause',
+        title: 'PAUSED',
+        initialItemId: 'resume',
+        items: [
+            { type:'button', id:'resume', label:'RESUME',        onClick: () => hideMenu('pause') },
+            { type:'button',              label:'OPTIONS',       onClick: () => pushMenu('options') },
+            { type:'button',              label:'QUIT TO TITLE', onClick: () =>
+                showConfirmDialog({ message:'Quit to title?', onYes: () => quitToTitle(newGame) }) },
+        ],
+    });
+
+    installDefaultToolbar();
+
+    // build the world so the title screen has a live backdrop, then show title
+    newGame();
+    gameAlive = false;   // title backdrop only; not a live run yet
+    showMenu('title');
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function gameUpdate()
+{
+    updateCameraScale();
+    if (bindPauseKey({ when: () => isPlaying() && gameAlive })) return;
+    if (isPlaying() && gameAlive)
+        updatePlayer();
+}
+
+function gameUpdatePost() {}
+
+function gameRender()
+{
+    updateCameraScale();
+    drawBackdrop();
+    for (const p of platforms) drawPlatform(p);
+    drawPlayer();
+}
+
+function gameRenderPost()
+{
+    drawSideMasks();
+    if (isPlaying())
+        drawTextScreen(String(getScore()), vec2(mainCanvasSize.x/2, 70),
+            70, WHITE, 6, BLACK);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+engineInit(gameInit, gameUpdate, gameUpdatePost, gameRender, gameRenderPost);
+</script></body></html>

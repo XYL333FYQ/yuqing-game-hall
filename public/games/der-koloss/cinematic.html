@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="Der Koloss cinematic director and capture environment." />
+  <meta name="robots" content="noindex,nofollow,noarchive" />
+  <title>Der Koloss — Isolated Cinematic Director</title>
+  <link rel="canonical" href="https://www.derkoloss.com/cinematic" />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:site_name" content="Der Koloss" />
+  <meta property="og:title" content="Der Koloss — The Colossus Awakens" />
+  <meta property="og:description" content="Fight together to survive in Der Koloss, a fan-made browser zombie survival experience." />
+  <meta property="og:url" content="https://www.derkoloss.com/cinematic" />
+  <meta property="og:image" content="https://www.derkoloss.com/assets/der-koloss-og-v06-courtyard-rev2-1200x630.png" />
+  <meta property="og:image:secure_url" content="https://www.derkoloss.com/assets/der-koloss-og-v06-courtyard-rev2-1200x630.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Four Der Koloss soldiers armed with upgraded wonder weapons defend the factory against a zombie horde." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Der Koloss — The Colossus Awakens" />
+  <meta name="twitter:description" content="Fight together to survive in the Der Koloss browser zombie experience." />
+  <meta name="twitter:image" content="https://www.derkoloss.com/assets/der-koloss-og-v06-courtyard-rev2-1200x630.png" />
+  <meta name="twitter:image:alt" content="Four Der Koloss soldiers defend the factory against a zombie horde." />
+  <style>
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#020408;color:#ddd;font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace}
+    #cinematic-canvas{display:block;width:100%;height:100%}
+    #director-overlay{position:fixed;inset:24px 24px auto 24px;display:flex;justify-content:space-between;gap:24px;pointer-events:none;text-shadow:0 2px 8px #000}
+    #director-overlay pre{margin:0;padding:10px 12px;background:#05080bc9;border:1px solid #7ca8c744;white-space:pre-wrap}
+    #director-overlay.good pre{border-color:#73c49c66} #director-overlay.bad pre{border-color:#d96f6266}
+    body.capture #director-overlay{display:none}
+  </style>
+  <script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
+</head>
+<body>
+  <canvas id="cinematic-canvas"></canvas>
+  <div id="director-overlay"><pre id="director-status">LOADING DIRECTOR…</pre><pre>Standalone capture page
+Normal game code path untouched
+?shot=factoryWake&amp;frame=0&amp;capture=1</pre></div>
+  <script type="module" src="./js/cinematic-director.js"></script>
+</body>
+</html>

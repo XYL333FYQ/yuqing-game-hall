@@ -1,0 +1,1358 @@
+<!DOCTYPE html><head>
+<title>Complements</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+/* Override any CSS variable on #littlejs-menus to re-skin all menus
+   and toolbars. Uncomment to try a different look — the helper itself
+   never needs to change. */
+/*
+#littlejs-menus {
+    --menu-bg:           rgba(20, 0, 30, 0.92);
+    --menu-fg:           #fff;
+    --menu-accent:       #f0a;
+    --menu-font:         sans-serif;
+    --menu-border-width: 4px;
+    --menu-radius:       18px;
+}
+*/
+</style>
+</head>
+<script src="../templates/engineLoader.js"></script>
+<script src="../templates/bloom.js"></script>
+<script src="../templates/menus.js"></script>
+<script src="../templates/gameFx.js"></script>
+<script src="../templates/textureGenerator.js"></script>
+<script src="../templates/tweakables.js"></script>
+<script>
+'use strict';
+
+// --- Color model (ported from ComplementsPiece::colors / GetComplement) ---
+// NOTE: color-type indices are C_-prefixed — bare RED/WHITE/BLACK/etc. are reserved
+// LittleJS Color globals (declared `const`), and redeclaring them is a load-time SyntaxError.
+const C_RED=0, C_ORANGE=1, C_YELLOW=2, C_GREEN=3, C_BLUE=4, C_PURPLE=5, C_BLACK=6, C_WHITE=7, C_CLEAR=8, NUM_COLORS=9;
+const COLORS = [
+    new Color(1.0, 0.0, 0.0),   // Red
+    new Color(1.0, 0.5, 0.0),   // Orange
+    new Color(1.0, 1.0, 0.0),   // Yellow
+    new Color(0.0, 0.9, 0.2),   // Green
+    new Color(0.0, 0.0, 1.0),   // Blue
+    new Color(0.7, 0.0, 1.0),   // Purple
+    new Color(0.0, 0.0, 0.0),   // Black
+    new Color(1.0, 1.0, 1.0),   // White
+    new Color(1.0, 1.0, 1.0),   // Clear (drawn as glow/outline)
+];
+const COMPLEMENT = [C_GREEN, C_BLUE, C_PURPLE, C_RED, C_ORANGE, C_YELLOW, C_WHITE, C_BLACK, C_CLEAR];
+const complementOf = c => COMPLEMENT[c];
+
+// --- Tuning (ported verbatim from complementsSettingsDefault) ---
+const settings = {
+    breakDamage:10, elasticity:0.5, friction:0.5, wallElasticity:0.8,
+    groundElasticity:0.2, groundFriction:0.2, connectionSpringConstant:1.5,
+    minRadius:0.0625, maxRadius:0.125, maxDeathTime:4, maxComboTime:1,
+    defendCoeff:1, veryLargeDamage:40, dropRate:0.1, gravity:-2,
+    maxBreakTime:0.5, maxBombTime:10, shakeSpeed:0.7, clearPiecePercent:0.2,
+    blackPiecePercent:0.1, whitePiecePercent:0.01, maxShakeTime:2,
+    playThroughCombos:false, shakeTimePerDamage:0.1, drag:0.985,
+    timeAttackRiseSpeed:0.005, launchSpeed:2.5, maxVelocity:3,
+    radiusChangeSpeed:0.2, shakeUseAmount:0.25,
+};
+const BOARD_HALF = 1;          // board is x,y in [-BOARD_HALF, BOARD_HALF]
+let icons;                     // default-atlas icon map
+let showTrajectory = true;     // toggle trajectory preview
+
+///////////////////////////////////////////////////////////////////////////////
+// --- Sound + particles (Task 7) ---
+
+// Pentatonic ratio table: maps ball size → musical pitch multiplier.
+// Large balls (low t) → low pitch (index 0=1.0); small balls → high pitch (index 5=2.0).
+const SCALE = [1, 9/8, 5/4, 3/2, 5/3, 2];  // major pentatonic ratios
+function pitchForRadius(r) {
+    const t = clamp((r - settings.minRadius) / (settings.maxRadius - settings.minRadius), 0, 1);
+    return SCALE[Math.min(SCALE.length - 1, Math.floor((1 - t) * SCALE.length))];
+}
+
+// Bounce sound: short click/thud, pitched by ball size.
+const bounceSound = new SoundGenerator({frequency: 200, release: 0.08, slide: -0.3, noise: 0.05, volume: 0.4});
+
+// Break sound: brighter pop/chime, pitched by ball size.
+const breakSound  = new SoundGenerator({frequency: 520, release: 0.15, slide: 0.4, pitchJump: 260, pitchJumpTime: 0.05, volume: 0.6});
+
+// Extra low break for WHITE / CLEAR (lower-octave double, per brief).
+const breakSoundLow = new SoundGenerator({frequency: 260, release: 0.2, slide: 0.2, pitchJump: 130, pitchJumpTime: 0.05, volume: 0.5});
+
+// Near-death alarm: pulsing warning tone.
+const alarmSound  = new SoundGenerator({frequency: 880, release: 0.25, slide: -0.6, volume: 0.5});
+
+// Timer throttles the alarm to ~every 0.5 s.
+const alarmTimer  = new Timer;
+
+function playBounceSound(p, speed) {
+    const pitch = pitchForRadius(p.radius);
+    bounceSound.play(p.pos, 1, pitch);
+}
+
+function playBreakSound(p) {
+    const pitch = pitchForRadius(p.radius);
+    breakSound.play(p.pos, 1, pitch);
+    // For WHITE or CLEAR pieces, play an additional lower-octave double.
+    if (p.colorType === C_WHITE || p.colorType === C_CLEAR) {
+        breakSoundLow.play(p.pos, 0.7, pitch * 0.5);
+    }
+}
+
+function playAlarmMaybe(deathTime) {
+    // Only pulse while deathTime > 0, throttled to ~every 0.5 s.
+    if (deathTime <= 0) return;
+    if (!alarmTimer.isSet() || alarmTimer.elapsed()) {
+        alarmSound.play();
+        alarmTimer.set(0.5);
+    }
+}
+
+function spawnBreakBurst(p) {
+    // Choose particle color: CLEAR uses the complement of its effective color.
+    const c = (p.colorType === C_CLEAR)
+        ? COLORS[complementOf(p.effectiveColorType)]
+        : COLORS[p.colorType];
+
+    // Scale rate/emitSize with radius so big gems burst more dramatically.
+    const rScale = p.radius / settings.maxRadius;   // 0.5..1
+    const rate   = Math.round(20 + 30 * rScale);    // 20..50 particles
+    const emitSz = p.radius * (0.8 + 0.4 * rScale); // slightly larger for big gems
+
+    // Color fades to alpha=0 at end-of-life (c.scale(1, 0) keeps RGB, zeroes alpha).
+    const cFade = c.scale(1, 0);
+
+    // ParticleEmitter(pos, angle, emitSize, emitTime, emitRate, emitConeAngle,
+    //   tileInfo,
+    //   colorStartA, colorStartB, colorEndA, colorEndB,
+    //   particleTime, sizeStart, sizeEnd,
+    //   speed, angleSpeed,
+    //   damping, angleDamping, gravityScale, particleConeAngle,
+    //   fadeRate, randomness, collideTiles, additive)
+    new ParticleEmitter(
+        p.pos.copy(), 0, emitSz, 0.1, rate, PI,
+        icons.spark,
+        c, c, cFade, cFade,
+        0.5, 0.01, 0.03,
+        0.3, 0.05,
+        0.95, 1, 0.3, PI,
+        0.15, 0.4, false, true
+    );
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// --- Difficulty names / best-time helpers ---
+const DIFF_NAMES = ['EASY', 'MEDIUM', 'HARD', 'INSANE'];
+
+function bestTimeFor(d) {
+    const b = getSaveData().bestTimes || {};
+    return b[d] || 0;
+}
+
+function recordTime(d, seconds) {
+    const b = Object.assign({}, getSaveData().bestTimes || {});
+    const prev = b[d] || 0;
+    const isBest = !prev || seconds < prev;
+    if (isBest) { b[d] = seconds; saveData({bestTimes: b}); }
+    return isBest;
+}
+
+function formatTime(s) {
+    const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+    return m + ':' + (sec < 10 ? '0' : '') + sec;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// --- Game-flow helpers ---
+function startGame(d) {
+    // Clear the pushMenu stack first: hideAllMenus() dismisses the difficulty
+    // menu, whose onHide:popMenu would otherwise restore the parent (title)
+    // right back over the freshly-started game.
+    clearSubmenuStack();
+    board.startNewGame(d);
+    setPlaying(true);
+    hideAllMenus();
+}
+
+function onGameOver() {
+    setPlaying(false);
+    if (board.won) {
+        const t = board.gameTime;
+        const isBest = recordTime(board.difficulty, t);
+        showGameOverDialog({
+            won: true, score: undefined,
+            customMessage: `Cleared ${DIFF_NAMES[board.difficulty]} in ${formatTime(t)}` + (isBest ? '\nNEW BEST!' : ''),
+            onContinue: () => quitToTitle(() => board.startNewGame(0)),
+        });
+    } else {
+        showGameOverDialog({
+            won: false, score: undefined,
+            customMessage: 'The pieces reached the line.',
+            onContinue: () => quitToTitle(() => board.startNewGame(0)),
+        });
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// --- Input helpers ---
+let aimWithMouse = true;
+function shootHeld() { return mouseIsDown(0) || keyIsDown('Space') || keyDirection().y > 0; }
+function shakeHeld() { return mouseIsDown(2) || keyDirection().y < 0; }
+function aimAngleToMouse() {
+    const launcher = vec2(0, board.deathLine + settings.maxRadius);
+    const d = mousePos.subtract(launcher);
+    // rotation 0 = straight down; positive = clockwise (right)
+    let a = Math.atan2(d.x, -d.y);
+    return clamp(a, -PI/2, PI/2);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// --- Board class ---
+
+const SEED_COUNT = [20, 40, 60, 80]; // easy, medium, hard, insane
+
+class Board {
+    constructor() { this.difficulty = 0; }
+
+    getComboBrakeCountLast() { return this.comboBrokeLast; }
+
+    breakStarted() {
+        if (!this.comboInProgress) { this.comboCount=0; this.comboBroke=0; }
+        this.comboInProgress = true;
+        this.comboTime = settings.maxComboTime;
+        ++this.comboCount;
+    }
+
+    breakHappened(p) {
+        ++this.comboBroke;
+        const dd = settings.breakDamage * p.radius*p.radius * this.comboBroke;
+        this.shakeTime = min(this.shakeTime + dd*settings.shakeTimePerDamage, settings.maxShakeTime);
+        this.breakDamage += dd;
+        spawnBreakBurst(p);
+        if (this.comboBroke >= 4 && isScreenShakeEnabled()) addScreenShake(0.15, 0.2);
+    }
+
+    shootAllowed() {
+        if (this.dropTime < settings.dropRate || this.gameOver) return false;
+        return physics.isAreaOpen(this.currentPiece.pos, this.currentPiece.radius);
+    }
+
+    getColor(attack) {
+        const pct = rand();
+
+        if (attack) {
+            // Attack drops: uniform 6 hues
+            if (pct < 1.0/6.0)       return C_RED;
+            else if (pct < 2.0/6.0)  return C_BLUE;
+            else if (pct < 3.0/6.0)  return C_YELLOW;
+            else if (pct < 4.0/6.0)  return C_GREEN;
+            else if (pct < 5.0/6.0)  return C_ORANGE;
+            else                     return C_PURPLE;
+        } else {
+            // Time-attack mode: helpful colors weighted toward what's on the board
+            let colorType;
+            const colorCount = new Array(NUM_COLORS);
+            physics.getColorCount(colorCount);
+
+            if (this.dropCount % 6 === 4) {
+                colorType = C_CLEAR;
+            } else if (this.dropCount % 6 === 1) {
+                colorType = C_BLACK;
+            } else {
+                let red = 1;
+                if (colorCount[C_RED] === 0 && colorCount[C_GREEN] === 0) red = 0;
+                let blue = 1;
+                if (colorCount[C_BLUE] === 0 && colorCount[C_ORANGE] === 0) blue = 0;
+                let yellow = 1;
+                if (colorCount[C_YELLOW] === 0 && colorCount[C_PURPLE] === 0) yellow = 0;
+
+                // weight toward colors still present; reduce redundancy with current/next
+                const hueCount = red + blue + yellow;
+                if (this.currentPiece && hueCount > 1) {
+                    if (this.nextColor === C_RED || this.nextColor === C_GREEN)
+                        red = 0;
+                    if (this.nextColor === C_BLUE || this.nextColor === C_ORANGE)
+                        blue = 0;
+                    if (
+                        (hueCount > 2 && (this.currentPiece.colorType === C_YELLOW || this.currentPiece.colorType === C_PURPLE))
+                        || this.nextColor === C_YELLOW
+                        || this.nextColor === C_PURPLE
+                    )
+                        yellow = 0;
+                }
+
+                let redPct = 0, bluePct = 0, yellowPct = 0;
+                if (red + blue + yellow > 0) {
+                    redPct    = red    / (red + blue + yellow);
+                    bluePct   = blue   / (red + blue + yellow);
+                    yellowPct = yellow / (red + blue + yellow);
+                }
+
+                if (redPct + bluePct + yellowPct > 0) {
+                    if (pct < redPct*0.5)
+                        colorType = C_RED;
+                    else if (pct < (redPct + bluePct)*0.5)
+                        colorType = C_BLUE;
+                    else if (pct < (redPct + bluePct + yellowPct)*0.5)
+                        colorType = C_YELLOW;
+                    else if (pct < (2*redPct + bluePct + yellowPct)*0.5)
+                        colorType = C_GREEN;
+                    else if (pct < (2*redPct + 2*bluePct + yellowPct)*0.5)
+                        colorType = C_ORANGE;
+                    else
+                        colorType = C_PURPLE;
+                } else {
+                    colorType = C_WHITE;
+                }
+            }
+
+            // no two blacks in a row (player can't see the direction arrow)
+            if (colorType === C_BLACK && this.nextColor === C_BLACK)
+                colorType = C_WHITE;
+
+            return colorType;
+        }
+    }
+
+    getNextPiece() {
+        ++this.dropCount;
+        const oldNext = this.nextColor;
+        this.nextColor = this.getColor(false);
+        this.currentPiece = new Piece(vec2(0, this.deathLine + settings.maxRadius), settings.minRadius, oldNext);
+    }
+
+    startNewGame(difficulty) {
+        this.difficulty = difficulty;
+        physics.reset();
+        this.inputWasUp = false;
+        this.deathLine = 1.0 - 2*settings.maxRadius;
+        this.dropCount = 0; this.gameTime = 0;
+        this.rotation = 0; this.rotationSpeed = 0;
+        this.radiusChangeDirection = -1;
+        this.deathTime = 0; this.breakDamage = 0;
+        this.comboTime = 0; this.comboInProgress = false;
+        this.comboBroke = 0; this.comboBrokeLast = 0; this.comboCount = 0;
+        this.shakeTime = 0; this.shakeDirection = 1;
+        this.dropTime = settings.dropRate;
+        this.gameOver = false; this.won = false;
+        this.currentPiece = null;
+        this.nextColor = this.getColor(false);
+        this.getNextPiece();
+        // time attack: first piece is Clear, next is White
+        this.currentPiece.colorType = C_CLEAR; this.currentPiece.effectiveColorType = C_CLEAR;
+        this.nextColor = C_WHITE;
+        // seed the board with falling pieces
+        let safety = 0;
+        for (let n = 0; n < SEED_COUNT[difficulty] && safety < 5000; ++safety) {
+            const radius = rand(settings.minRadius, settings.maxRadius);
+            const x = (rand()<0.5?-1:1) * rand(radius+settings.maxRadius, BOARD_HALF-radius);
+            const y = rand(1.0+radius, 1.0+2*settings.maxRadius);
+            const pos = vec2(x,y);
+            if (physics.isAreaOpen(pos, radius)) {
+                const p = new Piece(pos, radius, this.getColor(true), false);
+                p.vel.y = -0.1;
+                physics.add(p);
+                ++n;
+            }
+        }
+    }
+
+    updateInput(dt) {
+        const allowed = this.shootAllowed();
+
+        if (!allowed) {
+            // ease radius back to minRadius
+            if (this.currentPiece.radius > settings.minRadius) {
+                if (this.radiusChangeDirection > 0) this.radiusChangeDirection = -1;
+                this.currentPiece.radius += dt * this.radiusChangeDirection * settings.radiusChangeSpeed;
+                if (this.currentPiece.radius <= settings.minRadius)
+                    this.currentPiece.radius = settings.minRadius;
+            } else if (this.currentPiece.radius < settings.minRadius) {
+                if (this.radiusChangeDirection < 0) this.radiusChangeDirection = 1;
+                this.currentPiece.radius += dt * this.radiusChangeDirection * settings.radiusChangeSpeed;
+                if (this.currentPiece.radius >= settings.minRadius) {
+                    this.currentPiece.radius = settings.minRadius;
+                    this.radiusChangeDirection *= -1;
+                }
+            }
+        } else {
+            const held = shootHeld();
+            if (!held && this.inputWasUp) {
+                // Shoot!
+                this.comboInProgress = false;
+                this.radiusChangeDirection = -1;
+                this.dropTime = 0;
+                this.currentPiece.vel = vec2(Math.sin(this.rotation), -Math.cos(this.rotation)).scale(settings.launchSpeed);
+                this.currentPiece.mass = this.currentPiece.radius * this.currentPiece.radius;
+                physics.add(this.currentPiece);
+                this.getNextPiece();
+            } else if (held && this.inputWasUp) {
+                // charge: grow radius, bounce between min/max
+                this.currentPiece.radius += dt * this.radiusChangeDirection * settings.radiusChangeSpeed;
+                if (this.radiusChangeDirection < 0 && this.currentPiece.radius <= settings.minRadius) {
+                    this.currentPiece.radius = settings.minRadius;
+                    this.radiusChangeDirection = 1;
+                } else if (this.currentPiece.radius >= settings.maxRadius) {
+                    this.currentPiece.radius = settings.maxRadius;
+                    this.radiusChangeDirection = -1;
+                }
+            }
+        }
+        this.inputWasUp = shootHeld();
+
+        // aim
+        const rotationAcceleration = 6;
+        if (aimWithMouse && !this.gameOver) {
+            this.rotation = aimAngleToMouse();
+        } else {
+            const dir = keyDirection();
+            // natural mapping: right (dir.x>0) → clockwise (rotation increases)
+            if (dir.x > 0) {
+                this.rotationSpeed += dt * rotationAcceleration;
+            } else if (this.rotationSpeed > 0) {
+                this.rotationSpeed = 0;
+            }
+            if (dir.x < 0) {
+                this.rotationSpeed -= dt * rotationAcceleration;
+            } else if (this.rotationSpeed < 0) {
+                this.rotationSpeed = 0;
+            }
+            this.rotation += this.rotationSpeed * dt;
+        }
+
+        if (this.rotation > PI/2)  { this.rotation = PI/2;  this.rotationSpeed = 0; }
+        else if (this.rotation < -PI/2) { this.rotation = -PI/2; this.rotationSpeed = 0; }
+
+        // shake: debounced so holding doesn't drain instantly
+        if (shakeHeld() && !this.shook && this.shakeTime > settings.shakeUseAmount && !this.gameOver) {
+            this.shakeDirection *= -1;
+            physics.shake(this.shakeDirection);
+            this.shakeTime -= settings.shakeUseAmount;
+            if (this.shakeTime < 0) this.shakeTime = 0;
+        }
+        this.shook = shakeHeld();
+
+        // keep current piece at launcher position while not yet shot
+        this.currentPiece.pos = vec2(0, this.deathLine + settings.maxRadius);
+    }
+
+    updatePhysics(dt) {
+        this.comboBrokeLast = this.comboBroke;
+        physics.update(dt);
+        const before = new Array(NUM_COLORS); physics.getColorCount(before);
+        const breakCount = physics.removeBrokenPieces();
+        if (breakCount > 0) {
+            const after = new Array(NUM_COLORS); physics.getColorCount(after);
+            const gone = (a, b) => after[a]+after[b]===0 && before[a]+before[b]>0;
+            const blue = gone(C_BLUE, C_ORANGE), red = gone(C_RED, C_GREEN), yellow = gone(C_YELLOW, C_PURPLE);
+            if (blue||red||yellow) {
+                const c = this.currentPiece.colorType;
+                if ((blue&&(c===C_BLUE||c===C_ORANGE))||(red&&(c===C_RED||c===C_GREEN))||(yellow&&(c===C_YELLOW||c===C_PURPLE)))
+                    { this.currentPiece.colorType=C_WHITE; this.currentPiece.effectiveColorType=C_WHITE; }
+                else this.nextColor = C_WHITE;
+            }
+        }
+    }
+
+    updateGameLogic(dt) {
+        if (!this.gameOver) {
+            const dying = physics.isDying(this.deathLine, this.deathTime > 0);
+            if (dying) {
+                this.deathTime += dt;
+                playAlarmMaybe(this.deathTime);
+                if (this.deathTime > settings.maxDeathTime) { this.gameOver = true; this.won = false; onGameOver(); return; }
+            } else {
+                this.deathTime -= 2*dt; if (this.deathTime < 0) this.deathTime = 0;
+            }
+        }
+        if (this.comboTime > 0 && !physics.isBreakingAny()) { this.comboTime -= dt; if (this.comboTime<0) this.comboTime=0; }
+        if (physics.empty() && !this.gameOver) { this.gameOver = true; this.won = true; onGameOver(); }
+        if (!this.gameOver) {
+            this.deathLine -= settings.timeAttackRiseSpeed*dt;
+            if (this.currentPiece) this.currentPiece.pos.y -= settings.timeAttackRiseSpeed*dt;
+        }
+    }
+
+    update(dt) {
+        this.gameTime += dt; this.dropTime += dt;
+        this.updateInput(dt);
+        this.updatePhysics(dt);
+        this.updateGameLogic(dt);
+    }
+}
+
+// board is created after physics exists
+let board = new Board();
+
+///////////////////////////////////////////////////////////////////////////////
+// --- Piece class (ported from ComplementsPiece.cpp constructor + Update) ---
+
+let pieceHandleCounter = 1;
+class Piece {
+    constructor(pos, radius, colorType, bomb=false) {
+        this.pos = pos.copy();
+        this.vel = vec2(0,0);
+        this.deltaPosition = vec2(0,0);
+        this.radius = radius;
+        this.colorType = colorType;
+        this.effectiveColorType = colorType;
+        this.mass = radius*radius;
+        this.connections = [];
+        this.breaking = false;
+        this.fakeBreak = false;
+        this.lifeTime = 0;
+        this.bombTime = bomb ? settings.maxBombTime : 0;
+        this.breakTime = 0;
+        this.maxBreakTime = 0;
+        this.breakTimeScale = 0;
+        this.lastCollisionAmount = 0;
+        this.startedCombo = false;
+        this.playBounceSound = false;
+        this.collisionCount = 0;
+        this.wasOnTop = false;
+        this.isOnTop = true;
+        this.locked = false;
+        this.clearStartTime = -1;   // >=0 while an active-clear spinner is running
+        this.handle = pieceHandleCounter++;
+        this.possibleCollisions = [];
+    }
+    isUniversalBlocker() { return this.effectiveColorType === C_BLACK; }
+    isUniversalBreaker() { return this.effectiveColorType === C_WHITE; }
+    isBreaking() { return this.breakTime > 0; }
+
+    connect(o) {
+        const sameish =
+            (!this.isUniversalBlocker() && !o.isUniversalBlocker()) && (
+                this.effectiveColorType === o.effectiveColorType ||
+                (this.effectiveColorType === C_CLEAR && o.effectiveColorType !== C_CLEAR) ||
+                (o.effectiveColorType === C_CLEAR && this.effectiveColorType !== C_CLEAR) ||
+                ((this.colorType === C_CLEAR || o.colorType === C_CLEAR) &&
+                    this.effectiveColorType === complementOf(o.effectiveColorType))
+            )
+            || (this.isUniversalBlocker() && !o.isUniversalBlocker() && this.connections.length===0 && this.breakTime<=0)
+            || (o.isUniversalBlocker() && !this.isUniversalBlocker() && o.connections.length===0 && o.breakTime<=0)
+            || this.isUniversalBreaker() || o.isUniversalBreaker();
+
+        if (sameish && this.bombTime<=0 && o.bombTime<=0 && this.connections.indexOf(o)<0) {
+            this.connections.push(o);
+            o.connections.push(this);
+            if (o.effectiveColorType !== C_CLEAR && o.effectiveColorType !== C_BLACK) o.propagateActiveClear(o.effectiveColorType);
+            if (this.effectiveColorType !== C_CLEAR && this.effectiveColorType !== C_BLACK) this.propagateActiveClear(this.effectiveColorType);
+            if (this.effectiveColorType === C_CLEAR && o.effectiveColorType === C_CLEAR) return false;
+
+            if (this.effectiveColorType === complementOf(o.effectiveColorType) || this.isUniversalBreaker() || o.isUniversalBreaker()) {
+                const breakStarted = (this.breakTime<=0 && o.breakTime<=0);
+                if (this.breakTime<=0 && ((this.colorType===C_CLEAR && !o.isUniversalBreaker()) || this.isUniversalBreaker())) { this.startBreak(); this.startedCombo=true; }
+                if (o.breakTime<=0 && ((o.colorType===C_CLEAR && !this.isUniversalBreaker()) || o.isUniversalBreaker())) { o.startBreak(); o.startedCombo=true; }
+                return breakStarted;
+            }
+        }
+        return false;
+    }
+    startBreak() {
+        let count = 0;
+        for (const c of this.connections) if (!c.breaking) { count++; if (c.effectiveColorType===C_BLACK) count++; }
+        if (count===0) this.breakTimeScale = 2;
+        else if (count<=2) this.breakTimeScale = 1;
+        else if (count<=4) this.breakTimeScale = 1/2;
+        else this.breakTimeScale = 1/3;
+        if (this.colorType===C_BLACK) this.breakTimeScale = 1;
+        let coeff = 1 + 0.5*(board.getComboBrakeCountLast()+1)/settings.veryLargeDamage;
+        if (coeff > 1.5) coeff = 1.5;
+        this.maxBreakTime = this.breakTime = settings.maxBreakTime / coeff;
+    }
+    updateBreaks(dt) {
+        if (!this.breaking) return;
+        for (const c of this.connections) {
+            if (!this.fakeBreak) { const j=c.connections.indexOf(this); if (j>=0) c.connections.splice(j,1); }
+            if (this.fakeBreak && !c.fakeBreak) continue;
+            if (!this.fakeBreak && c.fakeBreak) { c.fakeBreak=false; c.breakTime=0; }
+            if (c.breakTime<=0) c.startBreak();
+        }
+    }
+    propagateActiveClear(type) {
+        for (const c of this.connections)
+            if (c.colorType===C_CLEAR && c.effectiveColorType===C_CLEAR) { c.effectiveColorType=type; c.propagateActiveClear(type); }
+    }
+    removeConnections() {
+        for (const c of [...this.connections]) {
+            const j=c.connections.indexOf(this); if (j>=0) c.connections.splice(j,1);
+        }
+        this.connections.length = 0;
+    }
+
+    update(dt) {
+        if (this.playBounceSound) { playBounceSound(this, this.lastCollisionAmount); this.playBounceSound = false; }
+        const last = this.pos.copy();
+        this.pos = this.pos.add(this.vel.scale(dt));
+        this.deltaPosition = last.subtract(this.pos);
+        this.lastCollisionAmount *= 0.9;
+        this.lifeTime += dt;
+        this.bombTime -= dt;
+
+        // active-clear spinner timer (0.3s ramp), ported from clearStartTimer
+        if (this.colorType === C_CLEAR && this.effectiveColorType !== C_CLEAR) {
+            if (this.clearStartTime < 0) this.clearStartTime = 0;
+            else this.clearStartTime = min(this.clearStartTime + dt, 0.3);
+        } else this.clearStartTime = -1;
+
+        // prune connections that have stretched too far (port)
+        for (let i = this.connections.length-1; i >= 0; --i) {
+            const o = this.connections[i];
+            const d = this.pos.subtract(o.pos);
+            const dist = 1.5*(this.radius + o.radius);
+            if (d.lengthSquared() > dist*dist && this.breakTime === 0 && o.breakTime === 0) {
+                this.connections.splice(i,1);
+                const j = o.connections.indexOf(this); if (j>=0) o.connections.splice(j,1);
+            }
+        }
+
+        if (this.breakTime > 0) {
+            this.breakTime -= dt * this.breakTimeScale;
+            if (this.breakTime <= 0) this.doBreak();
+        }
+    }
+    doBreak() { if (!this.breaking) { this.breaking = true; playBreakSound(this); } }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// --- Physics class ---
+
+const MAX_COLLISION_COUNT = 10, EXTRA_MAX_COLLISION_COUNT = 3000;
+class Physics {
+    constructor() { this.pieces = []; this.collisionCount = 0; this.collision = false; }
+    reset() { this.pieces.length = 0; }
+    add(p) { this.pieces.push(p); }
+    remove(p) { const i=this.pieces.indexOf(p); if(i>=0) this.pieces.splice(i,1); }
+    count() { return this.pieces.length; }
+    empty() { return this.pieces.length === 0; }
+
+    isAreaOpen(pos, radius, exclude=null) {
+        for (const p of this.pieces) {
+            if (p === exclude) continue;
+            const minD = radius + p.radius;
+            if (pos.subtract(p.pos).lengthSquared() <= minD*minD) return false;
+        }
+        return true;
+    }
+    getColorCount(out) {
+        for (let i=0;i<NUM_COLORS;++i) out[i]=0;
+        for (const p of this.pieces) ++out[p.colorType];
+    }
+    isDying(deathLine, wasDying) {
+        for (const p of this.pieces)
+            if ((p.lifeTime > 1.0 || (p.bombTime > 0 && wasDying)) && p.pos.y + p.radius > deathLine)
+                return true;
+        return false;
+    }
+    shake(dir) {
+        for (const p of this.pieces) {
+            const theta = rand(PI/5, PI/3);
+            p.vel = p.vel.add(vec2(dir*settings.shakeSpeed*Math.cos(theta), settings.shakeSpeed*Math.sin(theta)));
+        }
+    }
+
+    // Port of ResolveCollision (ComplementsPhysics.cpp:193-344)
+    _resolveCollision(p1, p2, deltaPos) {
+        ++p1.collisionCount;
+        ++p2.collisionCount;
+        ++this.collisionCount;
+
+        // keep track if a piece is on top
+        if (p1.pos.y < p2.pos.y)
+            p1.isOnTop = false;
+        else
+            p2.isOnTop = false;
+
+        // OPT: zero out velocities of each piece if they have received a lot of collisions
+        // and the velocity is under a certain threshold
+        const topMinSpeed = 0.00001;
+        const bottomMinSpeed = 0.001;
+        if (
+            p1.collisionCount >= MAX_COLLISION_COUNT
+            && !p1.wasOnTop && p1.vel.lengthSquared() < bottomMinSpeed
+            || p1.wasOnTop && p1.vel.lengthSquared() < topMinSpeed
+        ) {
+            p1.locked = true;
+            p1.vel = vec2(0, 0);
+        }
+        if (
+            p2.collisionCount >= MAX_COLLISION_COUNT
+            && !p2.wasOnTop && p2.vel.lengthSquared() < bottomMinSpeed
+            || p2.wasOnTop && p2.vel.lengthSquared() < topMinSpeed
+        ) {
+            p2.locked = true;
+            p2.vel = vec2(0, 0);
+            if (p1.locked)
+                return;
+        }
+
+        // OPT: zero out velocities and exit if the collision count is really high
+        if (this.collisionCount > EXTRA_MAX_COLLISION_COUNT) {
+            p1.vel = vec2(0, 0);
+            p2.vel = vec2(0, 0);
+            return;
+        }
+
+        // attempt to connect the pieces and notify board if break started
+        if (p1.connect(p2)) {
+            board.breakStarted();
+        }
+
+        // center of mass velocity
+        const m1addm2 = p1.mass + p2.mass;
+        const vcm = p1.vel.scale(p1.mass).add(p2.vel.scale(p2.mass)).scale(1/m1addm2);
+
+        // velocities relative to center of mass
+        const vr1 = p1.vel.subtract(vcm);
+        const vr2 = p2.vel.subtract(vcm);
+
+        // separate out normal and tangent components
+        const normal = deltaPos.normalize();
+        const sn1 = vr1.dot(normal);
+        const sn2 = vr2.dot(normal);
+        const vn1 = normal.scale(sn1);
+        const vn2 = normal.scale(sn2);
+        let vt1 = vr1.subtract(vn1);
+        let vt2 = vr2.subtract(vn2);
+
+        // final velocity along normal component (elastic reflection in CM frame)
+        const snf1 = -settings.elasticity * sn1;
+        const snf2 = -settings.elasticity * sn2;
+
+        // friction (port of C++ friction block)
+        const fs1 = sn1 * settings.friction;
+        if (fs1*fs1 < vt1.lengthSquared())
+            vt1 = vt1.subtract(vt1.normalize().scale(Math.abs(fs1)));
+        else
+            vt1 = vec2(0, 0);
+
+        const fs2 = sn2 * settings.friction;
+        if (fs2*fs2 < vt2.lengthSquared())
+            vt2 = vt2.subtract(vt2.normalize().scale(Math.abs(fs2)));
+        else
+            vt2 = vec2(0, 0);
+
+        // update bounce sounds
+        let soundVol = Math.abs(sn1);
+        if (p1.lastCollisionAmount < soundVol) {
+            p1.lastCollisionAmount = soundVol;
+            if (soundVol > 0.5) p1.playBounceSound = true;
+        }
+        soundVol = Math.abs(sn2);
+        if (p2.lastCollisionAmount < soundVol) {
+            p2.lastCollisionAmount = soundVol;
+            if (soundVol > 0.5) p2.playBounceSound = true;
+        }
+
+        // extra speed reduction to prevent jitter from rounding errors
+        const extraSpeedReduction = 0.995;
+        const maxVelocitySquared = settings.maxVelocity * settings.maxVelocity;
+
+        if (!p1.locked) {
+            p1.vel = vcm.add(vt1.add(normal.scale(snf1))).scale(extraSpeedReduction);
+            if (p1.vel.lengthSquared() > maxVelocitySquared)
+                p1.vel = p1.vel.normalize().scale(settings.maxVelocity);
+        }
+        if (!p2.locked) {
+            p2.vel = vcm.add(vt2.add(normal.scale(snf2))).scale(extraSpeedReduction);
+            if (p2.vel.lengthSquared() > maxVelocitySquared)
+                p2.vel = p2.vel.normalize().scale(settings.maxVelocity);
+        }
+    }
+
+    // Port of UpdatePiece (ComplementsPhysics.cpp:347-434)
+    _updatePiece(dt, p1) {
+        if (p1.locked) return;
+
+        // bottom wall (floor)
+        if (p1.pos.y + dt * p1.vel.y < -BOARD_HALF + p1.radius) {
+            this.collision = true;
+            ++p1.collisionCount;
+
+            const soundVol = Math.abs(p1.vel.y);
+            if (p1.lastCollisionAmount < soundVol) {
+                p1.lastCollisionAmount = soundVol;
+                if (soundVol > 0.5) p1.playBounceSound = true;
+            }
+            p1.vel = vec2(
+                p1.vel.x * settings.groundFriction,
+                p1.vel.y * -settings.groundElasticity
+            );
+        }
+        // left and right walls
+        if (Math.abs(p1.pos.x + dt * p1.vel.x) > BOARD_HALF - p1.radius) {
+            this.collision = true;
+            ++p1.collisionCount;
+
+            const soundVol = Math.abs(p1.vel.x);
+            if (p1.lastCollisionAmount < soundVol) {
+                p1.lastCollisionAmount = soundVol;
+                if (soundVol > 0.5) p1.playBounceSound = true;
+            }
+            p1.vel = vec2(
+                p1.vel.x * -settings.wallElasticity,
+                p1.vel.y
+            );
+        }
+
+        // test against all possible collision partners (broadphase list)
+        for (const p2 of p1.possibleCollisions) {
+            // AABB test (y-axis first for speed), then circle test
+            const dy = p1.pos.y - p2.pos.y;
+            const dyn = dy + dt * (p1.vel.y - p2.vel.y);
+            const distanceMin = p1.radius + p2.radius;
+
+            if (dyn < distanceMin && dyn > -distanceMin) {
+                const dx = p1.pos.x - p2.pos.x;
+                const dxn = dx + dt * (p1.vel.x - p2.vel.x);
+
+                if (dxn < distanceMin && dxn > -distanceMin) {
+                    // precise circle overlap test on next-frame positions
+                    if (dxn*dxn + dyn*dyn < distanceMin * distanceMin) {
+                        this.collision = true;
+                        this._resolveCollision(p1, p2, vec2(dx, dy));
+
+                        if (p1.locked) {
+                            p1.possibleCollisions = [];
+                            break;
+                        }
+                        if (p2.locked) {
+                            p2.possibleCollisions = [];
+                            // don't break — p1 is still processing
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    isBreakingAny() { return this.pieces.some(p => p.isBreaking()); }
+    removeBrokenPieces() {
+        let breakCount = 0;
+        for (let i=this.pieces.length-1; i>=0; --i) {
+            const p = this.pieces[i];
+            if (!p.breaking) continue;
+            ++breakCount;
+            board.breakHappened(p);
+            if (p.fakeBreak) { p.fakeBreak=false; p.breakTime=0; p.breaking=false; continue; }
+            p.removeConnections();
+            this.pieces.splice(i,1);
+        }
+        return breakCount;
+    }
+
+    // Port of Update (ComplementsPhysics.cpp:437-573)
+    update(dt) {
+        const maxVelocitySquared = settings.maxVelocity * settings.maxVelocity;
+
+        // clear possible-collision lists
+        for (const p of this.pieces) p.possibleCollisions = [];
+
+        // --- Spring pass: apply connection spring forces ---
+        for (const p1 of this.pieces) {
+            for (const p2 of p1.connections) {
+                // process each pair only once (port: if (&piece1 > &piece2) in C++,
+                // here we use handle comparison for a stable total order)
+                if (p1.handle <= p2.handle) continue;
+
+                const deltaPos = p1.pos.subtract(p2.pos);
+                const slackRange = 0.005;
+                const testDist = p1.radius + p2.radius + slackRange;
+                if (deltaPos.lengthSquared() > testDist * testDist) {
+                    // spring force: stretch beyond rest length
+                    const stretch = deltaPos.subtract(deltaPos.normalize().scale(p1.radius + p2.radius + slackRange));
+                    const force = stretch.scale(dt * settings.connectionSpringConstant);
+                    p1.vel = p1.vel.subtract(force.scale(1/p1.mass));
+                    p2.vel = p2.vel.add(force.scale(1/p2.mass));
+                }
+            }
+        }
+
+        // --- Forces + broadphase pass ---
+        for (const p1 of this.pieces) {
+            // apply drag
+            p1.vel = p1.vel.scale(settings.drag);
+
+            // apply gravity (lower pieces get slightly more gravity — C++ hack)
+            const grav = settings.gravity * (1 - 0.01 * p1.pos.y);
+            p1.vel = p1.vel.add(vec2(0, grav * dt));
+
+            // reset per-frame collision bookkeeping
+            p1.collisionCount = 0;
+            p1.wasOnTop = p1.isOnTop;
+            p1.isOnTop = true;
+            p1.locked = false;
+
+            // pre-clamp velocity before broadphase
+            if (p1.vel.lengthSquared() > maxVelocitySquared)
+                p1.vel = p1.vel.normalize().scale(settings.maxVelocity);
+
+            // broadphase: fill possibleCollisions for pairs ahead in the list
+            const idx = this.pieces.indexOf(p1);
+            for (let j = idx + 1; j < this.pieces.length; ++j) {
+                const p2 = this.pieces[j];
+                const deltaPos = p1.pos.subtract(p2.pos);
+                const distanceMin = p1.radius + p2.radius + dt * settings.maxVelocity + 0.01;
+
+                if (
+                    deltaPos.y < distanceMin && deltaPos.y > -distanceMin
+                    && deltaPos.x < distanceMin && deltaPos.x > -distanceMin
+                    && deltaPos.lengthSquared() < distanceMin * distanceMin
+                ) {
+                    p1.possibleCollisions.push(p2);
+                    p2.possibleCollisions.push(p1);
+                }
+            }
+        }
+
+        // --- Resolve loop: repeat until no new collisions this frame ---
+        this.collisionCount = 0;
+        do {
+            this.collision = false;
+            for (const p1 of this.pieces)
+                this._updatePiece(dt, p1);
+        } while (this.collision);
+
+        // --- Integrate + break update ---
+        for (const p of this.pieces) p.update(dt);
+        for (const p of this.pieces) p.updateBreaks(dt);
+    }
+}
+let physics = new Physics();
+
+///////////////////////////////////////////////////////////////////////////////
+// --- Menu builder ---
+function buildMenus() {
+    // Difficulty button labels — refreshed in onShow so best times update.
+    let diffMenu;
+
+    function diffLabel(d) {
+        const t = bestTimeFor(d);
+        const best = t ? ' — BEST ' + formatTime(t) : '';
+        return DIFF_NAMES[d] + ' (' + SEED_COUNT[d] + ')' + best;
+    }
+
+    // ----- title -----
+    createTitleMenu({
+        title: 'COMPLEMENTS',
+        titleFx: {fill: 'neon', motion: 'float'},
+        playLabel: 'PLAY',
+        playGlow: true,
+        revealOnClick: false,
+        onPlay: () => pushMenu('difficulty'),
+        canReveal: () => !isPlaying(),
+        items: [
+            {type: 'button', label: 'OPTIONS', onClick: () => pushMenu('options')},
+            {type: 'button', label: 'ABOUT',   onClick: () => pushMenu('about')},
+        ],
+    });
+
+    // ----- difficulty -----
+    diffMenu = createMenu({
+        id: 'difficulty',
+        title: 'DIFFICULTY',
+        onHide: popMenu,
+        onShow: () => {
+            for (let d = 0; d < 4; ++d) {
+                const item = diffMenu.getItem('diff' + d);
+                if (item) item.setLabel(diffLabel(d));
+            }
+        },
+        items: [
+            {type: 'button', id: 'diff0', label: diffLabel(0), onClick: () => startGame(0)},
+            {type: 'button', id: 'diff1', label: diffLabel(1), onClick: () => startGame(1)},
+            {type: 'button', id: 'diff2', label: diffLabel(2), onClick: () => startGame(2)},
+            {type: 'button', id: 'diff3', label: diffLabel(3), onClick: () => startGame(3)},
+        ],
+    });
+
+    // ----- options (shared between title and pause) -----
+    createMenu({
+        id: 'options',
+        title: 'OPTIONS',
+        onHide: popMenu,
+        items: [
+            {type: 'slider',   id: 'volume',     label: 'VOLUME',       value: 0.8,  min: 0, max: 1,
+                persist: 'volume',
+                onChange: v => setSoundVolume(v)},
+            {type: 'separator'},
+            {type: 'checkbox', id: 'shake',       label: 'SCREEN SHAKE', value: true,
+                persist: 'shake',
+                onChange: v => setScreenShakeEnabled(v)},
+            {type: 'checkbox', id: 'trajectory',  label: 'TRAJECTORY',   value: true,
+                persist: 'trajectory',
+                onChange: v => { showTrajectory = v; }},
+            {type: 'checkbox', id: 'aimMouse',    label: 'MOUSE AIM',    value: true,
+                persist: 'aimMouse',
+                onChange: v => { aimWithMouse = v; }},
+        ],
+    });
+
+    // ----- about -----
+    createMenu({
+        id: 'about',
+        title: 'ABOUT',
+        onHide: popMenu,
+        items: [
+            {type: 'text', text: 'Match gems with their color complements to clear them from the board.\n\nRed ↔ Green   Orange ↔ Blue   Yellow ↔ Purple\nBlack ↔ White\n\nClear (transparent) gems adopt any color they touch.\nShoot gems from the launcher at the top.\nHold to grow the gem before firing.'},
+            {type: 'separator'},
+            {type: 'button', label: 'BACK', onClick: () => hideMenu('about')},
+        ],
+    });
+
+    // ----- pause -----
+    createMenu({
+        id: 'pause',
+        title: 'PAUSED',
+        initialItemId: 'resume',
+        items: [
+            {type: 'button', id: 'resume',  label: 'RESUME',        onClick: () => hideMenu('pause')},
+            {type: 'button', id: 'options', label: 'OPTIONS',       onClick: () => pushMenu('options')},
+            {type: 'button', id: 'quit',    label: 'QUIT TO TITLE', onClick: () => {
+                showConfirmDialog({
+                    message: 'Quit to title?',
+                    onYes: () => quitToTitle(() => board.startNewGame(0)),
+                });
+            }},
+        ],
+    });
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function fitCamera() {
+    // fit the 2x2 board into the canvas with a small margin
+    const margin = 0.92;
+    cameraScale = min(mainCanvasSize.x, mainCanvasSize.y) / (2 * BOARD_HALF) * margin;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+async function gameInit()
+{
+    saveDataInit('Complements');
+    initDrawToTexture();
+    icons = initDefaultAtlas();
+    // bloomInit({threshold:0.3, intensity:1.5});  // disabled for now — post-process washed hues together
+    cameraPos = vec2(0, 0);
+    fitCamera();
+
+    // Tweakables panel — press \ to toggle.
+    tweakDivider('Complements');
+    tweak('settings.gravity',             {min: -5,   max: 0});
+    tweak('settings.launchSpeed',         {min:  0.5, max: 5});
+    tweak('settings.elasticity',          {min:  0,   max: 1});
+    tweak('settings.maxRadius',           {min:  0.06, max: 0.25});
+    tweak('settings.timeAttackRiseSpeed', {min:  0,   max: 0.02});
+    // bloomTweaks();  // disabled with bloom
+
+    setSoundVolume(.8);
+
+    // One callback drives `paused` for every menu, including dialogs.
+    setMenuVisibilityCallback(v => paused = v);
+
+    buildMenus();
+
+    // ----- toolbar -----
+    installDefaultToolbar();
+
+    // Seed the board for the title backdrop (frozen while paused by menu visibility).
+    board.startNewGame(0);
+
+    // Show title immediately — no click-to-reveal.
+    showMenu('title');
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function gameUpdate()
+{
+    if (isPlaying() && bindPauseKey({when: () => isPlaying() && !board.gameOver})) return;
+
+    if (!isPlaying()) return;
+    board.update(timeDelta);
+}
+
+function gameUpdatePost()
+{
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// --- Rendering helpers ---
+
+// Brighten a color toward white by a 0..1 amount (port of the collision-flash logic).
+function colorFlash(baseColor, amount) {
+    const t = clamp(amount, 0, 1);
+    return new Color(
+        baseColor.r + (1 - baseColor.r) * t,
+        baseColor.g + (1 - baseColor.g) * t,
+        baseColor.b + (1 - baseColor.b) * t,
+        baseColor.a
+    );
+}
+
+// Draw one gem + impact flash + breaking rings + active-clear spinner.
+// Port of ComplementsPiece::Render.
+function drawPiece(p) {
+    const pos  = p.pos;
+    const r    = p.radius;
+    const diam = vec2(2 * r);
+
+    // Determine base tint
+    let baseColor;
+    if (p.colorType === C_CLEAR) {
+        // Clear gem: tinted by its complement's effective color
+        baseColor = COLORS[complementOf(p.effectiveColorType)].copy();
+    } else {
+        baseColor = COLORS[p.colorType].copy();
+    }
+
+    // Impact flash: brighten toward white
+    const flashAmt = clamp(p.lastCollisionAmount / 1.5, 0, 1);
+    const gemColor = flashAmt > 0.01 ? colorFlash(baseColor, flashAmt) : baseColor;
+
+    if (p.colorType === C_CLEAR) {
+        // Clear gem: draw black outline circle
+        drawTile(pos, diam.scale(1.03), icons.ring, new Color(0, 0, 0, 1));
+
+        if (p.clearStartTime >= 0) {
+            // Active-clear spinner
+            const growPct = p.clearStartTime / 0.3;
+
+            // Calculate spinner angle from lifeTime
+            let theta = Math.PI * p.lifeTime;
+            if (p.breakTime > 0) {
+                // Speed up when breaking
+                const breakPct = p.breakTime / p.maxBreakTime;
+                theta += Math.PI * 2 * (1 - breakPct) * (1 - breakPct);
+            }
+
+            const spinSize = vec2(1.1 * r * growPct * 2);
+
+            // Two rotating stars (one bounceColor, one effectiveColorType)
+            drawTile(pos, spinSize, icons.star, gemColor, (theta + Math.PI / 3) / 2);
+            drawTile(pos, spinSize, icons.star, COLORS[p.effectiveColorType], -theta);
+
+            // Inner pulse
+            const pulseR = growPct * (r * 0.2 + r * 0.1 * Math.sin(p.lifeTime * Math.PI));
+            if (pulseR > 0) {
+                drawTile(pos, vec2(pulseR * 2), icons.glow, gemColor.scale(1, 0.7));
+            }
+        }
+    } else {
+        // Normal filled gem
+        drawTile(pos, diam.scale(1.03), icons.circle, gemColor);
+    }
+
+    // Breaking rings: two rings moving in opposite directions
+    if (p.breakTime > 0) {
+        const pct   = p.breakTime / p.maxBreakTime;
+        const rOuter = r * pct;
+        const rInner = r * (1 - pct);
+        const ringColor = (p.colorType === C_BLACK) ? COLORS[C_WHITE] : new Color(0, 0, 0, 1);
+
+        if (rOuter > 0) drawTile(pos, vec2(2 * rOuter), icons.ring, ringColor);
+        if (rInner > 0) drawTile(pos, vec2(2 * rInner), icons.ring, ringColor);
+    }
+}
+
+// Glow pass — drawn BEFORE the filled pass so glow sits behind gems.
+// Port of ComplementsPiece::RenderGlow.
+function drawPieceGlow(p) {
+    const pos     = p.pos;
+    const r       = p.radius;
+    const glowDiam = 1.6 * r * 2;  // diameter = 1.6 * radius * 2
+
+    if (p.colorType === C_CLEAR) {
+        if (p.clearStartTime >= 0) {
+            const pct = p.clearStartTime / 0.3;
+            // Pulsing glow for active clear gem
+            const pulse = 0.1 * r * Math.sin(p.lifeTime * Math.PI * 0.5 * 2);
+            const sz = vec2(glowDiam * pct + pulse * 2);
+            // Normal-alpha glow tinted by effective color — bloom amplifies it
+            drawTile(pos, sz, icons.glow, COLORS[p.effectiveColorType].scale(1, 0.6));
+        }
+        // inactive clear gems: no glow
+    } else if (p.colorType === C_WHITE) {
+        // White gems: bright white glow
+        drawTile(pos, vec2(glowDiam), icons.glow, new Color(1, 1, 1, 0.6));
+    } else {
+        // All other gems: dim white glow (from C++: ColorMultiply(glowColor, 0.1))
+        drawTile(pos, vec2(glowDiam), icons.glow, new Color(1, 1, 1, 0.1));
+    }
+}
+
+// Connection bonds between linked pieces.
+// Port of ComplementsPhysicsController::RenderPieces bond section (~lines 606-674).
+function drawBonds() {
+    for (const a of physics.pieces) {
+        for (const b of a.connections) {
+            // Draw each pair only once
+            if (a.handle >= b.handle) continue;
+
+            const deltaPos = a.pos.subtract(b.pos);
+            const dist     = deltaPos.length();
+            const minDist  = a.radius + b.radius;
+
+            // Bond length: stretch a bit beyond gem edges but not hugely
+            const length = (dist - minDist) + minDist * 0.7;
+            if (length <= 0) continue;
+
+            const center = a.pos.subtract(deltaPos.scale(0.5));
+
+            // Falloff: thicker when gems are close, thinner when stretched
+            const falloff0 = 0.05 / (0.1 + dist - minDist);
+            const falloff  = falloff0 * falloff0;
+            const thickness = 0.55 * dist * falloff;
+
+            // Bond angle: from a to b (atan2 of deltaPos gives correct angle)
+            const angle = Math.atan2(-deltaPos.y, deltaPos.x);
+
+            // Color: complement of the effective color, with special cases
+            let colorType = b.effectiveColorType;
+            if (colorType === C_BLACK || colorType === C_WHITE)
+                colorType = a.effectiveColorType;
+            if (b.colorType === C_CLEAR &&
+                a.effectiveColorType !== C_BLACK &&
+                a.effectiveColorType !== C_WHITE)
+                colorType = a.effectiveColorType;
+
+            const bondColor = COLORS[complementOf(colorType)];
+            drawTile(center, vec2(length, thickness), icons.circle, bondColor, angle);
+        }
+    }
+}
+
+// Trajectory prediction — dotted arc showing where the current piece will land.
+// Port of ComplementsBoard.cpp trajectory sim (~lines 856-937).
+function drawTrajectory() {
+    if (!showTrajectory || board.gameOver || !board.currentPiece) return;
+    const cp = board.currentPiece;
+
+    const dir = vec2(Math.sin(board.rotation), -Math.cos(board.rotation));
+    let vel = dir.scale(settings.launchSpeed * 1.05);
+    let pos = cp.pos.copy();
+
+    const predictDelta = 1 / 60;  // fixed engine timestep
+    let drawTimer = 0;
+    let loopsafe = 1000;
+
+    const dotSize = vec2(settings.minRadius);
+
+    // Trajectory dot color
+    let dotColor;
+    if (cp.colorType === C_CLEAR) {
+        dotColor = new Color(0, 0, 0, 0.8);
+    } else {
+        dotColor = COLORS[cp.colorType].copy();
+    }
+
+    const dotIcon = cp.colorType === C_CLEAR ? icons.ring : icons.circle;
+
+    while (--loopsafe > 0) {
+        // Step velocity: gravity + drag
+        vel = vel.add(vec2(0, settings.gravity * predictDelta));
+        vel = vel.scale(settings.drag);
+
+        pos = pos.add(vel.scale(predictDelta));
+
+        // Reflect off side walls
+        const minR = settings.minRadius;
+        if (pos.x + minR > BOARD_HALF) {
+            vel.x *= -settings.wallElasticity;
+            pos.x = BOARD_HALF - minR - 0.0001;
+        } else if (pos.x - minR < -BOARD_HALF) {
+            vel.x *= -settings.wallElasticity;
+            pos.x = -BOARD_HALF + minR + 0.0001;
+        }
+
+        // Stop at floor
+        if (pos.y < -BOARD_HALF) break;
+
+        drawTimer += predictDelta;
+        if (drawTimer > 0.06) {
+            drawTimer -= 0.06;
+            // alpha fades with height: 1 at top, 0 at bottom
+            const alpha = clamp((pos.y + BOARD_HALF) / (2 * BOARD_HALF), 0, 1);
+            const c = dotColor.copy();
+            c.a = alpha * 0.7;
+            drawTile(pos, dotSize, dotIcon, c);
+        }
+    }
+}
+
+// Death line bar + next-color arrow indicator.
+// Port of ComplementsBoard.cpp Render case 6 (death warning, ~lines 1098-1116).
+function drawDeathLine() {
+    const dl = board.deathLine;
+
+    // How far into the death countdown? 0=safe, 1=dead
+    const deathPct = clamp(board.deathTime / settings.maxDeathTime, 0, 1);
+
+    // Bar tints from dim gray toward bright red as deathTime rises
+    const barR = 0.3 + 0.7 * deathPct;
+    const barG = 0.3 * (1 - deathPct);
+    const barB = 0.3 * (1 - deathPct);
+    const barColor = new Color(barR, barG, barB, 0.7 + 0.3 * deathPct);
+
+    drawRect(vec2(0, dl), vec2(2 * BOARD_HALF, 0.025), barColor);
+
+    // Next-color indicator arrow above the death line at top-center (launcher position)
+    if (board.nextColor !== undefined) {
+        const arrowPos = vec2(0, dl + settings.maxRadius);
+        const arrowColor = COLORS[board.nextColor];
+        drawTile(arrowPos, vec2(2 * settings.maxRadius), icons.arrow, arrowColor, PI - board.rotation);
+    }
+}
+
+// Launcher arrow + current piece at the top.
+function drawLauncher() {
+    if (!board.currentPiece) return;
+    const cp = board.currentPiece;
+
+    // The current piece itself (glow pass disabled)
+    drawPiece(cp);
+
+    // Aim arrow on top of the piece. The arrow art points up (+Y) at angle 0;
+    // a tile at angle t points (sin t, cos t), but the launch dir is
+    // (sin r, -cos r), so the matching draw angle is PI - rotation.
+    const arrowColor = COLORS[cp.colorType === C_CLEAR ? complementOf(cp.effectiveColorType) : cp.colorType];
+    drawTile(cp.pos, vec2(2 * cp.radius), icons.arrow, arrowColor, PI - board.rotation);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function gameRender()
+{
+    fitCamera();
+
+    // Backdrop
+    drawRect(vec2(0, 0), vec2(2 * BOARD_HALF, 2 * BOARD_HALF), new Color(0.04, 0.04, 0.06));
+
+    // Floor + side walls
+    drawRect(vec2(0, -BOARD_HALF), vec2(2 * BOARD_HALF, 0.02),  new Color(0.4, 0.4, 0.5));
+    drawRect(vec2(-BOARD_HALF, 0), vec2(0.02, 2 * BOARD_HALF),  new Color(0.4, 0.4, 0.5));
+    drawRect(vec2( BOARD_HALF, 0), vec2(0.02, 2 * BOARD_HALF),  new Color(0.4, 0.4, 0.5));
+
+    // Trajectory (drawn behind everything)
+    drawTrajectory();
+
+    // Filled gem pass (glow pass disabled — the white halo washed hues together)
+    for (const p of physics.pieces) drawPiece(p);
+
+    // Bonds — drawn AFTER the gems so the connection lines sit on top and are visible
+    drawBonds();
+
+    // Current piece (launcher) + aim arrow
+    drawLauncher();
+
+    // Death line overlay
+    drawDeathLine();
+}
+
+function gameRenderPost()
+{
+}
+
+///////////////////////////////////////////////////////////////////////////////
+engineInit(gameInit, gameUpdate, gameUpdatePost, gameRender, gameRenderPost);
+</script></body></html>

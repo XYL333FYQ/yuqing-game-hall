@@ -1,0 +1,1091 @@
+<!DOCTYPE html><head>
+<title>Go</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<script src="../templates/engineLoader.js?1780767748506"></script>
+<script src="../templates/menus.js?1780767748506"></script>
+<script src="../templates/gameAI.js?1780767748506"></script>
+<script src="../templates/gameFx.js?1780767748506"></script>
+<script src="../templates/textureGenerator.js?1780767748506"></script>
+<script>
+'use strict';
+
+// engine settings
+canvasMaxSize = vec2(2048, 2048);
+
+///////////////////////////////////////////////////////////////////////////////
+// CAPTURE GO (ATARI GO) — 9×9
+
+const BOARD_SIZE = 9;
+const CELL_SIZE  = 1.0;   // world units between intersections
+const STONE_RADIUS = 0.8; // world units
+
+// Camera framing — matches the other board games (reversi/checkers): cameraFit
+// the board to the screen, tight at the title and a bigger margin during play.
+const BOARD_FIT_SPAN = (BOARD_SIZE - 1) * CELL_SIZE + CELL_SIZE * 1.4; // wooden board span (matches drawBoard)
+
+const STONE_EMPTY = 0;
+const STONE_BLACK = 1;
+const STONE_WHITE = 2;
+
+const PLAYER_HUMAN = STONE_BLACK;
+const PLAYER_AI    = STONE_WHITE;
+
+// Hoshi (star-point) intersections
+const HOSHI = [[2,2],[2,6],[4,4],[6,2],[6,6]];
+
+// Orthogonal directions
+const DIRS = [[-1,0],[1,0],[0,-1],[0,1]];
+
+///////////////////////////////////////////////////////////////////////////////
+// GAME STATE
+
+let board = [];
+let currentPlayer = STONE_BLACK;
+let gameOver  = false;
+let winner    = null;
+let lastMove  = null;   // {row, col}
+let blackCaptures = 0;  // stones black has captured (white stones removed)
+let whiteCaptures = 0;  // stones white has captured (black stones removed)
+let consecutivePasses = 0; // two in a row ends the game
+let deadStones = [];       // [idx...] removed at scoring (for render fade)
+let ownerMap = null;       // Int8Array(81) territory owner at game end (for shading)
+let finalScore = null;     // { black, white, margin } once scored
+
+// Ko: store the board hash (JSON string) BEFORE the previous player's last
+// move so we can reject moves that recreate it.
+let previousBoardHash = null; // board state before the opponent's last move
+
+let gameMode  = 'pvp'; // 'pvp' | 'ai' | 'aivai'
+let difficulty = 'medium'; // 'easy' | 'medium' | 'hard' — loaded in gameInit
+
+// AI timing
+let aiThinkTimer = 0;
+let aiSearching = false;
+let aiProgress = '';
+let aiGeneration = 0;
+const AI_THINK_DELAY = 0.6;
+const AI_VS_AI_DELAY = 0.6;
+
+// Animation
+let hoverIntersection = null; // {row, col} under cursor
+let placingStone = null;      // {row, col, progress} for spawn pop animation
+const PLACE_DURATION = 0.18;
+
+// Sounds
+let sfxPlace, sfxWin, sfxLose, sfxSelect;
+let icons; // default-atlas icon map (initDefaultAtlas)
+
+///////////////////////////////////////////////////////////////////////////////
+// BOARD LOGIC HELPERS
+
+function initBoard()
+{
+    board = [];
+    for (let r = 0; r < BOARD_SIZE; r++)
+    {
+        board[r] = [];
+        for (let c = 0; c < BOARD_SIZE; c++)
+            board[r][c] = STONE_EMPTY;
+    }
+    currentPlayer = STONE_BLACK;
+    gameOver      = false;
+    winner        = null;
+    lastMove      = null;
+    blackCaptures = 0;
+    whiteCaptures = 0;
+    previousBoardHash = null;
+    placingStone  = null;
+    hoverIntersection = null;
+    aiGeneration++;
+    aiSearching = false;
+    aiProgress = '';
+    consecutivePasses = 0;
+    deadStones = [];
+    ownerMap = null;
+    finalScore = null;
+}
+
+function getOpponent(player)
+{
+    return player === STONE_BLACK ? STONE_WHITE : STONE_BLACK;
+}
+
+// True when the local human controls the side to move: PvP (either side), or the
+// human's side in PvAI. Always false in AI-vs-AI. Gates input, the PASS button,
+// and the hover-ghost preview so none of them appear during an AI turn.
+function isHumanTurn()
+{
+    return gameMode === 'pvp' || (gameMode === 'ai' && currentPlayer === PLAYER_HUMAN);
+}
+
+function isInBounds(row, col)
+{
+    return row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE;
+}
+
+// BFS: find the group containing (row, col) and count its liberties.
+// Returns { stones: [{row,col},...], liberties: number }.
+function getGroupAndLiberties(b, row, col)
+{
+    const color = b[row][col];
+    if (color === STONE_EMPTY) return { stones: [], liberties: 0 };
+
+    const visited   = new Set();
+    const libertySet = new Set();
+    const stones    = [];
+    const queue     = [{row, col}];
+    visited.add(`${row},${col}`);
+
+    while (queue.length > 0)
+    {
+        const {row: r, col: c} = queue.shift();
+        stones.push({row: r, col: c});
+
+        for (const [dr, dc] of DIRS)
+        {
+            const nr = r + dr, nc = c + dc;
+            if (!isInBounds(nr, nc)) continue;
+            const key = `${nr},${nc}`;
+            if (b[nr][nc] === STONE_EMPTY)
+            {
+                libertySet.add(key);
+            }
+            else if (b[nr][nc] === color && !visited.has(key))
+            {
+                visited.add(key);
+                queue.push({row: nr, col: nc});
+            }
+        }
+    }
+    return { stones, liberties: libertySet.size };
+}
+
+// Deep-copy a board array.
+function cloneBoard(b)
+{
+    return b.map(row => [...row]);
+}
+
+function boardHash(b)
+{
+    return JSON.stringify(b);
+}
+
+// Place a stone on board b at (row, col) for player, apply captures.
+// Returns { newBoard, captured } or { newBoard: null } if illegal (occupied /
+// suicide / ko). koHash is the board hash to reject (optional).
+// State-parameterized version — operates on any board, used by both live game and AI search.
+function applyMoveAndCapturesForState(b, row, col, player, koHash)
+{
+    if (b[row][col] !== STONE_EMPTY)
+        return { newBoard: null, captured: 0 };
+
+    const nb = cloneBoard(b);
+    nb[row][col] = player;
+
+    const opponent = getOpponent(player);
+    let captured = 0;
+
+    // Check all orthogonal neighbors for opponent groups with 0 liberties.
+    const checkedGroups = new Set();
+    for (const [dr, dc] of DIRS)
+    {
+        const nr = row + dr, nc = col + dc;
+        if (!isInBounds(nr, nc)) continue;
+        if (nb[nr][nc] !== opponent) continue;
+        const key = `${nr},${nc}`;
+        if (checkedGroups.has(key)) continue;
+
+        const { stones, liberties } = getGroupAndLiberties(nb, nr, nc);
+        // Mark all stones of this group as checked.
+        for (const s of stones)
+            checkedGroups.add(`${s.row},${s.col}`);
+
+        if (liberties === 0)
+        {
+            // Capture the whole group.
+            for (const s of stones)
+                nb[s.row][s.col] = STONE_EMPTY;
+            captured += stones.length;
+        }
+    }
+
+    // Suicide check: player's new group must have at least 1 liberty.
+    const { liberties: ownLiberties } = getGroupAndLiberties(nb, row, col);
+    if (ownLiberties === 0)
+        return { newBoard: null, captured: 0 }; // suicide — illegal
+
+    // Ko check: resulting board must not match the provided hash.
+    if (koHash !== null && koHash !== undefined && boardHash(nb) === koHash)
+        return { newBoard: null, captured: 0 }; // ko — illegal
+
+    return { newBoard: nb, captured };
+}
+
+// Thin wrapper — delegates to state version using the live board and ko hash.
+function applyMoveAndCaptures(b, row, col, player, koHash)
+{
+    return applyMoveAndCapturesForState(b, row, col, player, koHash);
+}
+
+// State-parameterized legality check — used by both live game and AI search.
+function isLegalMoveForState(b, row, col, player, koHash)
+{
+    const { newBoard } = applyMoveAndCapturesForState(b, row, col, player, koHash);
+    return newBoard !== null;
+}
+
+// Thin wrapper — delegates to state version using the live board and ko hash.
+function isLegalMove(b, row, col, player, koHash)
+{
+    return isLegalMoveForState(b, row, col, player, koHash);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// ===== FAST GO ENGINE (flat Int8Array) — used by MCTS + scoring =====
+// Stone values reuse STONE_EMPTY/BLACK/WHITE (0/1/2). State shape:
+//   { s: Int8Array(81), toMove, ko (point index or -1), passes }
+
+const N  = BOARD_SIZE;       // 9
+const NN = N * N;            // 81
+const GO_KOMI = 7;           // komi for White (area scoring)
+const PASS = -1;             // move value meaning "pass"
+
+// Precomputed orthogonal + diagonal neighbor index lists per point.
+const NEIGHBORS = [];
+const DIAGONALS = [];
+for (let i = 0; i < NN; i++) {
+    const r = (i / N) | 0, c = i % N;
+    const orth = [], diag = [];
+    if (r > 0)     orth.push(i - N);
+    if (r < N - 1) orth.push(i + N);
+    if (c > 0)     orth.push(i - 1);
+    if (c < N - 1) orth.push(i + 1);
+    if (r > 0 && c > 0)         diag.push(i - N - 1);
+    if (r > 0 && c < N - 1)     diag.push(i - N + 1);
+    if (r < N - 1 && c > 0)     diag.push(i + N - 1);
+    if (r < N - 1 && c < N - 1) diag.push(i + N + 1);
+    NEIGHBORS.push(orth);
+    DIAGONALS.push(diag);
+}
+
+function otherColor(color) { return color === STONE_BLACK ? STONE_WHITE : STONE_BLACK; }
+
+// Flood-fill the group at point i; return {stones:[idx...], libs:int}.
+function groupInfo(s, i) {
+    const color = s[i];
+    const stones = [i];
+    const seen = new Uint8Array(NN); seen[i] = 1;
+    const libSeen = new Uint8Array(NN);
+    let libs = 0;
+    const stack = [i];
+    while (stack.length) {
+        const p = stack.pop();
+        for (const nb of NEIGHBORS[p]) {
+            const v = s[nb];
+            if (v === STONE_EMPTY) { if (!libSeen[nb]) { libSeen[nb] = 1; libs++; } }
+            else if (v === color && !seen[nb]) { seen[nb] = 1; stones.push(nb); stack.push(nb); }
+        }
+    }
+    return { stones, libs };
+}
+
+// Is placing `color` at empty point i legal (ignoring eye policy)? ko = forbidden point.
+function isLegal(s, i, color, ko) {
+    if (s[i] !== STONE_EMPTY || i === ko) return false;
+    const opp = otherColor(color);
+    for (const nb of NEIGHBORS[i]) if (s[nb] === STONE_EMPTY) return true;       // has a liberty
+    for (const nb of NEIGHBORS[i]) if (s[nb] === color && groupInfo(s, nb).libs > 1) return true; // connects, keeps a liberty
+    for (const nb of NEIGHBORS[i]) if (s[nb] === opp && groupInfo(s, nb).libs === 1) return true; // captures
+    return false; // suicide
+}
+
+// Place `color` at i on board s IN PLACE, resolving captures. Returns the ko
+// point (index) if exactly one stone was captured into a single-stone atari, else -1.
+function applyInPlace(s, i, color) {
+    s[i] = color;
+    const opp = otherColor(color);
+    let captured = 0, lastCap = -1;
+    for (const nb of NEIGHBORS[i]) {
+        if (s[nb] !== opp) continue;
+        const g = groupInfo(s, nb);
+        if (g.libs === 0) for (const st of g.stones) { s[st] = STONE_EMPTY; captured++; lastCap = st; }
+    }
+    if (captured === 1) {
+        const g = groupInfo(s, i);
+        if (g.stones.length === 1 && g.libs === 1) return lastCap;
+    }
+    return -1;
+}
+
+// All legal stone moves for the side to move (no pass, no eye policy).
+function flatLegalMoves(state) {
+    const out = [];
+    for (let i = 0; i < NN; i++) if (isLegal(state.s, i, state.toMove, state.ko)) out.push(i);
+    return out;
+}
+
+// True-eye heuristic: i empty, all orthogonals are `color`, and diagonals are
+// controlled (corner/edge: no opponent diagonal; center: at most one).
+function isEye(s, i, color) {
+    if (s[i] !== STONE_EMPTY) return false;
+    for (const nb of NEIGHBORS[i]) if (s[nb] !== color) return false;
+    const opp = otherColor(color);
+    const diags = DIAGONALS[i];
+    let oppDiag = 0;
+    for (const d of diags) if (s[d] === opp) oppDiag++;
+    const onEdge = diags.length < 4;
+    return onEdge ? oppDiag === 0 : oppDiag <= 1;
+}
+
+// Flood-fill the contiguous empty region containing seed point `i`. Marks visited
+// cells in `seen` (a Uint8Array(NN) the caller owns). Returns {region, touchB, touchW}
+// where touchB/touchW say whether the region borders that color. Shared by area
+// scoring and Monte-Carlo ownership so the fill logic lives in exactly one place.
+function emptyRegion(s, i, seen) {
+    const region = [i]; seen[i] = 1; const stack = [i];
+    let touchB = false, touchW = false;
+    while (stack.length) {
+        const p = stack.pop();
+        for (const nb of NEIGHBORS[p]) {
+            const v = s[nb];
+            if (v === STONE_EMPTY) { if (!seen[nb]) { seen[nb] = 1; region.push(nb); stack.push(nb); } }
+            else if (v === STONE_BLACK) touchB = true;
+            else if (v === STONE_WHITE) touchW = true;
+        }
+    }
+    return { region, touchB, touchW };
+}
+
+// Chinese area score of a finished board. Returns {black, white, margin}
+// where margin = black - white (white includes komi).
+function scoreArea(s, komi) {
+    let black = 0, white = 0;
+    for (let i = 0; i < NN; i++) { if (s[i] === STONE_BLACK) black++; else if (s[i] === STONE_WHITE) white++; }
+    const seen = new Uint8Array(NN);
+    for (let i = 0; i < NN; i++) {
+        if (s[i] !== STONE_EMPTY || seen[i]) continue;
+        const { region, touchB, touchW } = emptyRegion(s, i, seen);
+        if (touchB && !touchW) black += region.length;
+        else if (touchW && !touchB) white += region.length;
+    }
+    white += komi;
+    return { black, white, margin: black - white };
+}
+
+// Random playout to game end on board state (mutated in place). Picks uniformly
+// random legal moves that are not own-eye-fills; passes when none remain; ends on
+// two consecutive passes (or a generous move cap as a safety net). Returns the
+// area-score margin (black - (white + komi)).
+function randomPlayoutFrom(state) {
+    const s = state.s; // caller owns this Int8Array
+    let toMove = state.toMove, ko = state.ko ?? -1, passes = state.passes | 0;
+    const cap = NN * 3; // safety net: far more plies than any real 9x9 game
+    for (let m = 0; m < cap && passes < 2; m++) {
+        const moves = [];
+        for (let i = 0; i < NN; i++)
+            if (isLegal(s, i, toMove, ko) && !isEye(s, i, toMove)) moves.push(i);
+        if (moves.length === 0) { passes++; ko = -1; toMove = otherColor(toMove); continue; }
+        const mv = moves[(rand() * moves.length) | 0];
+        ko = applyInPlace(s, mv, toMove);
+        passes = 0;
+        toMove = otherColor(toMove);
+    }
+    return scoreArea(s, GO_KOMI).margin;
+}
+
+// MCTS node. `toMove` is the side to move AT this node. `blackWins` accumulates
+// the playout result from BLACK's perspective (1 win, 0.5 tie) so a node's value
+// for whoever is choosing is derived by flipping when the chooser is white.
+function mctsNode(move, parent, state) {
+    return {
+        move, parent,
+        children: [],
+        untried: shuffleInt(flatLegalMovesWithPass(state)),
+        visits: 0, blackWins: 0,
+        toMove: state.toMove,
+    };
+}
+
+// Legal moves plus PASS (so the tree can choose to end the game).
+function flatLegalMovesWithPass(state) {
+    const m = flatLegalMoves(state);
+    m.push(PASS);
+    return m;
+}
+
+// Fisher-Yates on a plain array of ints (gives move-order variety).
+function shuffleInt(a) {
+    for (let i = a.length - 1; i > 0; i--) { const j = (rand()*(i+1))|0; const t=a[i]; a[i]=a[j]; a[j]=t; }
+    return a;
+}
+
+// Apply a move (point index or PASS) to a flat state IN PLACE.
+function applyMoveInPlace(state, move) {
+    if (move === PASS) { state.passes = (state.passes|0) + 1; state.ko = -1; }
+    else { state.ko = applyInPlace(state.s, move, state.toMove); state.passes = 0; }
+    state.toMove = otherColor(state.toMove);
+}
+
+function flatClone(state) {
+    return { s: Int8Array.from(state.s), toMove: state.toMove, ko: state.ko, passes: state.passes|0 };
+}
+
+const UCT_C = 1.4;
+function uctSelectChild(node) {
+    const logN = Math.log(node.visits);
+    const blackChooses = node.toMove === STONE_BLACK;
+    let best = null, bestVal = -Infinity;
+    for (const ch of node.children) {
+        const winRate = ch.blackWins / ch.visits;            // from black's view
+        const exploit = blackChooses ? winRate : 1 - winRate; // value to the chooser
+        const val = exploit + UCT_C * Math.sqrt(logN / ch.visits);
+        if (val > bestVal) { bestVal = val; best = ch; }
+    }
+    return best;
+}
+
+// Run MCTS from rootState. options: { maxTimeMs, maxPlayouts?, onProgress? }.
+// Returns the most-visited root child's move (point index or PASS).
+async function mctsSearch(rootState, options = {}) {
+    const maxTimeMs = options.maxTimeMs || 1000;
+    const maxPlayouts = options.maxPlayouts != null ? options.maxPlayouts : Infinity;
+    const onProgress = options.onProgress || null;
+    const root = mctsNode(null, null, rootState);
+    if (root.untried.length === 1) return root.untried[0]; // only PASS available
+    const start = performance.now();
+    let lastYield = start, count = 0;
+
+    while (true) {
+        const now = performance.now();
+        if (now - start >= maxTimeMs || count >= maxPlayouts) break;
+
+        let node = root;
+        const state = flatClone(rootState);
+        // Select
+        while (node.untried.length === 0 && node.children.length > 0) {
+            node = uctSelectChild(node);
+            applyMoveInPlace(state, node.move);
+        }
+        // Expand
+        if (node.untried.length > 0) {
+            const move = node.untried.pop();
+            applyMoveInPlace(state, move);
+            const child = mctsNode(move, node, state);
+            node.children.push(child);
+            node = child;
+        }
+        // Simulate (state is owned; randomPlayoutFrom mutates it)
+        const margin = randomPlayoutFrom(state);
+        const blackResult = margin > 0 ? 1 : margin < 0 ? 0 : 0.5;
+        // Backpropagate
+        for (let n = node; n; n = n.parent) { n.visits++; n.blackWins += blackResult; }
+        count++;
+
+        if (now - lastYield >= 16) {
+            await new Promise(r => setTimeout(r, 0));
+            lastYield = performance.now();
+            if (onProgress) onProgress(lastYield - start, maxTimeMs);
+        }
+    }
+
+    // Choose the most-visited child (robust); break ties by first encountered.
+    let best = null, bestVisits = -1;
+    for (const ch of root.children) {
+        if (ch.visits > bestVisits) { bestVisits = ch.visits; best = ch; }
+    }
+    return best ? best.move : PASS;
+}
+
+// Determine dead stones via Monte Carlo ownership, then area-score the cleaned
+// board. `s0` = final Int8Array, `toMove` = side to move at game end.
+// Returns { score:{black,white,margin}, dead:[idx...], owner:Int8Array(81) }
+// where owner[i] is STONE_BLACK / STONE_WHITE / STONE_EMPTY (neutral).
+function scoreWithDeadStones(s0, toMove, options = {}) {
+    const playouts = options.playouts || 200;
+    const ownB = new Int32Array(NN), ownW = new Int32Array(NN);
+    for (let p = 0; p < playouts; p++) {
+        const s = Int8Array.from(s0);
+        randomPlayoutFrom({ s, toMove, ko: -1, passes: 0 });
+        // Count area ownership per cell (stones + territory) using flood-fill.
+        const seen = new Uint8Array(NN);
+        for (let i = 0; i < NN; i++) {
+            if (s[i] === STONE_BLACK) { ownB[i]++; continue; }
+            if (s[i] === STONE_WHITE) { ownW[i]++; continue; }
+            if (seen[i]) continue;
+            // Empty territory: attribute the whole region to its sole bordering color.
+            const { region, touchB, touchW } = emptyRegion(s, i, seen);
+            if (touchB && !touchW) for (const r of region) ownB[r]++;
+            else if (touchW && !touchB) for (const r of region) ownW[r]++;
+        }
+    }
+    const owner = new Int8Array(NN);
+    for (let i = 0; i < NN; i++)
+        owner[i] = ownB[i] > ownW[i] ? STONE_BLACK : ownW[i] > ownB[i] ? STONE_WHITE : STONE_EMPTY;
+
+    // A stone whose point is owned by the opponent is dead → remove it.
+    const cleaned = Int8Array.from(s0);
+    const dead = [];
+    for (let i = 0; i < NN; i++) {
+        if (s0[i] !== STONE_EMPTY && owner[i] !== STONE_EMPTY && owner[i] !== s0[i]) {
+            cleaned[i] = STONE_EMPTY;
+            dead.push(i);
+        }
+    }
+    return { score: scoreArea(cleaned, GO_KOMI), dead, owner };
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// AI ADAPTER — MCTS over the flat engine
+
+// Time/playout budgets per difficulty.
+const GO_EASY_PLAYOUTS = 300;
+const GO_MEDIUM_MS = 1000;
+const GO_HARD_MS   = 3500;
+
+// Convert the live row/col board to a flat search state for `toMove`.
+function liveToFlatState(toMove) {
+    const s = new Int8Array(NN);
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) s[r*N + c] = board[r][c];
+    return { s, toMove, ko: liveKoPoint(s), passes: 0 };
+}
+
+// Derive the ko point from the live board + lastMove: if the last move left a
+// lone stone in atari (single liberty), that liberty is the forbidden ko point.
+function liveKoPoint(s) {
+    if (!lastMove) return -1;
+    const i = lastMove.row * N + lastMove.col;
+    if (s[i] === STONE_EMPTY) return -1;
+    const g = groupInfo(s, i);
+    if (g.stones.length === 1 && g.libs === 1)
+        for (const nb of NEIGHBORS[i]) if (s[nb] === STONE_EMPTY) return nb;
+    return -1;
+}
+
+// Run the AI for difficulty `d`. Returns a flat move (point index or PASS).
+async function goAIMove(flatState, d, opts = {}) {
+    // easy is capped by playouts (fast + weak); maxTimeMs here is only a hang-safety ceiling, never the real limit.
+    if (d === 'easy')   return mctsSearch(flatState, { maxPlayouts: GO_EASY_PLAYOUTS, maxTimeMs: 5000, ...opts });
+    if (d === 'medium') return mctsSearch(flatState, { maxTimeMs: GO_MEDIUM_MS, ...opts });
+    return mctsSearch(flatState, { maxTimeMs: GO_HARD_MS, ...opts });
+}
+
+// Find the AI's move for the current live position. Returns {row,col} or {pass:true}.
+function findBestAIMove(opts = {}) {
+    const flat = liveToFlatState(currentPlayer);
+    return goAIMove(flat, difficulty, opts).then(move => {
+        if (move === PASS) return { pass: true };
+        return { row: (move / N) | 0, col: move % N };
+    });
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// LIVE GAME MOVE
+
+function makeMove(row, col)
+{
+    if (gameOver || !isPlaying()) return false;
+    if (!isInBounds(row, col)) return false;
+
+    const { newBoard, captured } = applyMoveAndCaptures(board, row, col, currentPlayer, previousBoardHash);
+    if (newBoard === null) return false; // illegal
+
+    const newKoHash = boardHash(board);
+    board = newBoard;
+    previousBoardHash = newKoHash;
+    lastMove = { row, col };
+
+    if (currentPlayer === STONE_BLACK) blackCaptures += captured;
+    else                               whiteCaptures += captured;
+
+    placingStone = { row, col, progress: 0 };
+    sfxPlace && sfxPlace.play();
+
+    consecutivePasses = 0;
+    currentPlayer = getOpponent(currentPlayer);
+    return true;
+}
+
+function passMove()
+{
+    if (gameOver || !isPlaying()) return;
+    lastMove = null;            // a pass has no board marker
+    consecutivePasses++;
+    sfxPlace && sfxPlace.play();
+    if (consecutivePasses >= 2) { endGameAndScore(); return; }
+    currentPlayer = getOpponent(currentPlayer);
+}
+
+function humanPass()
+{
+    if (gameOver || !isPlaying()) return;
+    if (!isHumanTurn()) return;
+    passMove();
+    aiThinkTimer = 0;
+}
+
+function endGameAndScore()
+{
+    const s = new Int8Array(NN);
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) s[r*N + c] = board[r][c];
+    // currentPlayer here is the player who just passed (passMove doesn't switch on
+    // the second pass) — the correct side to move first in the scoring playouts.
+    // This runs synchronously once at game end; 100 playouts keeps the freeze short
+    // while still giving decisive ownership for clearly dead/alive stones.
+    const result = scoreWithDeadStones(s, currentPlayer, { playouts: 100 });
+    finalScore = result.score;
+    ownerMap = result.owner;
+    deadStones = result.dead;
+    gameOver = true;
+    winner = result.score.margin > 0 ? STONE_BLACK
+           : result.score.margin < 0 ? STONE_WHITE : null;
+
+    // Sounds mirror captureGo's game-over handling. Draw (winner === null) plays neither.
+    if (gameMode === 'ai') {
+        if (winner === PLAYER_HUMAN) sfxWin && sfxWin.play();
+        else if (winner === PLAYER_AI) sfxLose && sfxLose.play();
+    } else {
+        sfxSelect && sfxSelect.play();
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// RENDERING HELPERS
+
+// Convert grid intersection (row, col) to world position.
+// Row 0 = top, row 8 = bottom. Y-up world space, so row 0 → highest Y.
+function getIntersectionWorldPos(row, col)
+{
+    const halfSpan = (BOARD_SIZE - 1) * CELL_SIZE / 2;
+    return vec2(
+        -halfSpan + col * CELL_SIZE,
+         halfSpan - row * CELL_SIZE
+    );
+}
+
+// Snap mouse world position to nearest intersection within half a cell.
+function worldPosToIntersection(worldPos)
+{
+    const halfSpan = (BOARD_SIZE - 1) * CELL_SIZE / 2;
+    const col = round((worldPos.x + halfSpan) / CELL_SIZE);
+    const row = round((-worldPos.y + halfSpan) / CELL_SIZE);
+    if (!isInBounds(row, col)) return null;
+    // Reject if the mouse is more than half a cell away from the intersection.
+    const iPos = getIntersectionWorldPos(row, col);
+    if (abs(worldPos.x - iPos.x) > CELL_SIZE * 0.5) return null;
+    if (abs(worldPos.y - iPos.y) > CELL_SIZE * 0.5) return null;
+    return { row, col };
+}
+
+// Draw a single stone (circle + specular highlight).
+function drawStone(pos, stoneColor, scale)
+{
+    scale = scale === undefined ? 1 : scale;
+    const r = STONE_RADIUS * scale;
+    const diam = r * 2;
+
+    // Shadow
+    drawTile(pos.add(vec2(0.05, -0.05)), vec2(r * 0.96), icons.circle, rgb(0, 0, 0, 0.28));
+
+    const baseColor  = stoneColor === STONE_BLACK ? hsl(0, 0, 0.1)  : hsl(0, 0, 0.95);
+    drawTile(pos, vec2(r), icons.circle, baseColor);
+
+    // Specular highlight — upper-left, ~30% of diameter, 45% opacity
+    const off = r * 0.2;
+    const specR = r * 0.3;
+    const specColor = stoneColor === STONE_BLACK
+        ? rgb(1, 1, 1, 0.45)
+        : rgb(1, 1, 1, 0.55);
+    drawTile(pos.add(vec2(-off, off)), vec2(specR), icons.circle, specColor);
+}
+
+// Draw the board: background, grid lines, hoshi, stones, last-move marker,
+// hover ghost.
+function drawBoard()
+{
+    const halfSpan  = (BOARD_SIZE - 1) * CELL_SIZE / 2;
+    const boardHalf = halfSpan + CELL_SIZE * 0.7; // extra margin around edges
+
+    // Wooden board background.
+    drawRect(vec2(0, 0), vec2(boardHalf * 2 + 0.1), rgb(0.08, 0.06, 0.04));
+    drawRect(vec2(0, 0), vec2(boardHalf * 2),        hsl(0.1, 0.4, 0.65));
+
+    // Grid lines (9 horizontal + 9 vertical).
+    const lineColor = rgb(0.18, 0.12, 0.06);
+    for (let i = 0; i < BOARD_SIZE; i++)
+    {
+        const x = -halfSpan + i * CELL_SIZE;
+        const y = -halfSpan + i * CELL_SIZE;
+        // Vertical
+        drawLine(vec2(x, -halfSpan), vec2(x, halfSpan), 0.04, lineColor);
+        // Horizontal
+        drawLine(vec2(-halfSpan, y), vec2(halfSpan, y), 0.04, lineColor);
+    }
+
+    // Star points (hoshi).
+    for (const [r, c] of HOSHI)
+    {
+        const pos = getIntersectionWorldPos(r, c);
+        drawTile(pos, vec2(0.25), icons.circle, lineColor);
+    }
+
+    // Last-move pulsing ring.
+    if (lastMove && !gameOver)
+    {
+        const pos    = getIntersectionWorldPos(lastMove.row, lastMove.col);
+        const pulse  = 1 + sin(time * 6) * 0.1;
+        const ringR  = STONE_RADIUS * 1.3 * pulse;
+        drawTile(pos, vec2(ringR), icons.circle, hsl(0.12, 0.9, 0.55, 0.55));
+    }
+
+    // Hover ghost stone (semi-transparent, only when legal AND it's the human's
+    // turn — no placement preview during an AI turn or in AI-vs-AI).
+    if (isPlaying() && !gameOver && hoverIntersection && isHumanTurn())
+    {
+        const { row, col } = hoverIntersection;
+        if (board[row][col] === STONE_EMPTY
+            && isLegalMove(board, row, col, currentPlayer, previousBoardHash))
+        {
+            const pos  = getIntersectionWorldPos(row, col);
+            const alpha = 0.38;
+            const ghostColor = currentPlayer === STONE_BLACK
+                ? rgb(0.1, 0.1, 0.1, alpha)
+                : rgb(0.95, 0.95, 0.95, alpha);
+            drawTile(pos, vec2(STONE_RADIUS), icons.circle, ghostColor);
+        }
+    }
+
+    // Stones.
+    for (let row = 0; row < BOARD_SIZE; row++)
+    {
+        for (let col = 0; col < BOARD_SIZE; col++)
+        {
+            const cell = board[row][col];
+            if (cell === STONE_EMPTY) continue;
+            const pos = getIntersectionWorldPos(row, col);
+
+            // Placement pop animation for the most-recently-placed stone.
+            if (placingStone && placingStone.row === row && placingStone.col === col)
+            {
+                const scale = min(placingStone.progress * 1.3, 1);
+                drawStone(pos, cell, scale);
+            }
+            else
+            {
+                drawStone(pos, cell);
+            }
+        }
+    }
+
+    // Territory shading + dead-stone markers at game end.
+    if (gameOver && ownerMap)
+    {
+        for (let i = 0; i < NN; i++)
+        {
+            const r = (i / N) | 0, c = i % N;
+            const pos = getIntersectionWorldPos(r, c);
+            if (board[r][c] === STONE_EMPTY)
+            {
+                // Shade owned empty points (territory).
+                if (ownerMap[i] === STONE_BLACK)
+                    drawTile(pos, vec2(0.34), icons.circle, rgb(0, 0, 0, 0.55));
+                else if (ownerMap[i] === STONE_WHITE)
+                    drawTile(pos, vec2(0.34), icons.circle, rgb(1, 1, 1, 0.7));
+            }
+        }
+        // Dead stones: a faint red ring over removed stones (still drawn on board).
+        for (const i of deadStones)
+        {
+            const pos = getIntersectionWorldPos((i / N) | 0, i % N);
+            drawTile(pos, vec2(STONE_RADIUS * 1.1), icons.circle, rgb(1, 0.2, 0.2, 0.4));
+        }
+    }
+}
+
+function drawUI()
+{
+    const sw = mainCanvasSize.x;
+    const sh = mainCanvasSize.y;
+
+    // Stones captured so far (informational).
+    drawTextScreen(`Captures  B ${blackCaptures} · W ${whiteCaptures}`, vec2(20, 30), 24, WHITE, 4, BLACK, 'left');
+    if (consecutivePasses > 0 && !gameOver)
+        drawTextScreen(`Pass (${consecutivePasses}/2)`, vec2(20, 60), 24, hsl(0.1, 0.9, 0.6), 4, BLACK, 'left');
+
+    // Current player indicator.
+    if (!gameOver)
+    {
+        let turnText;
+        if (gameMode === 'ai')
+        {
+            if (currentPlayer === PLAYER_HUMAN) turnText = "Your Turn";
+            else turnText = aiProgress || "AI Thinking...";
+        }
+        else if (gameMode === 'aivai')
+        {
+            if (aiProgress) {
+                const side = currentPlayer === STONE_BLACK ? "Black" : "White";
+                turnText = `AI ${side} — ${aiProgress.replace('AI Thinking... ', '').replace('AI Thinking...', 'thinking...')}`;
+            } else {
+                turnText = currentPlayer === STONE_BLACK ? "AI Black Thinking..." : "AI White Thinking...";
+            }
+        }
+        else
+            turnText = currentPlayer === STONE_BLACK ? "Black's Turn" : "White's Turn";
+        const turnColor = currentPlayer === STONE_BLACK ? rgb(0.85, 0.85, 0.85) : rgb(1, 1, 1);
+        drawTextScreen(turnText, vec2(20, 102), 26, turnColor, 4, BLACK, 'left');
+    }
+
+    // Game-over banner.
+    if (gameOver)
+    {
+        const cx = sw / 2, cy = sh / 2;
+        drawTextScreen('GO', vec2(cx, cy - 90), 64, hsl(0.1, 0.9, 0.55), 6, BLACK);
+        let resultText, resultColor;
+        if (gameMode === 'ai') {
+            const humanWon = winner === PLAYER_HUMAN;
+            resultText  = winner === null ? 'Draw' : humanWon ? 'You Win!' : 'AI Wins!';
+            resultColor = winner === null ? WHITE : humanWon ? rgb(0,1,0.3) : rgb(1,0.3,0.3);
+        } else {
+            resultText  = winner === null ? 'Draw' : winner === STONE_BLACK ? 'Black Wins!' : 'White Wins!';
+            resultColor = WHITE;
+        }
+        drawTextScreen(resultText, vec2(cx, cy - 30), 52, resultColor, 5, BLACK);
+        if (finalScore)
+            drawTextScreen(`Black ${finalScore.black}  ·  White ${finalScore.white}  (komi ${GO_KOMI})`,
+                vec2(cx, cy + 24), 30, WHITE, 4, BLACK);
+        drawTextScreen('Press R to restart or ESC to pause', vec2(cx, cy + 72), 22, WHITE, 3, BLACK);
+    }
+
+    // Hint.
+    if (!gameOver)
+    {
+        drawTextScreen('Click to place · P: Pass · R: Restart · ESC: Pause',
+            vec2(sw / 2, sh - 28), 18, rgb(0.6, 0.6, 0.6), 2, BLACK);
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// GAME FLOW
+
+function startGame(mode)
+{
+    gameMode = mode;
+    initBoard();
+    aiThinkTimer = 0;
+    setPlaying(true);
+    hideMenu('title');
+}
+
+function setDifficulty(d)
+{
+    difficulty = d;
+    saveData({difficulty: d});
+    refreshDifficultyUI();
+}
+
+function refreshDifficultyUI()
+{
+    const grid = getMenu('options')?.getItem('difficultyGrid');
+    if (grid)
+    {
+        grid.setCell(0, {earned: difficulty === 'easy'});
+        grid.setCell(1, {earned: difficulty === 'medium'});
+        grid.setCell(2, {earned: difficulty === 'hard'});
+    }
+    const title = getMenu('title');
+    const upper = difficulty.toUpperCase();
+    title?.getItem('vsAI')?.setLabel(`PLAYER VS AI · ${upper}`);
+    title?.getItem('aiVsAi')?.setLabel(`AI VS AI · ${upper}`);
+}
+
+function quitToTitleWithCleanup()
+{
+    quitToTitle(() => { aiGeneration++; aiSearching = false; aiProgress = ''; });
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// GAME LOOP
+
+async function gameInit()
+{
+    saveDataInit('go');
+    cameraPos       = vec2(0, 0);
+    canvasClearColor = new Color().setHex('#0d0d14');
+    difficulty = getSaveData().difficulty ?? 'medium';
+    setSoundVolume(0.8);
+
+    icons = initDefaultAtlas(); // bake 16 white-on-transparent icons into tiles 0-15
+
+    // Keep the title UNPAUSED so the framed board shows (and refits on resize)
+    // behind the menu; only a real game pauses when a menu/dialog appears.
+    installAutoPause(() => isPlaying());
+
+    // Gameplay sounds.
+    sfxPlace  = new SoundGenerator({frequency: 300, release: 0.05, volume: 0.3});
+    sfxWin    = new SoundGenerator({frequency: 660, release: 0.3,  pitchJump: 220, pitchJumpTime: 0.1, volume: 0.6});
+    sfxLose   = new SoundGenerator({frequency: 220, release: 0.35, slide: -0.5,   volume: 0.5});
+    sfxSelect = new SoundGenerator({frequency: 550, release: 0.08, volume: 0.4});
+
+    // ----- title menu -----
+    setMenuTheme({accent:'#c79a4b'});
+    createMenu({
+        id: 'title',
+        title: 'GO',
+        titleFx: {fill:'outline'},
+        dismissable: false,
+        onStart: () => startGame('ai'),
+        items: [
+            {type:'button', id:'vsAI',   label:'PLAYER VS AI',     onClick: () => startGame('ai')},
+            {type:'button',              label:'PLAYER VS PLAYER', onClick: () => startGame('pvp')},
+            {type:'button', id:'aiVsAi', label:'AI VS AI',         onClick: () => startGame('aivai')},
+            {type:'button',              label:'OPTIONS',          onClick: () => pushMenu('options')},
+            {type:'button',              label:'HELP',             onClick: () => pushMenu('help')},
+        ],
+    });
+
+    // ----- options menu -----
+    createOptionsMenu({
+        persistKey: 'volume',
+        extraItems: [
+            {type:'separator'},
+            {type:'label', text:'DIFFICULTY'},
+            {type:'grid', id:'difficultyGrid', columns:3, cells: [
+                {label:'EASY',   title:'Random moves',               onClick: () => setDifficulty('easy')},
+                {label:'MEDIUM', title:'Greedy 1-ply',               onClick: () => setDifficulty('medium')},
+                {label:'HARD',   title:'Adaptive depth (4-6) by board fill', onClick: () => setDifficulty('hard')},
+            ]},
+        ],
+    });
+
+    // ----- about menu -----
+    createMenu({
+        id: 'help',
+        title: 'HELP',
+        onHide: popMenu,
+        items: [
+            {type:'text', text:'Surround empty points to make territory and capture enemy stones. Pass when you have no useful move; two passes in a row end the game. Score = your stones on the board + the empty points you surround, plus komi for White. Most points wins.'},
+            {type:'text', text:'Click an intersection to place a stone · R restart'},
+            {type:'separator'},
+            {type:'button', label:'BACK', onClick: () => hideMenu('help')},
+        ],
+    });
+
+    // ----- pause menu -----
+    createPauseMenu({
+        onRestart: initBoard,
+        onQuit:    quitToTitleWithCleanup,
+        extraItems: [
+            {type:'button', label:'OPTIONS', onClick: () => pushMenu('options')},
+        ],
+    });
+
+    // ----- HUD toolbar -----
+    installDefaultToolbar({
+        landscapeStack: true,
+        extraItemsBefore: [
+            {type:'button', id:'pass', label:'PASS', title:'Pass your turn (two passes end the game)', onClick: () => humanPass()},
+        ],
+    });
+
+    initBoard();
+    setPlaying(false);
+    // Fit the empty board tight and centered behind the title.
+    cameraFit(vec2(0, 0), vec2(BOARD_FIT_SPAN), .3);
+    showMenu('title');
+    refreshDifficultyUI();
+}
+
+function gameUpdate()
+{
+    if (bindPauseKey({when: () => isPlaying()})) return;
+    if (!isPlaying()) return;
+
+    // Placement pop animation.
+    if (placingStone)
+    {
+        placingStone.progress += timeDelta / PLACE_DURATION;
+        if (placingStone.progress >= 1)
+            placingStone = null;
+    }
+
+    // Restart hotkey.
+    if (keyWasPressed('KeyR'))
+        initBoard();
+    if (keyWasPressed('KeyP')) humanPass();
+
+    // PASS button visibility — update every frame regardless of gameOver.
+    getToolbar('hud')?.getItem('pass')?.setVisible(!gameOver && isHumanTurn());
+
+    if (gameOver) return;
+
+    // Update hover intersection.
+    hoverIntersection = worldPosToIntersection(mousePos);
+
+    // AI move — covers 'ai' mode (AI is white) and 'aivai' mode (AI plays both sides).
+    const isAITurn = (gameMode === 'ai' && currentPlayer === PLAYER_AI) || gameMode === 'aivai';
+    if (isAITurn && !aiSearching)
+    {
+        const delay = gameMode === 'aivai' ? AI_VS_AI_DELAY : AI_THINK_DELAY;
+        aiThinkTimer += timeDelta;
+        if (aiThinkTimer >= delay)
+        {
+            aiSearching = true;
+            aiProgress = 'AI Thinking...';
+            const myGen = aiGeneration;
+            findBestAIMove({
+                onProgress: (d, n) => {
+                    if (myGen === aiGeneration) aiProgress = `AI Thinking... ${round(d / n * 100)}%`;
+                }
+            }).then(move => {
+                if (myGen !== aiGeneration) { aiSearching = false; aiProgress = ''; return; }
+                if (move) {
+                    if (move.pass) passMove();
+                    else makeMove(move.row, move.col);
+                }
+                aiSearching = false;
+                aiProgress = '';
+                aiThinkTimer = 0;
+            });
+        }
+    }
+
+    // Human input — PvP always, or PvAI when it's the human's turn. Never in aivai.
+    if (isHumanTurn() && mouseWasPressed(0) && hoverIntersection)
+    {
+        const { row, col } = hoverIntersection;
+        if (isLegalMove(board, row, col, currentPlayer, previousBoardHash))
+        {
+            makeMove(row, col);
+            aiThinkTimer = 0;
+        }
+    }
+}
+
+function gameUpdatePost()
+{
+    // Fit the board into view via the shared cameraFit helper (letterbox fit,
+    // resize-safe, never crops). Tight at the title so the static board fills
+    // the view; a bigger margin during play leaves room for the HUD and keeps
+    // the board on screen.
+    cameraFit(vec2(0, 0), vec2(BOARD_FIT_SPAN), isPlaying() ? 0.6 : 0.3);
+}
+
+// gameRender draws the board behind the title menu (empty board on load).
+function gameRender()
+{
+    drawBoard();
+}
+
+function gameRenderPost()
+{
+    if (isPlaying()) drawUI();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+engineInit(gameInit, gameUpdate, gameUpdatePost, gameRender, gameRenderPost);
+
+</script>
+</body></html>

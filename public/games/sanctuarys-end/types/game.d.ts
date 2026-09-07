@@ -1,0 +1,270 @@
+// Ambient domain types for Sanctuary's End — zero-build type-checking. See jsconfig.json and types/README.md.
+//
+// These describe the core game-data shapes so JSDoc annotations in game.js (e.g. `/** @param {Item} it */`)
+// and editor IntelliSense catch field typos and wrong shapes. Plain .d.ts: no runtime impact, nothing is
+// emitted, the shipped game.js is byte-for-byte unchanged.
+//
+// No import/export => these are GLOBAL types, referenceable by bare name from game.js JSDoc (`{Item}`,
+// `{Character}`, ...). They mirror the literals in game.js (AFFIXES, SLOTS, CLASSES, SAVE.newCharacter, …);
+// keep them in sync when those shapes change.
+
+// --- enumerations (mirror the const literals / key sets in game.js) ----------------------------------
+type Slot = 'weapon' | 'offhand' | 'helm' | 'armor' | 'gloves' | 'boots' | 'ring' | 'amulet';
+type Rarity = 'common' | 'magic' | 'rare' | 'set' | 'unique';
+type ClassId = 'warrior' | 'mage' | 'rogue' | 'barbarian';
+type Difficulty = 'Normal' | 'Hard' | 'Hell' | 'Inferno';
+
+/** Keys of the AFFIXES table (game.js). */
+type AffixKey =
+  | 'dmg'
+  | 'hp'
+  | 'mp'
+  | 'armor'
+  | 'str'
+  | 'dex'
+  | 'vit'
+  | 'eng'
+  | 'crit'
+  | 'ias'
+  | 'ms'
+  | 'leech'
+  | 'allstats'
+  | 'thorns'
+  | 'fireRes'
+  | 'coldRes'
+  | 'poisonRes'
+  | 'lightRes'
+  | 'allRes'
+  | 'critDmg'
+  | 'manaLeech'
+  | 'leechAll'
+  | 'burnOnHit'
+  | 'bleedOnHit'
+  | 'skillranks'
+  | 'skilldmg'
+  | 'activeskill'
+  | 'fireDmg'
+  | 'coldDmg'
+  | 'lightDmg'
+  | 'poisonDmg'
+  | 'hpregen'
+  | 'mpregen'
+  | 'mf'
+  | 'gf'
+  | 'dodge'
+  | 'flatDR'
+  | 'cdr'
+  | 'lifeOnHit';
+
+/** Rolled affixes on an item: a subset of affix keys mapped to magnitudes. */
+type Affixes = Partial<Record<AffixKey, number>>;
+
+interface Stats {
+  str: number;
+  dex: number;
+  vit: number;
+  eng: number;
+}
+
+/** Derived combat effects accumulated by recompute() into player.effects. All optional; reads
+ *  guard with `|| 0` / ternaries, so absent fields read as undefined. Mirrors the `eff` literal in recompute(). */
+interface Effects {
+  lifesteal?: number;
+  manaleech?: number;
+  thorns?: number;
+  allskills?: number;
+  movespeed?: number;
+  critdmg?: boolean;
+  critDmgPct?: number;
+  pierce?: number;
+  deathnova?: number;
+  manaShield?: number;
+  haste?: number;
+  chillaura?: boolean;
+  echo?: boolean;
+  fireRes?: number;
+  frostRes?: number;
+  poisonRes?: number;
+  lightningRes?: number;
+  allRes?: number;
+  burnProc?: number;
+  bleedProc?: number;
+  dodge?: number;
+  flatDR?: number;
+  lifeOnHit?: number;
+  /** Shield Block chance (0..0.3): on success incoming damage is multiplied by 0.6. */
+  block?: number;
+}
+
+// --- items -------------------------------------------------------------------------------------------
+/** A gem: `t` is the gem type key (into GEMS), `q` is the quality tier index (0..4). */
+interface Gem {
+  t: string;
+  q: number;
+}
+
+interface Item {
+  id: number;
+  slot: Slot;
+  rarity: Rarity;
+  ilvl: number;
+  /** Base item name (e.g. "Sword", "Plate"); cosmetic, does not affect stats. */
+  base: string;
+  /** Primary stat (weapon damage / armor); 0 for rings & amulets. */
+  baseStat: number;
+  affixes: Affixes;
+  /** Upgrade level applied at the smith (0..UPGRADE_CAP[rarity]). */
+  upgrade: number;
+  /** Display name; present once the item is fully rolled. */
+  name?: string;
+  /** Unique/set special-effect id (e.g. "lifesteal", "thorns", "critdmg", "allskills", "movespeed"). */
+  effect?: string;
+  /** Magnitude for `effect`. */
+  effVal?: number;
+  /** Human-readable description of `effect` (uniques). */
+  effectDesc?: string;
+  /** Set id (key into SET_DEFS) when this is a set piece. */
+  set?: string;
+  /** Enchant added at the enchanter. */
+  enchant?: { key: string; val: number };
+  /** Socket slots (rolled by rollSockets); each holds a Gem or null when empty. */
+  sockets?: (Gem | null)[];
+  /** Offhand kind identity ('shield' | 'tome' | 'quiver'); set by applyOffhandKind on offhand rolls. */
+  ohKind?: string;
+  /** Two-handed weapon (rolled flag; never derived from the base name). Locks the offhand slot. */
+  h2?: boolean;
+  /** Shield Block % (chance to take 60% damage; recompute caps the folded total at 30%). */
+  block?: number;
+  /** Player lock flag (right-click): protected from selling and salvaging. */
+  lock?: boolean;
+}
+
+/** Equipped items by slot (null when empty). */
+type Equipment = Record<Slot, Item | null>;
+
+/** A world interaction point returned by interactables() (town gates, caves, waypoints, portals, vendors). */
+interface Interactable {
+  /** Discriminator: 'vendor' | 'towngate' | 'cave' | 'deeper' | 'wildnext' | 'wildprev' | 'waypoint' | … */
+  kind: string;
+  x: number;
+  z: number;
+  /** Town/area id (on 'towngate'). */
+  area?: string;
+  /** Destination region id (on 'wildnext' / 'wildprev'). */
+  to?: string;
+  /** Referenced world object (e.g. the shrine record on 'shrine'). */
+  ref?: any;
+}
+
+/** Player loot filter (Settings.lootFilter). */
+interface LootFilter {
+  rarity: Record<Rarity, boolean>;
+  slot: Record<Slot, boolean>;
+  minIlvl: number;
+}
+
+// --- skills ------------------------------------------------------------------------------------------
+/** An entry in the SKILLDEFS table (active and passive variants share this shape). */
+interface SkillDef {
+  name: string;
+  ico: string;
+  type: 'active' | 'passive';
+  maxRank: number;
+  req: number;
+  granted: boolean;
+  desc: string;
+  // active-only fields:
+  kind?: string;
+  elem?: string;
+  onHit?: string;
+  cost?: number;
+  cd?: number;
+}
+
+// --- character / save --------------------------------------------------------------------------------
+interface CharBase {
+  hpMax: number;
+  mpMax: number;
+  dmg: number;
+}
+
+/** A saved hero (built by SAVE.newCharacter, backfilled by SAVE.migrate). */
+interface Character {
+  name: string;
+  class: ClassId;
+  version: number;
+  created: number;
+  lastPlayed: number;
+  level: number;
+  xp: number;
+  xpNext: number;
+  gold: number;
+  kills: number;
+  potions: number;
+  hpPotions: number;
+  mpPotions: number;
+  potionTier: number;
+  potionCap: number;
+  invMax: number;
+  stashMax: number;
+  maxDepth: number;
+  /** Currently-selected active skill id, or null. */
+  activeSkillId: string | null;
+  /** Discovered zones (zone id -> revealed). */
+  discovered: Record<string, boolean>;
+  base: CharBase;
+  stats: Stats;
+  statPoints: number;
+  skillPoints: number;
+  /** Crafting Dust (salvage currency). */
+  materials: number;
+  /** Gem pouch: "type:quality" key -> count. */
+  gems: Record<string, number>;
+  inventory: Item[];
+  stash: Item[];
+  equipment: Equipment;
+  /** Skill id -> allocated rank. */
+  skills: Record<string, number>;
+  /** Allocated passive-tree node ids. */
+  passives: string[];
+  /** Action-bar assignment: 6 slots (slot 0 is always the basic attack), null when empty. */
+  loadout: (string | null)[];
+  /** Skill id -> (rune node id -> allocated ranks). */
+  skillRunes: Record<string, Record<string, number>>;
+  /** Unspent rune/ability points (+1 per level from L2). */
+  abilityPoints: number;
+  /** V8: persistent progress flags (e.g. `sigil` — the Depth 666 unlock). */
+  flags: Record<string, boolean>;
+  /** V8: achievement journal — `u` = unlocked (id -> 1), `n` = event counters (event -> count). */
+  ach: { u: Record<string, number>; n: Record<string, number> };
+}
+
+/** Global game settings (SAVE._data.settings). */
+interface Settings {
+  difficulty: Difficulty;
+  muted: boolean;
+  volume: number;
+  music: boolean;
+  sfx: boolean;
+  shake: boolean;
+  dmgnum: boolean;
+  resScale: number;
+  shadows: boolean;
+  postfx: boolean;
+  bloom: number;
+  exposure: number;
+  reflections: boolean;
+  ssao: boolean;
+  colorgrade: boolean;
+  vfx: boolean;
+  particles: boolean;
+  lootFilter: LootFilter;
+  keybinds: Record<string, string>;
+}
+
+/** The persisted save blob (localStorage, JSON). */
+interface SaveData {
+  version: number;
+  slots: Array<Character | null>;
+  settings: Settings;
+}

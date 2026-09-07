@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="google" content="notranslate" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>孤堡尸潮 · 单人 / 合作波次生存</title>
+<meta name="description" content="Fight through escalating zombie waves in Der Koloss, a free fan-made browser survival game with solo play, four-player co-op, voice chat, Pack-a-Punch, wonder weapons, perks, teleporters, and more." />
+<meta name="keywords" content="Der Koloss, Der Riese fan remake, browser zombie game, wave survival, multiplayer zombie game, co-op browser game, Pack-a-Punch, Wunderwaffe, Ray Gun, voice chat" />
+<meta name="author" content="vesper.inc" />
+<meta name="creator" content="vesper.inc" />
+<meta name="publisher" content="vesper.inc" />
+<meta name="application-name" content="Der Koloss" />
+<meta name="apple-mobile-web-app-title" content="Der Koloss" />
+<meta name="theme-color" content="#070b12" />
+<meta name="color-scheme" content="dark" />
+<meta name="referrer" content="strict-origin-when-cross-origin" />
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
+<link rel="canonical" href="https://www.derkoloss.com/" />
+
+<!-- Open Graph: iMessage, LinkedIn, Facebook, Slack, Discord and other unfurlers -->
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="en_US" />
+<meta property="og:site_name" content="Der Koloss" />
+<meta property="og:title" content="Der Koloss — Browser Zombie Survival" />
+<meta property="og:description" content="Fight together to survive. Play solo or four-player co-op with voice chat, Pack-a-Punch, wonder weapons, perks, teleporters, and relentless zombie waves." />
+<meta property="og:url" content="https://www.derkoloss.com/" />
+<meta property="og:image" content="https://www.derkoloss.com/assets/der-koloss-og-v06-courtyard-rev2-1200x630.png" />
+<meta property="og:image:secure_url" content="https://www.derkoloss.com/assets/der-koloss-og-v06-courtyard-rev2-1200x630.png" />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Four Der Koloss soldiers armed with upgraded wonder weapons defend the factory against a zombie horde." />
+
+<!-- X / Twitter -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Der Koloss — Browser Zombie Survival" />
+<meta name="twitter:description" content="Fight together to survive in a free fan-made browser zombie experience with solo and four-player co-op." />
+<meta name="twitter:image" content="https://www.derkoloss.com/assets/der-koloss-og-v06-courtyard-rev2-1200x630.png" />
+<meta name="twitter:image:alt" content="Four Der Koloss soldiers defend the factory against a zombie horde." />
+
+<!-- Search, answer engines and generative discovery -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "@id": "https://www.derkoloss.com/#game",
+  "name": "Der Koloss",
+  "alternateName": "Der Koloss: The Colossus Awakens",
+  "url": "https://www.derkoloss.com/",
+  "image": {
+    "@type": "ImageObject",
+    "url": "https://www.derkoloss.com/assets/der-koloss-og-v06-courtyard-rev2-1200x630.png",
+    "width": 1200,
+    "height": 630,
+    "caption": "Der Koloss browser zombie survival game"
+  },
+  "description": "Der Koloss is a free fan-made wave-based zombie survival game for modern web browsers. It supports solo play and four-player online co-op with voice chat, Pack-a-Punch weapon upgrades, wonder weapons, perks, teleporters, power-ups, traps, and escalating rounds.",
+  "genre": ["Zombie survival", "First-person shooter", "Cooperative multiplayer", "Wave survival"],
+  "gamePlatform": "Web browser",
+  "operatingSystem": "Any modern desktop operating system with a compatible web browser",
+  "applicationCategory": "Game",
+  "playMode": ["SinglePlayer", "MultiPlayer", "CoOp"],
+  "numberOfPlayers": {"@type": "QuantitativeValue", "minValue": 1, "maxValue": 4},
+  "isAccessibleForFree": true,
+  "inLanguage": "en",
+  "author": {"@type": "Organization", "name": "vesper.inc", "url": "https://vesper.inc/"},
+  "publisher": {"@type": "Organization", "name": "vesper.inc", "url": "https://vesper.inc/"},
+  "isBasedOn": {"@type": "CreativeWork", "name": "The original Der Riese map"},
+  "copyrightNotice": "Fan-made tribute. Not affiliated with or endorsed by the original rights holders.",
+  "potentialAction": {
+    "@type": "PlayAction",
+    "target": {"@type": "EntryPoint", "urlTemplate": "https://www.derkoloss.com/", "actionPlatform": "https://schema.org/DesktopWebPlatform"}
+  }
+}
+</script>
+<link rel="manifest" href="./site.webmanifest" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>☠</text></svg>" />
+<!-- Fonts are self-hosted under assets/fonts (see that folder's LICENSE.txt);
+     the game has no external font dependency and runs fully offline. -->
+<link rel="preload" href="assets/fonts/staatliches-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/special-elite-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css?v=10" />
+<!-- menu background plate; every rule inside is scoped to #menu-bg -->
+<link rel="stylesheet" href="menu-bg.css?v=1" />
+<script defer src="../_shared/yuqing-bridge.js" data-game="der-koloss"></script>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.js" } }
+</script>
+<script src="./vendor/peerjs.min.js"></script>
+</head>
+<body>
+<canvas id="game-canvas"></canvas>
+
+<!-- full-screen fx overlays -->
+<div id="dmg-vignette"></div>
+<!-- Directional damage. js/fx.js drives this by setting, on #dmg-dir:
+       el.style.setProperty('--dmg-angle', <deg>)   0 = straight ahead, clockwise, 0..360
+       el.dataset.hit = String(++n)                 any changing value replays the arc
+     Nothing else is required; CSS owns the animation and the fade-out. -->
+<div id="dmg-dir" aria-hidden="true"><i class="dmg-arc"></i></div>
+<div id="health-pulse"></div>
+<div id="screen-flash"></div>
+
+<!-- ==================== HUD ==================== -->
+<div id="hud" class="hidden">
+  <div id="crosshair"><span class="ch-l"></span><span class="ch-r"></span><span class="ch-t"></span><span class="ch-b"></span><span class="ch-dot"></span></div>
+  <div id="hitmarker"><span></span><span></span><span></span><span></span></div>
+
+  <div id="vox-sub" class="hidden"></div>
+  <aside id="multiplayer-roster" class="hidden" aria-label="Co-op squad" aria-hidden="true">
+    <div class="squad-kicker">SQUAD</div>
+    <div id="multiplayer-roster-rows" role="list"></div>
+  </aside>
+  <div id="mic-indicator" class="hidden">🎙 SPEAKING</div>
+  <div id="bottom-left">
+    <div class="round-block">
+      <div class="round-kicker" aria-hidden="true">ROUND</div>
+      <div id="round"></div>
+    </div>
+    <div class="vitals-block">
+      <div class="vitals-kicker" aria-hidden="true">VITALS</div>
+      <div id="health-track" role="img" aria-label="Health"><div id="health-fill"></div><div id="health-tip"></div></div>
+    </div>
+    <div class="points-block">
+      <div class="points-kicker" aria-hidden="true">POINTS</div>
+      <div class="points-row"><div id="points">500</div><div id="points-delta" aria-hidden="true"></div></div>
+    </div>
+    <div id="perk-icons"></div>
+  </div>
+
+  <div id="bottom-right">
+    <div id="monkey-count" class="hidden">🐵 MONKEY BOMB × <span id="monkey-n">2</span> <em>— press X</em></div>
+    <div id="weapon-name">M1911</div>
+    <div id="ammo"><span class="mag">8</span><span class="sep">|</span><span class="reserve">80</span></div>
+    <div id="ammo-track" aria-hidden="true"><div id="ammo-fill"></div></div>
+    <div id="nade-row"><div id="grenades"></div><div id="nade-count">× 4</div></div>
+  </div>
+
+  <div id="drop-timers"></div>
+  <div id="wave-progress" class="hidden"></div>
+  <div id="pap-notice" class="hidden"></div>
+
+  <div id="minimap-frame" role="img" aria-label="Factory minimap">
+    <canvas id="minimap" width="210" height="210" aria-hidden="true"></canvas>
+    <span class="minimap-tick n" aria-hidden="true"></span>
+    <span class="minimap-label" aria-hidden="true">WAFFENFABRIK</span>
+  </div>
+  <div id="scope-overlay" class="hidden">
+    <div class="scope-ring"></div>
+    <div class="scope-h"></div>
+    <div class="scope-v"></div>
+    <div class="scope-tick t1"></div><div class="scope-tick t2"></div>
+    <div class="scope-tick t3"></div><div class="scope-tick t4"></div>
+  </div>
+
+  <div id="prompt-wrap">
+    <div id="prompt" class="hidden"></div>
+    <div id="prompt-bar" class="hidden"><div id="prompt-bar-fill"></div></div>
+  </div>
+
+  <div id="lock-hint" class="hidden">CLICK TO AIM</div>
+
+  <div id="banner-sub"></div>
+  <div id="banner"></div>
+
+  <div id="revive-wrap" class="hidden">
+    <div id="revive-text">REVIVING</div>
+    <div class="bar"><div id="revive-fill"></div></div>
+  </div>
+
+  <div id="down-overlay" class="hidden">
+    <div id="down-text">YOU ARE DOWN</div>
+    <div class="bar bleed"><div id="bleed-fill"></div></div>
+    <div class="down-note" aria-hidden="true">HOLD ON — A TEAMMATE CAN REVIVE YOU</div>
+  </div>
+
+  <div id="scoreboard" class="hidden">
+    <h3>SCORE</h3>
+    <table>
+      <thead><tr><th>PLAYER</th><th>KILLS</th><th>DOWNS</th><th>REVIVES</th><th>POINTS</th></tr></thead>
+      <tbody id="score-rows"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ==================== MAIN MENU ==================== -->
+<div id="menu" class="screen">
+  <!-- Filters for the wordmark. Fractal noise is used instead of CSS gradients
+       because it has high spatial frequency — large soft gradients average out
+       to a flat tint on bright metal, noise actually reads as churning energy.
+       The <animate> tags are SMIL; no script is involved. -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <!-- energy crawling inside the glyphs -->
+      <filter id="fx-title-plasma" x="-6%" y="-22%" width="112%" height="144%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.013 0.05" numOctaves="2" seed="11" result="n">
+          <animate attributeName="baseFrequency" dur="23s"
+                   values="0.013 0.05;0.021 0.034;0.016 0.058;0.013 0.05" repeatCount="indefinite"/>
+        </feTurbulence>
+        <!-- crush the midtones so only hot cores survive: plasma, not fog -->
+        <feColorMatrix in="n" type="matrix" result="hot"
+          values="0 0 0 0 0.42
+                  0 0 0 0 0.86
+                  0 0 0 0 1
+                  2.1 0.9 0 0 -0.80"/>
+        <feComposite in="hot" in2="SourceGraphic" operator="in"/>
+      </filter>
+      <!-- sparks along the cut: displace the glyph, then keep only the part
+           that falls OUTSIDE it, which leaves a crackling fringe on the edges -->
+      <filter id="fx-title-crackle" x="-14%" y="-46%" width="128%" height="192%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.05 0.14" numOctaves="1" seed="2" result="d">
+          <animate attributeName="seed" dur="1.1s" values="2;17;31;9;24;38;5;13"
+                   calcMode="discrete" repeatCount="indefinite"/>
+        </feTurbulence>
+        <feDisplacementMap in="SourceGraphic" in2="d" scale="9" xChannelSelector="R" yChannelSelector="G" result="warp"/>
+        <feComposite in="warp" in2="SourceGraphic" operator="out" result="fringe"/>
+        <feGaussianBlur in="fringe" stdDeviation="0.5"/>
+      </filter>
+    </defs>
+  </svg>
+  <div class="menu-scene" aria-hidden="true">
+    <!-- Background plate: a silent, seamlessly looping shot of the machine
+         hall. The poster still is the clip's own first frame, so the hand-off
+         is invisible and a failed/blocked/reduced-motion video simply leaves
+         the still on screen. Styling lives in menu-bg.css, behaviour in
+         js/menu-bg.js; both are scoped to #menu-bg. -->
+    <div id="menu-bg" aria-hidden="true">
+      <img class="menu-bg-still" src="assets/menu/menu-bg-poster.webp" alt="" decoding="async" width="1280" height="720">
+      <video class="menu-bg-video" muted loop playsinline autoplay preload="metadata"
+             disablepictureinpicture disableremoteplayback tabindex="-1" width="1280" height="720">
+        <source src="assets/menu/menu-bg.webm" type="video/webm">
+        <source src="assets/menu/menu-bg.mp4" type="video/mp4">
+      </video>
+      <div class="menu-bg-scrim"></div>
+    </div>
+    <div class="scene-sky"></div>
+    <div class="scene-beam b1"></div>
+    <div class="scene-beam b2"></div>
+    <div class="scene-ridge"></div>
+    <svg id="skyline" viewBox="0 0 1200 300" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+      <g fill="#04050a">
+        <rect x="0" y="120" width="240" height="180"/>
+        <rect x="180" y="80" width="140" height="220"/>
+        <rect x="320" y="140" width="200" height="160"/>
+        <rect x="520" y="60" width="60" height="240"/>
+        <rect x="540" y="20" width="20" height="50"/>
+        <rect x="580" y="110" width="220" height="190"/>
+        <rect x="800" y="90" width="160" height="210"/>
+        <rect x="960" y="130" width="240" height="170"/>
+        <rect x="60" y="60" width="14" height="70"/>
+        <rect x="88" y="40" width="10" height="90"/>
+        <rect x="700" y="50" width="12" height="70"/>
+        <rect x="1020" y="70" width="16" height="70"/>
+      </g>
+      <g stroke="#04050a" stroke-width="3" fill="none">
+        <path d="M0,90 Q300,130 620,70 T1200,95"/>
+        <path d="M0,110 Q400,150 800,100 T1200,120"/>
+      </g>
+      <g fill="#c8873a" opacity="0.85">
+        <rect x="200" y="100" width="10" height="14" class="win"/>
+        <rect x="250" y="140" width="10" height="14" class="win d2"/>
+        <rect x="620" y="140" width="12" height="16" class="win d3"/>
+        <rect x="830" y="120" width="10" height="14" class="win d2"/>
+      </g>
+    </svg>
+    <div class="fog-layer f1"></div>
+    <div class="fog-layer f2"></div>
+    <div class="scene-dust d1"></div>
+    <div class="scene-dust d2"></div>
+    <div id="film-grain"></div>
+    <div id="film-scratch"></div>
+    <div id="menu-vignette"></div>
+  </div>
+  <div class="menu-corner tl">AKTE&nbsp;NR.&nbsp;7&nbsp;//&nbsp;GEHEIM</div>
+  <div class="menu-corner tr">NIEDERSCHLESIEN&nbsp;·&nbsp;1945</div>
+  <div class="menu-corner br">NUR&nbsp;FÜR&nbsp;DEN&nbsp;DIENSTGEBRAUCH</div>
+  <div class="menu-inner">
+    <div class="menu-lead">
+      <div class="title-block">
+        <div class="title-top">— WAVE SURVIVAL · SOLO &amp; CO-OP —</div>
+        <h1 class="notranslate" translate="no">DER KOLOSS<span class="title-glow" data-text="DER KOLOSS" aria-hidden="true"></span><span class="title-plasma" data-text="DER KOLOSS" aria-hidden="true"></span><span class="title-tear" data-text="DER KOLOSS" aria-hidden="true"></span></h1>
+        <div class="title-rule"><span></span><em>◆</em><span></span></div>
+        <div class="title-sub">THE COLOSSUS AWAKENS</div>
+        <div class="stamp">GEHEIM</div>
+      </div>
+      <nav class="menu-buttons" aria-label="Main menu">
+        <button id="btn-solo" class="mbtn primary" data-idx="01" data-hint="DEPLOY ALONE">SOLO</button>
+        <button id="btn-host" class="mbtn" data-idx="02" data-hint="OPEN A SQUAD">HOST LOBBY</button>
+        <button id="btn-join" class="mbtn" data-idx="03" data-hint="ENTER A CODE">JOIN LOBBY</button>
+        <button id="btn-char" class="mbtn" data-idx="04" data-hint="PICK YOUR SOLDIER">CHARACTER</button>
+        <button id="btn-cheats" class="mbtn" data-idx="05" data-hint="RIG THE MATCH">CHEAT CODES</button>
+        <button id="btn-options" class="mbtn" data-idx="06" data-hint="AUDIO · VIDEO · INPUT">OPTIONS</button>
+        <div class="menu-more-wrap">
+          <button id="btn-more" class="mbtn" type="button" data-idx="07" data-hint="ARCHIVE · ABOUT" aria-expanded="false" aria-controls="menu-more-links">MORE LINKS</button>
+          <div id="menu-more-links" class="menu-more-links hidden">
+            <a class="mbtn menu-link menu-sub-link" href="./assets/">ASSET ARCHIVE</a>
+            <a class="mbtn menu-link menu-sub-link" href="https://github.com/rishipr/der-koloss-ce" target="_blank" rel="noopener">ABOUT THE PROJECT</a>
+          </div>
+        </div>
+      </nav>
+    </div>
+    <aside class="menu-brief" aria-label="Field manual">
+      <div class="brief-head">
+        <span class="brief-kicker">FIELD MANUAL</span>
+        <button id="btn-controls" class="brief-toggle" type="button" aria-expanded="false" aria-controls="menu-help">ALL CONTROLS</button>
+      </div>
+      <div class="menu-help" id="menu-help">
+        <span class="kp"><b>WASD</b> move</span><span class="kp"><b>Mouse</b> look</span><span class="kp"><b>LMB</b> fire</span><span class="kp"><b>RMB / E</b> aim</span><span class="kp"><b>R</b> reload</span><span class="kp"><b>1/2/Q</b> weapons</span><span class="kp"><b>V</b> knife</span><span class="kp"><b>G</b> grenade</span><span class="kp"><b>X</b> monkey</span><span class="kp"><b>I</b> inspect</span><span class="kp"><b>T</b> flashlight</span><span class="kp"><b>F</b> interact</span><span class="kp"><b>Space</b> jump</span><span class="kp"><b>Shift</b> sprint</span><span class="kp"><b>C</b> crouch</span><span class="kp"><b>Tab</b> score</span><span class="kp"><b>Esc</b> pause</span>
+      </div>
+      <div class="brief-rule"></div>
+      <div class="menu-foot">Fan-made tribute, created by <a class="menu-credit-link" href="https://vesper.inc/" rel="noopener">Vesper</a>. Not affiliated with any publisher.</div>
+    </aside>
+  </div>
+</div>
+
+<!-- ==================== CHARACTER SELECT ==================== -->
+<div id="charselect" class="screen hidden">
+  <div class="panel wide chars-panel">
+    <div class="panel-kicker">ROSTER</div>
+    <h2>CHOOSE YOUR SOLDIER</h2>
+    <p class="dim panel-lead">Each soldier carries their own voice, quips and battle cries. One of each per lobby.</p>
+    <div id="char-cards"></div>
+    <div class="row-buttons">
+      <button id="btn-char-back" class="mbtn">BACK</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== CHARACTER PAGE ==================== -->
+<div id="charpage" class="screen hidden">
+  <div class="panel wide char-page">
+    <div class="char-page-left">
+      <div class="char-portrait-frame" role="img" aria-labelledby="char-name"><canvas id="char-portrait" width="96" height="96" aria-hidden="true"></canvas></div>
+      <div class="char-voice-head">VOICE SAMPLES</div>
+      <div id="char-voice-lines"></div>
+    </div>
+    <div class="char-page-right">
+      <div class="panel-kicker">PERSONNEL FILE</div>
+      <h2 id="char-name"></h2>
+      <div id="char-role" class="char-role"></div>
+      <p id="char-bio" class="char-bio"></p>
+      <div class="char-section-head">TRAITS</div>
+      <ul id="char-traits" class="char-traits"></ul>
+      <div class="char-section-head">ON RECORD</div>
+      <div id="char-quotes" class="char-quotes"></div>
+      <div class="row-buttons">
+        <button id="btn-char-pick" class="mbtn primary">SELECT</button>
+        <button id="btn-char-page-back" class="mbtn">BACK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== CHEAT CODES ==================== -->
+<div id="cheats" class="screen hidden">
+  <div class="panel wide" id="cheats-panel">
+    <div class="panel-kicker">CLASSIFIED</div>
+    <h2>CHEAT CODES</h2>
+    <p class="dim" id="cheats-note">Solo &amp; hosted lobbies — in co-op the host's codes apply to everyone.</p>
+    <button id="btn-titan" class="mbtn titan">⚡ TITAN MODE — one click: God + Wunderwaffen + perks + points + power + doors + teleporters (no gold, no ghost town)</button>
+    <div class="section-head"><span>MODIFIERS</span></div>
+    <div class="cheats-grid">
+      <label class="cheat"><input type="checkbox" id="cheat-papguns"><span class="box"></span><span class="txt">ARMED TO THE TEETH <em>spawn with 2 random Pack-a-Punched guns &amp; the Bowie Knife</em></span></label>
+      <label class="cheat"><input type="checkbox" id="cheat-wunder"><span class="box"></span><span class="txt">WUNDERWAFFEN <em>spawn with Ray Gun, Wunderwaffe DG-2 &amp; 2 Monkey Bombs</em></span></label>
+      <label class="cheat"><input type="checkbox" id="cheat-perkaholic"><span class="box"></span><span class="txt">PERKAHOLIC <em>spawn with all four perks</em></span></label>
+      <label class="cheat"><input type="checkbox" id="cheat-goldguns"><span class="box"></span><span class="txt">GOLD STANDARD <em>every gun wears gold — Pack-a-Punch turns it to diamond</em></span></label>
+      <label class="cheat"><input type="checkbox" id="cheat-opensesame"><span class="box"></span><span class="txt">OPEN SESAME <em>every door starts open</em></span></label>
+      <label class="cheat"><input type="checkbox" id="cheat-zero"><span class="box"></span><span class="txt">GHOST TOWN <em>no zombies — explore the factory in peace</em></span></label>
+      <label class="cheat"><input type="checkbox" id="cheat-warbond"><span class="box"></span><span class="txt">WAR BOND <em>start with 50,000 points</em></span></label>
+      <label class="cheat"><input type="checkbox" id="cheat-god"><span class="box"></span><span class="txt">GOD MODE <em>zombies can't hurt you</em></span></label>
+      <label class="cheat"><input type="checkbox" id="cheat-power"><span class="box"></span><span class="txt">POWER SURGE <em>power starts ON</em></span></label>
+      <label class="cheat"><input type="checkbox" id="cheat-tele"><span class="box"></span><span class="txt">FULL LINK <em>all teleporters linked (PaP open)</em></span></label>
+    </div>
+    <div class="loadout-row">
+      <div class="section-head"><span>CUSTOM LOADOUT</span></div>
+      <div class="cheat-lbl loadout-title"><em>Spawn with these exact guns — this clears ARMED TO THE TEETH / WUNDERWAFFEN.</em></div>
+      <div class="wpn-picks">
+        <div class="wpn-pick" data-slot="p1">
+          <label>PRIMARY</label>
+          <input class="wpn-search" placeholder="type to filter…" spellcheck="false">
+          <div class="wpn-list"></div>
+        </div>
+        <div class="wpn-pick" data-slot="p2">
+          <label>SECONDARY</label>
+          <input class="wpn-search" placeholder="type to filter…" spellcheck="false">
+          <div class="wpn-list"></div>
+        </div>
+      </div>
+    </div>
+    <div class="section-head"><span>DEPLOYMENT</span></div>
+    <div class="cheat-row">
+      <label class="cheat-lbl" for="cheat-round">START ROUND</label>
+      <input id="cheat-round" type="number" min="1" max="40" value="1">
+      <label class="cheat-lbl" for="cheat-area">SPAWN AREA</label>
+      <select id="cheat-area">
+        <option value="mainframe">Mainframe (default)</option>
+        <option value="courtyard">Courtyard</option>
+        <option value="factory">Main Factory</option>
+        <option value="teleA">Generator Room (Tele A)</option>
+        <option value="chem">Chemical Testing (Tele B)</option>
+      </select>
+      <span class="dim">Custom spawns automatically open a route back to Mainframe.</span>
+    </div>
+    <div class="row-buttons">
+      <button id="btn-cheats-all" class="mbtn">SELECT ALL</button>
+      <button id="btn-cheats-none" class="mbtn">DESELECT ALL</button>
+      <button id="btn-cheats-back" class="mbtn primary">BACK</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== LOADING ==================== -->
+<div id="loading" class="screen overlay-dark hidden">
+  <div class="load-inner">
+    <div class="load-kicker">TRANSMISSION INBOUND</div>
+    <div class="load-title">DER KOLOSS</div>
+    <div class="load-bar-wrap"><div id="load-bar"></div><div class="load-bar-scan" aria-hidden="true"></div></div>
+    <div class="load-meta">
+      <div class="load-hint">Loading the factory…</div>
+      <div class="load-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== LOBBY ==================== -->
+<div id="lobby" class="screen hidden">
+  <div class="panel wide lobby-panel">
+    <div class="lobby-head">
+      <div>
+        <div class="panel-kicker">CO-OP</div>
+        <h2>LOBBY</h2>
+      </div>
+      <div class="lobby-code-row">
+        <div class="lobby-code-block">
+          <div class="lbl">LOBBY CODE</div>
+          <div id="lobby-code">-----</div>
+        </div>
+        <div class="link-row">
+          <label class="lbl" for="lobby-link">INVITE LINK</label>
+          <div class="link-field">
+            <input id="lobby-link" readonly value="" aria-label="Invite link" />
+            <button id="btn-copy-link" class="mbtn small">COPY INVITE LINK</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="lobby-you">
+      <div class="lobby-char-row">
+        <span class="lbl">YOUR NAME</span>
+        <input id="lobby-name" maxlength="14" spellcheck="false" autocomplete="off" aria-label="Your name" />
+      </div>
+      <div class="lobby-char-row">
+        <span class="lbl">YOUR SOLDIER</span>
+        <button id="btn-lobby-char" class="mbtn small">CHOOSE</button>
+        <span id="lobby-char-name" class="lobby-char-name"></span>
+      </div>
+      <div class="lobby-char-row">
+        <span class="lbl">VOICE CHAT</span>
+        <button id="btn-lobby-mic" class="mbtn small">MIC: ON</button>
+        <span id="lobby-voice-note" class="lobby-voice-note"></span>
+      </div>
+    </div>
+
+    <div class="section-head"><span>SQUAD</span><i class="section-rule"></i></div>
+    <div id="lobby-players"></div>
+    <div id="lobby-hint"></div>
+    <div class="row-buttons lobby-action-row">
+      <button id="btn-ready" class="mbtn primary lobby-primary-action">READY UP</button>
+      <button id="btn-start-game" class="mbtn lobby-ghost-action hidden" disabled>START GAME</button>
+      <button id="btn-lobby-cheats" class="mbtn lobby-ghost-action">CHEAT CODES</button>
+      <button id="btn-leave-lobby" class="mbtn danger lobby-ghost-action">LEAVE</button>
+    </div>
+    <div class="lobby-fullscreen-prompt">
+      <p id="lobby-fullscreen-note" class="lobby-fullscreen-note">For the best aim and performance, we recommend entering full screen before the match.</p>
+      <button id="btn-lobby-fs" class="mbtn lobby-secondary-action fullscreen-callout" aria-describedby="lobby-fullscreen-note" aria-pressed="false">FULL SCREEN</button>
+    </div>
+    <div class="lobby-note">Game starts when the host presses START — a majority of players must be ready.</div>
+  </div>
+</div>
+
+<!-- ==================== SOLO FULLSCREEN PREFLIGHT ==================== -->
+<div id="solo-fs-modal" class="screen hidden">
+  <div class="panel solo-fs-panel" role="dialog" aria-modal="true" aria-labelledby="solo-fs-title">
+    <div class="panel-kicker lbl">BEFORE THE MATCH</div>
+    <h2 id="solo-fs-title">FULL SCREEN RECOMMENDED</h2>
+    <p class="dim">For the best aim, framing, and performance, we recommend playing Der Koloss in full screen.</p>
+    <div class="row-buttons solo-fs-actions">
+      <button id="btn-solo-fs-toggle" class="mbtn primary fullscreen-callout" aria-pressed="false">ENTER FULL SCREEN</button>
+      <button id="btn-solo-fs-start" class="mbtn">START WITHOUT FULL SCREEN</button>
+      <button id="btn-solo-fs-back" class="mbtn danger">BACK</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== JOIN MODAL ==================== -->
+<div id="join-modal" class="screen hidden">
+  <div class="panel join-panel">
+    <div class="panel-kicker">CO-OP</div>
+    <h2>JOIN LOBBY</h2>
+    <p class="dim">Enter the 5-character code from your friend (or use their invite link).</p>
+    <input id="join-code" maxlength="5" placeholder="CODE" autocomplete="off" spellcheck="false" aria-label="Lobby code" />
+    <div class="row-buttons">
+      <button id="btn-join-go" class="mbtn primary">JOIN</button>
+      <button id="btn-join-cancel" class="mbtn">BACK</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== OPTIONS ==================== -->
+<div id="options" class="screen hidden">
+  <div class="panel wide options-panel">
+    <div class="panel-kicker">SETTINGS</div>
+    <h2>OPTIONS</h2>
+    <div class="opt-sections">
+      <section class="opt-section">
+        <div class="section-head"><span>PROFILE</span><i class="section-rule"></i></div>
+        <div class="opt-grid">
+          <label for="opt-name">Soldier name</label>
+          <div><input id="opt-name" maxlength="14" /></div>
+        </div>
+      </section>
+
+      <section class="opt-section">
+        <div class="section-head"><span>CONTROLS</span><i class="section-rule"></i></div>
+        <div class="opt-grid">
+          <label for="opt-sens">Mouse sensitivity <span id="opt-sens-val" class="val"></span></label>
+          <input id="opt-sens" type="range" min="0.2" max="3" step="0.05" />
+
+          <label for="opt-invert">Invert Y axis</label>
+          <div class="opt-toggle"><input id="opt-invert" type="checkbox" /><span class="opt-switch" aria-hidden="true"></span></div>
+        </div>
+      </section>
+
+      <section class="opt-section">
+        <div class="section-head"><span>VIDEO</span><i class="section-rule"></i></div>
+        <div class="opt-grid">
+          <label for="opt-fov">Field of view <span id="opt-fov-val" class="val"></span></label>
+          <input id="opt-fov" type="range" min="70" max="110" step="1" />
+
+          <label for="opt-brightness">Brightness <span id="opt-brightness-val" class="val"></span></label>
+          <input id="opt-brightness" type="range" min="0.5" max="1.6" step="0.05" />
+
+          <label for="opt-motionblur">Motion blur <span id="opt-motionblur-val" class="val"></span></label>
+          <input id="opt-motionblur" type="range" min="0" max="1.5" step="0.05" />
+
+          <label for="opt-quality">Quality</label>
+          <select id="opt-quality">
+            <option value="auto">Auto (recommended)</option>
+            <option value="low">Low (max FPS)</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="opt-section">
+        <div class="section-head"><span>AUDIO</span><i class="section-rule"></i></div>
+        <div class="opt-grid">
+          <label for="opt-master">Master volume <span id="opt-master-val" class="val"></span></label>
+          <input id="opt-master" type="range" min="0" max="1" step="0.05" />
+
+          <label for="opt-sfx">Effects volume <span id="opt-sfx-val" class="val"></span></label>
+          <input id="opt-sfx" type="range" min="0" max="1" step="0.05" />
+
+          <label for="opt-music">Music volume <span id="opt-music-val" class="val"></span></label>
+          <input id="opt-music" type="range" min="0" max="1" step="0.05" />
+
+          <label for="opt-voice">Zombie voices <span id="opt-voice-val" class="val"></span></label>
+          <input id="opt-voice" type="range" min="0" max="1" step="0.05" />
+
+          <label for="opt-voicechat">Voice chat (co-op)</label>
+          <div class="opt-toggle"><input id="opt-voicechat" type="checkbox" /><span class="opt-switch" aria-hidden="true"></span></div>
+        </div>
+      </section>
+    </div>
+    <div class="row-buttons">
+      <button id="btn-options-back" class="mbtn primary">BACK</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAUSE ==================== -->
+<div id="pause" class="screen overlay-dark hidden">
+  <div class="pause-shell">
+    <div class="panel pause-panel">
+      <div class="panel-kicker">MATCH SUSPENDED</div>
+      <h2>PAUSED</h2>
+      <div class="pause-stats" aria-live="polite">
+        <div class="pstat"><span class="pstat-lbl">ROUND</span><span class="pstat-val" id="pause-round">—</span></div>
+        <div class="pstat"><span class="pstat-lbl">POINTS</span><span class="pstat-val" id="pause-points">—</span></div>
+      </div>
+      <div class="row-buttons col">
+        <button id="btn-resume" class="mbtn primary">RESUME</button>
+        <button id="btn-pause-fs" class="mbtn">FULLSCREEN: OFF</button>
+        <button id="btn-pause-mic" class="mbtn">MIC: ON</button>
+        <button id="btn-pause-options" class="mbtn">OPTIONS</button>
+        <button id="btn-quit" class="mbtn danger">QUIT TO MENU</button>
+      </div>
+      <p class="dim small-note">Esc — resume · In co-op the world keeps moving while you're away…</p>
+      <div class="pause-controls">
+        <span class="kp"><b>WASD</b> move</span><span class="kp"><b>LMB</b> fire</span><span class="kp"><b>RMB / E</b> aim</span><span class="kp"><b>R</b> reload</span><span class="kp"><b>1/2/Q</b> weapons</span><span class="kp"><b>V</b> knife</span><span class="kp"><b>G</b> grenade</span><span class="kp"><b>X</b> monkey</span><span class="kp"><b>I</b> inspect</span><span class="kp"><b>T</b> flashlight</span><span class="kp"><b>F</b> interact</span><span class="kp"><b>Space</b> jump</span><span class="kp"><b>Shift</b> sprint</span><span class="kp"><b>C</b> crouch</span><span class="kp"><b>Tab</b> score</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TOUCH DEVICE NOTICE ==================== -->
+<div id="device-gate" class="screen hidden" role="dialog" aria-labelledby="device-gate-title">
+  <div class="fog-layer f1"></div>
+  <div class="fog-layer f2"></div>
+  <div class="gate-grain" aria-hidden="true"></div>
+  <div class="gate-vignette" aria-hidden="true"></div>
+  <div class="gate-dossier">GERÄTEPRÜFUNG&nbsp;//&nbsp;EINGESCHRÄNKTER ZUGRIFF</div>
+  <main class="device-gate-card">
+    <div class="gate-kicker">FIELD NOTICE · 01</div>
+    <div class="gate-mark" aria-hidden="true">×</div>
+    <h2 id="device-gate-title">DESKTOP REQUIRED</h2>
+    <p class="gate-lead">This game is only available via desktop and computer devices.</p>
+    <p class="gate-copy">Der Koloss uses mouse look, keyboard controls, pointer lock, and a full-scale 3D battlefield. Return on a desktop computer to enter the factory.</p>
+    <nav class="gate-actions" aria-label="Available pages">
+      <a class="gate-action primary" href="./assets/">OPEN ASSET ARCHIVE</a>
+      <a class="gate-action" href="https://github.com/rishipr/der-koloss-ce" target="_blank" rel="noopener">READ ABOUT THE GAME</a>
+    </nav>
+    <button id="gate-audio" class="gate-audio" type="button" aria-pressed="false">▶ PLAY MENU TRANSMISSION</button>
+  </main>
+  <div class="gate-foot">THE FACTORY WILL BE WAITING.</div>
+  <audio id="gate-soundtrack" loop preload="auto" src="assets/audio/menu_music.mp3"></audio>
+</div>
+
+<div id="toast" class="hidden"></div>
+
+<script type="module">
+  import { isMobileOrTablet } from './js/device-gate.js';
+  import { syncMenuMusicElement } from './js/site-audio.js?v=6';
+
+  if (isMobileOrTablet()) {
+    const gate = document.getElementById('device-gate');
+    const soundtrack = document.getElementById('gate-soundtrack');
+    const audioButton = document.getElementById('gate-audio');
+    const gateUi = new Audio('assets/audio/ui.mp3');
+    gate.classList.remove('hidden');
+    document.body.classList.add('touch-device-gated');
+
+    const syncAudioButton = () => {
+      const playing = !soundtrack.paused;
+      audioButton.setAttribute('aria-pressed', String(playing));
+      audioButton.textContent = playing ? '❚❚ PAUSE MENU TRANSMISSION' : '▶ PLAY MENU TRANSMISSION';
+    };
+    const tryPlay = () => soundtrack.play().then(syncAudioButton).catch(() => {});
+    soundtrack.volume = 0.42;
+    gateUi.volume = 0.5;
+    syncMenuMusicElement(soundtrack);
+    tryPlay();
+    audioButton.addEventListener('click', () => {
+      if (soundtrack.paused) tryPlay();
+      else { soundtrack.pause(); syncAudioButton(); }
+    });
+    gate.querySelectorAll('a, button').forEach((control) => control.addEventListener('click', (event) => {
+      if (control === audioButton) return;
+      gateUi.currentTime = 0;
+      gateUi.play().catch(() => {});
+      if (!control.matches('a') || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      setTimeout(() => { location.href = control.href; }, 75);
+    }));
+    document.addEventListener('pointerdown', () => { if (soundtrack.paused) tryPlay(); }, { once: true });
+  } else {
+    import('./js/main.js?v=6');
+  }
+</script>
+
+<!-- ============================================================
+     Presentation-only shell.
+     Purely additive: it never rewrites markup that js/main.js owns,
+     it only decorates it. Everything here degrades to "no decoration"
+     if it throws, and no element that main.js queries is renamed,
+     removed or re-parented.
+     ============================================================ -->
+<script type="module">
+  const MAX_SLOTS = 4;
+  const lobbyPlayers = document.getElementById('lobby-players');
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
+  /* ---- lobby: turn main.js' flat rows into four real squad slots ---- */
+  function decorateLobby() {
+    if (!lobbyPlayers) return;
+    const rows = [...lobbyPlayers.querySelectorAll(':scope > .lobby-row')];
+    rows.forEach((row, i) => {
+      row.dataset.slot = String(i + 1);
+      row.classList.toggle('is-host', !!row.querySelector('.lobby-name')?.textContent.includes('👑'));
+      row.classList.toggle('is-you', !!row.querySelector('.lobby-name')?.textContent.includes('(you)'));
+      row.classList.toggle('is-ready', !!row.querySelector('.lobby-ready.yes'));
+      const nameEl = row.querySelector('.lobby-name');
+      if (nameEl && !row.querySelector('.lobby-avatar')) {
+        const av = document.createElement('span');
+        av.className = 'lobby-avatar';
+        av.setAttribute('aria-hidden', 'true');
+        av.style.setProperty('--slot-color', nameEl.style.color || '#e8e4d8');
+        av.textContent = (nameEl.textContent.replace(/[^A-Za-z0-9]/g, '')[0] || '?').toUpperCase();
+        row.insertBefore(av, row.firstChild);
+      }
+      const av = row.querySelector('.lobby-avatar');
+      if (av && nameEl) av.style.setProperty('--slot-color', nameEl.style.color || '#e8e4d8');
+      // icon-only controls main.js emits need accessible names
+      const mute = row.querySelector('.lobby-mute');
+      if (mute) {
+        const who = (nameEl?.textContent || 'player').replace(/[👑]/g, '').trim();
+        mute.setAttribute('aria-label', `${mute.classList.contains('muted') ? 'Unmute' : 'Mute'} ${who}`);
+      }
+      const spk = row.querySelector('.lobby-spk');
+      if (spk) { spk.setAttribute('aria-hidden', 'true'); spk.setAttribute('title', 'voice activity'); }
+      row.setAttribute('role', 'listitem');
+    });
+    lobbyPlayers.setAttribute('role', 'list');
+    lobbyPlayers.setAttribute('aria-label', 'Squad slots');
+    // trailing empty slots so the squad always reads as a four-seat squad
+    [...lobbyPlayers.querySelectorAll(':scope > .lobby-slot-empty')].forEach((n) => n.remove());
+    for (let i = rows.length; i < MAX_SLOTS; i++) {
+      const slot = document.createElement('div');
+      slot.className = 'lobby-slot-empty';
+      slot.setAttribute('aria-hidden', 'true');
+      slot.innerHTML = '<span class="slot-num">' + String(i + 1).padStart(2, '0')
+        + '</span><span class="slot-text">OPEN SLOT</span><span class="slot-cta">SHARE THE CODE</span>';
+      lobbyPlayers.appendChild(slot);
+    }
+  }
+  if (lobbyPlayers) {
+    decorateLobby();
+    new MutationObserver((records) => {
+      // ignore our own appends
+      if (records.every((r) => [...r.addedNodes].every((n) => n.nodeType === 1 && n.classList.contains('lobby-slot-empty')))) return;
+      decorateLobby();
+    }).observe(lobbyPlayers, { childList: true });
+  }
+
+  /* ---- field manual: full legend is opt-in, and never resizes the page ---- */
+  const brief = document.querySelector('.menu-brief');
+  const briefToggle = document.getElementById('btn-controls');
+  if (brief && briefToggle) {
+    const KEY = 'der-koloss-controls-open';
+    const setOpen = (open, persist) => {
+      brief.classList.toggle('open', open);
+      briefToggle.setAttribute('aria-expanded', String(open));
+      briefToggle.textContent = open ? 'ESSENTIALS' : 'ALL CONTROLS';
+      if (persist) { try { localStorage.setItem(KEY, open ? '1' : '0'); } catch { /* private mode */ } }
+    };
+    const roomy = matchMedia('(min-height: 1000px) and (min-width: 1101px)');
+    const stored = () => { try { return localStorage.getItem(KEY); } catch { return null; } };
+    // Default open only where there is genuinely room; re-evaluate on resize
+    // until the player expresses a preference, which then wins forever.
+    const applyDefault = () => { if (stored() === null) setOpen(roomy.matches, false); };
+    setOpen(stored() === null ? roomy.matches : stored() === '1', false);
+    roomy.addEventListener('change', applyDefault);
+    briefToggle.addEventListener('click', () => setOpen(!brief.classList.contains('open'), true));
+  }
+
+  /* ---- pause: mirror the live round / points so the state stays legible ---- */
+  const pauseScreen = document.getElementById('pause');
+  const pauseRound = document.getElementById('pause-round');
+  const pausePoints = document.getElementById('pause-points');
+  if (pauseScreen && pauseRound && pausePoints) {
+    const syncPauseStats = () => {
+      if (pauseScreen.classList.contains('hidden')) return;
+      const r = (document.getElementById('round')?.textContent || '').trim();
+      const p = (document.getElementById('points')?.textContent || '').trim();
+      pauseRound.textContent = r || '—';
+      pausePoints.textContent = p ? Number(p).toLocaleString('en-US') : '—';
+    };
+    new MutationObserver(syncPauseStats).observe(pauseScreen, { attributes: true, attributeFilter: ['class'] });
+    syncPauseStats();
+  }
+
+  /* ---- character select: show which soldier is already yours ---- */
+  const charCards = document.getElementById('char-cards');
+  const charName = document.getElementById('lobby-char-name');
+  if (charCards && charName) {
+    const markCurrent = () => {
+      const mine = (charName.textContent || '').trim().toLowerCase();
+      charCards.querySelectorAll('.char-card').forEach((card) => {
+        const label = card.querySelector('.cc-name')?.textContent.trim().toLowerCase();
+        card.classList.toggle('is-current', !!mine && label === mine);
+      });
+    };
+    new MutationObserver(markCurrent).observe(charCards, { childList: true });
+    new MutationObserver(markCurrent).observe(charName, { childList: true, characterData: true, subtree: true });
+  }
+
+  /* ---- the code itself is the fastest thing to share: make it copyable ---- */
+  const codeEl = document.getElementById('lobby-code');
+  if (codeEl) {
+    codeEl.setAttribute('role', 'button');
+    codeEl.setAttribute('tabindex', '0');
+    codeEl.setAttribute('aria-label', 'Lobby code — activate to copy');
+    let copyT = null;
+    const copyCode = async () => {
+      const code = (codeEl.textContent || '').trim();
+      if (!code || code === '-----') return;
+      try { await navigator.clipboard.writeText(code); } catch { return; }
+      codeEl.classList.add('copied');
+      clearTimeout(copyT);
+      copyT = setTimeout(() => codeEl.classList.remove('copied'), 1600);
+    };
+    codeEl.addEventListener('click', copyCode);
+    codeEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); copyCode(); }
+    });
+  }
+
+  /* ---- lobby countdown presence: mirror main.js' hint text into a ring ---- */
+  const hint = document.getElementById('lobby-hint');
+  if (hint) {
+    const ring = document.createElement('div');
+    ring.className = 'lobby-countdown hidden';
+    ring.setAttribute('aria-hidden', 'true');
+    ring.innerHTML = '<span class="cd-num"></span><span class="cd-lbl">STARTING</span>';
+    hint.parentNode.insertBefore(ring, hint);
+    const num = ring.querySelector('.cd-num');
+    new MutationObserver(() => {
+      const m = /Starting in (\d+)s/.exec(hint.textContent || '');
+      ring.classList.toggle('hidden', !m);
+      if (m && num.textContent !== m[1]) {
+        num.textContent = m[1];
+        if (!reduceMotion.matches) { ring.classList.remove('tick'); void ring.offsetWidth; ring.classList.add('tick'); }
+      }
+    }).observe(hint, { childList: true, characterData: true, subtree: true });
+  }
+
+  /* ---- sliders read as filled-to-value, not as a bare rail ---- */
+  const ranges = [...document.querySelectorAll('.opt-grid input[type="range"]')];
+  const paintRange = (el) => {
+    const min = Number(el.min || 0), max = Number(el.max || 100);
+    const pct = max > min ? ((Number(el.value) - min) / (max - min)) * 100 : 0;
+    el.style.setProperty('--fill', Math.max(0, Math.min(100, pct)) + '%');
+  };
+  ranges.forEach((el) => {
+    paintRange(el);
+    el.addEventListener('input', () => paintRange(el));
+  });
+  // main.js can rewrite the master slider (co-op auto-volume); repaint on open
+  const optionsScreen = document.getElementById('options');
+  if (optionsScreen) {
+    new MutationObserver(() => {
+      if (!optionsScreen.classList.contains('hidden')) ranges.forEach(paintRange);
+    }).observe(optionsScreen, { attributes: true, attributeFilter: ['class'] });
+  }
+
+  /* ---- press feedback on every menu/panel button (compositor-only) ---- */
+  document.addEventListener('pointerdown', (e) => {
+    const b = e.target.closest?.('.mbtn, .char-card, .vline-btn, .wpn-item, .gate-action');
+    if (b) b.classList.add('is-pressed');
+  }, true);
+  const clearPress = () => document.querySelectorAll('.is-pressed').forEach((b) => b.classList.remove('is-pressed'));
+  document.addEventListener('pointerup', clearPress, true);
+  document.addEventListener('pointercancel', clearPress, true);
+
+  /* ---- keyboard users get focus rings; mouse users do not ---- */
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab') document.body.classList.add('kbd-nav');
+  }, true);
+  document.addEventListener('pointerdown', () => document.body.classList.remove('kbd-nav'), true);
+</script>
+
+<!-- Menu background plate: pauses the loop off-screen, honours reduced motion,
+     falls back to the poster still. Purely an enhancement of the markup above. -->
+<script type="module" src="./js/menu-bg.js?v=1"></script>
+</body>
+</html>

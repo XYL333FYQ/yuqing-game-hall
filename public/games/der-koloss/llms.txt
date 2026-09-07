@@ -1,0 +1,22 @@
+# Der Koloss
+
+> Der Koloss is a free, fan-made browser zombie survival game created by vesper.inc. It is a tribute to the original Der Riese map and is not affiliated with or endorsed by the original rights holders.
+
+Canonical site: https://www.derkoloss.com/
+Social preview image: https://www.derkoloss.com/assets/der-koloss-og-v06-courtyard-rev2-1200x630.png
+
+## What it is
+
+- First-person, wave-based zombie survival playable in a modern desktop web browser.
+- Supports solo play and online co-op for up to four players.
+- Multiplayer includes in-game voice chat, ready-up flow, personalized invite links, and one distinct character per player.
+- Gameplay includes Pack-a-Punch weapon upgrades, the Ray Gun, Wunderwaffe DG-2, Monkey Bombs, mystery box, perk machines, teleporters, electric traps, power-ups, revives, and escalating zombie rounds.
+- No download or purchase is required.
+
+## How to play
+
+Open https://www.derkoloss.com/ and choose Solo, Host Lobby, or Join Lobby. A host can copy a personalized invite URL. Invite URLs identify the inviter and lobby code in link-preview metadata, then open the in-game join screen.
+
+## Attribution
+
+Created by vesper.inc. Fan-made tribute to the original Der Riese. Not affiliated with or endorsed by the original rights holders.

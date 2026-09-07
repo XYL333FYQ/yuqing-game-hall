@@ -1,0 +1,475 @@
+<!DOCTYPE html><head>
+<title>Wordly</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<script src="../templates/engineLoader.js?1780767748506"></script>
+<script src="../templates/gameFx.js?1780767748506"></script>
+<script src="../templates/words.js?1780767748506"></script>
+<script src="../templates/menus.js?1780767748506"></script>
+<script>
+'use strict';
+
+const testMode = debug;   // bypasses word validation; debug build only
+
+///////////////////////////////////////////////////////////////////////////////
+// LAYOUT (world space, y-up)
+const ROWS = 6, COLS = 5;
+const TILE = 1.5, GAP = 0.18, STEP = TILE + GAP;
+const GRID_TOP = 9.2;                       // y of top row of tiles
+const KB_ROWS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
+const KEY_W = 1.0, KEY_H = 1.4, KEY_GAP = 0.14, KEY_STEP = KEY_W + KEY_GAP;
+const WIDE = KEY_W * 1.6;                    // ENTER / BACK width
+const KB_TOP = -3.6, KB_ROW_STEP = KEY_H + 0.22;
+const ARENA = vec2(12.5, 19);               // world box the camera fits to
+const CAM_Y = 1.25;
+
+function tilePos(row, col) {
+    return vec2((col - (COLS - 1) / 2) * STEP, GRID_TOP - row * STEP);
+}
+
+// Build keyboard key descriptors: {label, key, pos, size}
+function buildKeys() {
+    const keys = [];
+    KB_ROWS.forEach((rowStr, r) => {
+        const y = KB_TOP - r * KB_ROW_STEP;
+        const chars = rowStr.split('');
+        const cells = (r === 2)
+            ? [{key:'ENTER', label:'⏎', w:WIDE}, ...chars.map(c => ({key:c, label:c, w:KEY_W})), {key:'BACK', label:'⌫', w:WIDE}]
+            : chars.map(c => ({key:c, label:c, w:KEY_W}));
+        const totalW = cells.reduce((s, c) => s + c.w, 0) + (cells.length - 1) * KEY_GAP;
+        let x = -totalW / 2;
+        for (const c of cells) {
+            keys.push({key:c.key, label:c.label, pos:vec2(x + c.w / 2, y), size:vec2(c.w, KEY_H)});
+            x += c.w + KEY_GAP;
+        }
+    });
+    return keys;
+}
+const KEYS = buildKeys();
+
+///////////////////////////////////////////////////////////////////////////////
+// COLORS
+let highContrast = false;
+function palette() {
+    return highContrast
+        ? {correct: new Color().setHex('#f5793a'), present: new Color().setHex('#85c0f9'),
+           absent: hsl(0,0,.28), tile: hsl(0,0,.10), border: hsl(0,0,.32),
+           text: hsl(0,0,1), bg: hsl(0,0,.06)}
+        : {correct: new Color().setHex('#538d4e'), present: new Color().setHex('#b59f3b'),
+           absent: hsl(0,0,.28), tile: hsl(0,0,.10), border: hsl(0,0,.32),
+           text: hsl(0,0,1), bg: hsl(0,0,.06)};
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// STATE
+let answer = '';
+let guesses = [];        // submitted guess strings
+let evals = [];          // arrays of 'correct'|'present'|'absent'
+let current = '';        // row being typed
+let keyState = {};       // letter -> best state
+let finished = false;    // win or lose: stop input
+let dailyMode = false;   // true while playing the daily puzzle
+let reviewMode = false, reviewArmed = false;  // viewing a finished daily (read-only)
+let message = '', messageTimer = new Timer();
+let rowRevealTime = -9;   // engine time when the latest row was submitted
+let popCol = -1, popTime = -9;   // last typed tile (entry pop)
+let shakeTime = -9;       // invalid-row shake start
+let winTime = -9;         // win bounce start
+const FLIP = 0.28;        // seconds per-tile flip
+const STAGGER = 0.18;     // delay between tiles in a revealing row
+
+// ---- daily puzzle helpers (UTC day) ----
+const LAUNCH_DAY = floor(Date.UTC(2026, 5, 1) / 864e5);   // Jun 1 2026 UTC = Daily #1
+function dayNumber() { return floor(Date.now() / 864e5); }
+function dailyWord() { return WORDLE_ANSWERS[dayNumber() % WORDLE_ANSWERS.length]; }
+function currentDailyStreak() {
+    const b = getSaveData();
+    const last = (b.lastDailyDay ?? -1);
+    return (last >= dayNumber() - 1) ? (b.dailyStreak || 0) : 0;
+}
+
+function newGame(daily = false) {
+    dailyMode = daily;
+    answer = daily ? dailyWord() : WORDLE_ANSWERS[randInt(WORDLE_ANSWERS.length)];
+    guesses = []; evals = []; current = '';
+    keyState = {}; finished = false; message = ''; reviewMode = false;
+    rowRevealTime = -9; popCol = -1; popTime = -9; shakeTime = -9; winTime = -9;
+}
+
+// Rebuild an in-progress board from a saved slot {answer, guesses[]}.
+// evals + keyState are recomputed, never stored.
+function resumeGame(slot, daily) {
+    dailyMode = daily;
+    answer = slot.answer;
+    guesses = slot.guesses.slice();
+    evals = guesses.map(g => evaluate(g, answer));
+    keyState = {};
+    guesses.forEach((g, r) => {
+        for (let i = 0; i < COLS; i++)
+            keyState[g[i]] = mergeKeyState(keyState[g[i]], evals[r][i]);
+    });
+    current = ''; finished = false; message = ''; reviewMode = false;
+    rowRevealTime = -9; popCol = -1; popTime = -9; shakeTime = -9; winTime = -9;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// SOUNDS (gameFx.js SoundGenerator)
+const sndKey   = new SoundGenerator({frequency: 480, release: .04, volume: .3, shape: 5});
+const sndError = new SoundGenerator({frequency: 130, release: .25, volume: .4, shape: 2, noise: .1});
+const sndType  = new SoundGenerator({frequency: 660, release: .03, volume: .25, shape: 5});
+const sndSubmit = new SoundGenerator({frequency: 300, release: .12, volume: .4, shape: 1, slide: 2});
+const sndWin    = new SoundGenerator({frequency: 523, release: .3, volume: .5, shape: 1, pitchJump: 400, pitchJumpTime: .12});
+const sndLose   = new SoundGenerator({frequency: 200, release: .5, volume: .5, shape: 2, slide: -1});
+
+// Duplicate-safe scoring (verified against Wordle rules).
+function evaluate(guess, answer) {
+    const result = new Array(5).fill('absent');
+    const counts = {};
+    for (const ch of answer) counts[ch] = (counts[ch] || 0) + 1;
+    for (let i = 0; i < 5; i++)
+        if (guess[i] === answer[i]) { result[i] = 'correct'; counts[guess[i]]--; }
+    for (let i = 0; i < 5; i++) {
+        if (result[i] === 'correct') continue;
+        const ch = guess[i];
+        if (counts[ch] > 0) { result[i] = 'present'; counts[ch]--; }
+    }
+    return result;
+}
+const KEY_RANK = { absent: 1, present: 2, correct: 3 };
+function mergeKeyState(cur, next) {
+    if (!cur) return next;
+    return KEY_RANK[next] > KEY_RANK[cur] ? next : cur;
+}
+
+const VALID_SET = new Set(WORDLE_VALID);
+
+function showMessage(text) { message = text; messageTimer.set(1.2); }
+
+// Handle one logical key action ('A'..'Z', 'ENTER', 'BACK').
+function pressKey(key) {
+    if (finished) return;
+    if (key === 'ENTER') { submitGuess(); return; }
+    if (key === 'BACK') { if (current.length) { current = current.slice(0, -1); sndType.play(); } return; }
+    if (/^[A-Z]$/.test(key) && current.length < COLS) { current += key; popCol = current.length - 1; popTime = time; sndType.play(); }
+}
+
+// Persist the in-progress board to the correct slot (per submitted guess).
+function saveProgress() {
+    if (dailyMode)
+        saveData({ dailyProgress: { day: dayNumber(), answer, guesses: guesses.slice() } });
+    else
+        saveData({ endlessProgress: { answer, guesses: guesses.slice() } });
+}
+
+function submitGuess() {
+    if (!testMode && current.length < COLS) { showMessage('NOT ENOUGH LETTERS'); sndError.play(); shakeTime = time; return; }
+    if (!testMode && !VALID_SET.has(current)) { showMessage('NOT IN WORD LIST'); sndError.play(); shakeTime = time; return; }
+
+    const result = evaluate(current, answer);
+    guesses.push(current);
+    rowRevealTime = time;
+    evals.push(result);
+    for (let i = 0; i < COLS; i++)
+        keyState[current[i]] = mergeKeyState(keyState[current[i]], result[i]);
+    sndSubmit.play();
+
+    const guess = current;
+    current = '';
+
+    if (guess === answer) { finished = true; finishGame(true); }
+    else if (guesses.length >= ROWS) { finished = true; finishGame(false); }
+    else saveProgress();
+}
+
+function finishGame(won) {
+    if (won) { sndWin.play(); winTime = time; } else sndLose.play();
+    const n = guesses.length;
+
+    if (dailyMode) {
+        const b = getSaveData();
+        const today = dayNumber();
+        const prevStreak = currentDailyStreak();   // effective streak BEFORE this game
+        const newStreak = won
+            ? ((b.lastDailyDay === today - 1 && b.lastDailyWon) ? (b.dailyStreak || 0) + 1 : 1)
+            : 0;
+        saveData({
+            dailyStreak: newStreak, lastDailyDay: today, lastDailyWon: won, lastDailyGuesses: n,
+            // keep the full finished board so the player can re-open and review it
+            dailyProgress: { day: today, answer, guesses: guesses.slice() },
+        });
+        const num = today - LAUNCH_DAY + 1;
+        const lines = won
+            ? ['Daily #' + num, 'Solved in ' + n + '/6', 'DAILY STREAK ' + newStreak]
+            : ['Daily #' + num, 'The word was ' + answer];
+        if (!won && prevStreak > 0) lines.push('STREAK BROKEN (' + prevStreak + ')');
+        showGameOverDialog({ won, customMessage: lines.join('\n'),
+            submitBest: false, onContinue: () => quitToTitle() });
+    } else {
+        saveData({ endlessProgress: null });
+        if (won) {
+            const streak = (getSaveData().streak || 0) + 1;
+            saveData({ streak });
+            const isBest = submitBestScore(streak);
+            const lines = ['Solved in ' + n + (n === 1 ? ' guess!' : ' guesses!'), 'STREAK ' + streak];
+            if (isBest) lines.push('NEW BEST!');
+            showGameOverDialog({ won: true, customMessage: lines.join('\n'),
+                submitBest: false, onContinue: () => quitToTitle() });
+        } else {
+            saveData({ streak: 0 });
+            showGameOverDialog({ won: false, customMessage: 'The word was ' + answer,
+                submitBest: false, onContinue: () => quitToTitle() });
+        }
+    }
+}
+
+// Refresh CONTINUE visibility, DAILY button state/label, and the daily streak line.
+function refreshTitle() {
+    const t = getMenu('title');
+    if (!t) return;
+    const b = getSaveData(), today = dayNumber();
+
+    t.getItem('continue').setVisible(!!b.endlessProgress);
+
+    const daily = t.getItem('daily');
+    if (b.lastDailyDay === today) {
+        daily.setDisabled(false);   // clickable to review the finished board
+        daily.setLabel('DAILY ' + (b.lastDailyWon ? '✓ ' + b.lastDailyGuesses + '/6' : '✗ X/6') + ' — VIEW');
+    } else if (b.dailyProgress && b.dailyProgress.day === today) {
+        daily.setDisabled(false);
+        daily.setLabel('DAILY (CONTINUE)');
+    } else {
+        daily.setDisabled(false);
+        daily.setLabel('DAILY');
+    }
+
+    t.getItem('dailyStreak').setLabel('DAILY STREAK ' + currentDailyStreak());
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function gameInit() {
+    canvasClearColor = palette().bg;
+    setSoundVolume(.6);
+    saveDataInit('WordGuess');
+    setMenuVisibilityCallback(v => paused = v);
+
+    // Wordle-style menu skin
+    setMenuTheme({
+        bg:          'rgba(18,18,19,.96)',
+        accent:      '#6aaa64',
+        borderWidth: 2,
+        radius:      6,
+    });
+
+    newGame();
+
+    createTitleMenu({
+        title: 'WORDLY',
+        titleFx: {fill:'shine', color:'#6aaa64', spacing:0.12},
+        subtitle: 'Guess the 5-letter word in 6 tries',
+        showBest: true,
+        formatBest: n => 'BEST STREAK ' + n,
+        canReveal: () => !isPlaying(),
+        revealOnClick: false,
+        playLabel: 'PLAY RANDOM',
+        // PLAY always starts a FRESH endless word, discarding any in-progress board.
+        onPlay: () => { newGame(false); saveData({ endlessProgress: null }); setPlaying(true); },
+        onShow: refreshTitle,
+        items: [
+            {type:'button', id:'continue', label:'CONTINUE', onClick: () => {
+                const slot = getSaveData().endlessProgress;
+                if (!slot) return;
+                resumeGame(slot, false); setPlaying(true); hideMenu('title');
+            }},
+            {type:'button', id:'daily', label:'DAILY', onClick: () => {
+                const b = getSaveData(), today = dayNumber();
+                if (b.lastDailyDay === today) {                 // already done -> review saved board
+                    if (b.dailyProgress && b.dailyProgress.day === today) {
+                        resumeGame(b.dailyProgress, true);
+                        finished = true; reviewMode = true; reviewArmed = false;
+                        setPlaying(true); hideMenu('title');
+                    }
+                    return;
+                }
+                if (b.dailyProgress && b.dailyProgress.day === today)
+                    resumeGame(b.dailyProgress, true);
+                else
+                    newGame(true);
+                setPlaying(true); hideMenu('title');
+            }},
+            {type:'label', id:'dailyStreak', text:'DAILY STREAK 0'},
+            {type:'button', label:'OPTIONS', onClick: () => pushMenu('options')},
+            {type:'button', label:'ABOUT',   onClick: () => pushMenu('about')},
+        ],
+    });
+
+    createOptionsMenu({
+        showResetBest: true,
+        resetBestMessage: 'Reset your best streak?',
+        extraItems: [
+            {type:'separator'},
+            {type:'checkbox', id:'contrast', label:'HIGH CONTRAST', value:false,
+                persist:'contrast', onChange: v => { highContrast = v; }},
+        ],
+    });
+
+    createHelpMenu({
+        id: 'about',
+        title: 'ABOUT',
+        text: 'Guess the hidden 5-letter word in 6 tries. ' +
+            'Green = right letter, right spot. Yellow = in the word, wrong spot. ' +
+            'Gray = not in the word. Type with your keyboard or tap the on-screen keys. ' +
+            'Win in a row to build your streak.',
+    });
+
+    createMenu({
+        id: 'pause',
+        title: 'PAUSED',
+        initialItemId: 'resume',
+        items: [
+            {type:'button', id:'resume',  label:'RESUME',        onClick: () => hideMenu('pause')},
+            {type:'button', id:'options', label:'OPTIONS',       onClick: () => pushMenu('options')},
+            {type:'button', id:'quit',    label:'QUIT TO TITLE', onClick: () =>
+                showConfirmDialog({ message: 'Quit to title?', onYes: () => { newGame(); quitToTitle(); } })},
+        ],
+    });
+
+    installDefaultToolbar();
+    showMenu('title');
+}
+
+function gameUpdate() {
+    if (reviewMode) {
+        // read-only review of a finished daily; ignore the opening click (one armed
+        // frame), then any key / tap returns to the title.
+        if (!reviewArmed) { reviewArmed = true; return; }
+        if (keyWasPressed('Escape') || keyWasPressed('Enter') || mouseWasPressed(0)) {
+            reviewMode = false; quitToTitle();
+        }
+        return;
+    }
+    if (bindPauseKey({ when: () => isPlaying() && !finished })) return;
+    if (!isPlaying()) return;
+
+    // physical keyboard: A..Z
+    for (let i = 0; i < 26; i++) {
+        const letter = String.fromCharCode(65 + i);
+        if (keyWasPressed('Key' + letter)) pressKey(letter);
+    }
+    if (keyWasPressed('Enter')) pressKey('ENTER');
+    if (keyWasPressed('Backspace')) pressKey('BACK');
+
+    // on-screen keyboard: click / tap
+    if (mouseWasPressed(0))
+        for (const k of KEYS)
+            if (isOverlapping(k.pos, k.size, mousePos, vec2(0))) { pressKey(k.key); break; }
+
+    // reveal blips: fire once as each tile in the revealing row passes its flip midpoint
+    if (guesses.length && time - rowRevealTime >= 0) {
+        const r = guesses.length - 1;
+        for (let c = 0; c < COLS; c++) {
+            const mid = rowRevealTime + c * STAGGER + FLIP / 2;
+            if (time >= mid && time - timeDelta < mid) sndType.play();
+        }
+    }
+}
+function gameUpdatePost()
+{
+    cameraFit(vec2(0, CAM_Y), ARENA);
+}
+
+// Draw a single tile with letter. A non-null `border` draws a ring (outer
+// border rect + inset fill rect); otherwise a solid fill. All WebGL (default)
+// so letters drawn afterward layer correctly on top.
+function drawCell(pos, size, fill, border, letter, textCol) {
+    if (border) {
+        drawRect(pos, size, border);
+        drawRect(pos, size.subtract(vec2(.14)), fill);
+    } else {
+        drawRect(pos, size, fill);
+    }
+    if (letter) drawText(letter, pos, size.y * .7, textCol);
+}
+
+function drawGrid() {
+    const pal = palette();
+    const submittedRow = guesses.length - 1;
+    for (let r = 0; r < ROWS; r++)
+        for (let c = 0; c < COLS; c++) {
+            let p = tilePos(r, c);
+            let size = vec2(TILE);
+            let letter = '', fill = pal.tile, border = pal.border, textCol = pal.text;
+
+            if (r < guesses.length) {
+                letter = guesses[r][c];
+                if (r === submittedRow) {
+                    const t = time - rowRevealTime - c * STAGGER;
+                    if (t < 0) { fill = pal.tile; border = pal.border; }
+                    else if (t < FLIP) {
+                        size = vec2(TILE, TILE * abs(1 - t / FLIP * 2 % 2));
+                        if (t < FLIP / 2) { fill = pal.tile; border = pal.border; }
+                        else { fill = pal[evals[r][c]]; border = null; }
+                    } else { fill = pal[evals[r][c]]; border = null; }
+                } else { fill = pal[evals[r][c]]; border = null; }
+                if (winTime > 0 && r === submittedRow) {
+                    const revealDone = (COLS - 1) * STAGGER + FLIP;
+                    const b = time - winTime - revealDone - c * 0.06;
+                    if (b > 0 && b < 0.6) p = p.add(vec2(0, sin(b / 0.6 * PI) * 0.5));
+                }
+            } else if (r === guesses.length && !finished && c < current.length) {
+                letter = current[c]; border = pal.border;
+                if (c === popCol) {
+                    const t = (time - popTime) / 0.12;
+                    if (t < 1) size = vec2(TILE * (1 + 0.18 * (1 - t)));
+                }
+            }
+
+            if (r === guesses.length && !finished) {
+                const s = time - shakeTime;
+                if (s > 0 && s < 0.4) p = p.add(vec2(sin(s * 50) * 0.18 * (1 - s / 0.4), 0));
+            }
+
+            drawCell(p, size, fill, border, letter, textCol);
+        }
+}
+
+function drawKeyboard() {
+    const pal = palette();
+    for (const k of KEYS) {
+        const st = keyState[k.key];
+        // Untried keys are a clear medium gray (available); correct/present take
+        // their state color; absent keys (letters proven NOT in the word) go
+        // distinctly dark with dimmed text so eliminated letters visibly recede.
+        let fill = hsl(0,0,.34), textCol = pal.text;
+        if (st === 'absent') { fill = hsl(0,0,.12); textCol = hsl(0,0,.4); }
+        else if (st) fill = pal[st];
+        drawRect(k.pos, k.size, fill);
+        drawText(k.label, k.pos, k.size.y * .5, textCol);
+    }
+}
+
+function gameRender() {
+    canvasClearColor = palette().bg;
+    drawGrid();
+    drawKeyboard();
+
+    // Reviewing a finished daily you DIDN'T solve: reveal the answer in the gap
+    // between the board and the keyboard.
+    if (reviewMode && !guesses.includes(answer)) {
+        drawText('THE WORD WAS', vec2(0, -0.85), 0.7, hsl(0,0,.85));
+        drawText(answer, vec2(0, -2), 1.4, palette().correct);
+    }
+}
+
+function gameRenderPost() {
+    if (message && !messageTimer.elapsed())
+        drawTextScreen(message, vec2(mainCanvasSize.x/2, mainCanvasSize.y*.10),
+            36, hsl(0,0,1), 5, hsl(0,0,0));
+    if (reviewMode)
+        drawTextScreen('tap or ESC to exit', vec2(mainCanvasSize.x/2, mainCanvasSize.y*.94),
+            26, hsl(0,0,.9), 4, hsl(0,0,0));
+}
+
+///////////////////////////////////////////////////////////////////////////////
+engineInit(gameInit, gameUpdate, gameUpdatePost, gameRender, gameRenderPost);
+</script></body></html>

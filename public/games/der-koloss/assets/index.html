@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="google" content="notranslate">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07080b">
+  <meta name="description" content="Explore the 3D weapon models, character voices, enemy recordings, perks, music, and environmental assets of Der Koloss.">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <title>Asset Archive — Der Koloss</title>
+  <link rel="canonical" href="https://www.derkoloss.com/assets">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:site_name" content="Der Koloss">
+  <meta property="og:title" content="Asset Archive — Der Koloss">
+  <meta property="og:description" content="Explore the 3D weapon models, character voices, enemies, power-ups, perks, music, machines, and environmental assets of Der Koloss.">
+  <meta property="og:url" content="https://www.derkoloss.com/assets">
+  <meta property="og:image" content="https://www.derkoloss.com/assets/der-koloss-og-v06-courtyard-rev2-1200x630.png">
+  <meta property="og:image:secure_url" content="https://www.derkoloss.com/assets/der-koloss-og-v06-courtyard-rev2-1200x630.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Four Der Koloss soldiers armed with upgraded wonder weapons defend the factory against a zombie horde.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Asset Archive — Der Koloss">
+  <meta name="twitter:description" content="Explore the 3D weapons, voices, enemies, power-ups, music, machines, and environmental assets of Der Koloss.">
+  <meta name="twitter:image" content="https://www.derkoloss.com/assets/der-koloss-og-v06-courtyard-rev2-1200x630.png">
+  <meta name="twitter:image:alt" content="Four Der Koloss soldiers defend the factory against a zombie horde.">
+  <!-- Fonts self-hosted under /assets/fonts (see LICENSE.txt there). -->
+  <link rel="preload" href="./fonts/staatliches-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="./fonts/special-elite-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <script>
+    try {
+      document.documentElement.dataset.theme = localStorage.getItem('der-koloss-theme')
+        || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    } catch (error) { document.documentElement.dataset.theme = 'dark'; }
+  </script>
+  <link rel="stylesheet" href="../site.css?v=14">
+  <script type="importmap">{ "imports": { "three": "../vendor/three.module.js" } }</script>
+</head>
+<body>
+  <header class="site-nav">
+    <a class="site-brand" href="../" aria-label="Der Koloss home">
+      <strong class="notranslate" translate="no">DER KOLOSS</strong><span>THE COLOSSUS AWAKENS</span>
+    </a>
+    <button class="site-menu-toggle" type="button" aria-controls="site-menu" aria-expanded="false" aria-label="Open navigation menu"><span></span><span></span><span></span></button>
+    <nav class="site-links" id="site-menu" aria-label="Primary navigation">
+      <a href="./" aria-current="page">Assets</a>
+      <a href="https://github.com/rishipr/der-koloss-ce" target="_blank" rel="noreferrer">About</a>
+      <button class="theme-toggle" type="button" aria-label="Use light theme" aria-pressed="false">
+        <span class="theme-toggle-icon theme-toggle-sun" aria-hidden="true">☀</span>
+        <span class="theme-toggle-icon theme-toggle-moon" aria-hidden="true">☾</span>
+        <span class="theme-toggle-label">Light</span>
+      </button>
+      <a class="play-link" href="../">Play game</a>
+    </nav>
+  </header>
+
+  <main class="site-main">
+    <section class="route-hero">
+      <div class="site-wrap">
+        <p class="eyebrow">Group 935 // Asset Intelligence</p>
+        <h1>Asset Archive</h1>
+        <div class="route-hero-copy">
+          <div class="route-index">ARCHIVE: A-115<br>STATUS: DECLASSIFIED</div>
+          <p>Every field model, report, weapon crack, undead snarl, and machine hum from the factory—catalogued for review. Select a weapon to inspect its model, then compare the standard and Pack-a-Punch recordings.</p>
+        </div>
+        <nav class="section-nav" aria-label="Asset archive sections">
+          <span>Jump to</span>
+          <div class="section-nav-links">
+            <a href="#weapons">Armory</a>
+            <a href="#voices">Voices</a>
+            <a href="#effects">Effects</a>
+            <a href="#original-music">Original Music</a>
+          </div>
+        </nav>
+      </div>
+    </section>
+
+    <section class="section" id="weapons">
+      <div class="site-wrap">
+        <div class="section-heading">
+          <div>
+            <span class="section-no">01 // ARMORY</span>
+            <h2>Weapon Gallery</h2>
+          </div>
+          <p>Filter by weapon family or sound treatment. The selected field model rotates automatically; drag across it with a mouse or finger to inspect it from any angle.</p>
+        </div>
+
+        <div class="armory-browser">
+          <aside class="archive-sidebar" aria-label="Browse weapons">
+            <div class="archive-controls" aria-label="Weapon filters">
+              <label class="filter-group filter-search">
+                <span class="filter-label">SEARCH ARMORY</span>
+                <input id="weapon-search" class="archive-search" type="search" placeholder="Search weapon or upgrade…" aria-label="Search weapons" autocomplete="off">
+              </label>
+              <div class="filter-group">
+                <span class="filter-label">AUDIO VERSION</span>
+                <div class="filter-set" id="variant-filters">
+                  <button class="variant-button active" data-variant="both" type="button" aria-pressed="true">Both</button>
+                  <button class="variant-button" data-variant="normal" type="button" aria-pressed="false">Normal</button>
+                  <button class="variant-button" data-variant="pap" type="button" aria-pressed="false">Pack-a-Punch</button>
+                </div>
+              </div>
+              <div class="filter-group filter-group-classes">
+                <span class="filter-label">WEAPON TYPE</span>
+                <div class="filter-set" id="class-filters"></div>
+              </div>
+            </div>
+            <div class="archive-results-head">
+              <span>ARMORY INDEX</span>
+              <strong id="weapon-result-count">0 WEAPONS</strong>
+            </div>
+            <div class="weapon-grid" id="weapon-grid" role="listbox" aria-label="Weapons"></div>
+            <div class="empty-state" id="weapon-empty">NO ARMORY RECORDS MATCH THIS SEARCH.</div>
+          </aside>
+
+          <div class="weapon-stage">
+            <div class="weapon-canvas-wrap" id="weapon-canvas-wrap" aria-label="Interactive 3D weapon model. Drag to rotate.">
+              <div class="stage-grid" aria-hidden="true"></div>
+              <canvas id="weapon-canvas"></canvas>
+              <div class="weapon-status" id="weapon-status" aria-live="polite">READY // SELECT A FIRE CONTROL</div>
+            </div>
+            <div class="weapon-info">
+              <span class="weapon-class" id="weapon-class">Pistol</span>
+              <h3 id="weapon-name">M1911</h3>
+              <div class="pap-name" id="pap-name">C-3000 b1at-ch35</div>
+              <div class="finish-controls" id="finish-controls" aria-label="Weapon finish">
+                <span>FINISH</span>
+                <div>
+                  <button class="finish-button active" data-finish="standard" type="button">Standard</button>
+                  <button class="finish-button" data-finish="pap" type="button">Pack-a-Punch</button>
+                  <button class="finish-button" data-finish="gold" type="button">Gold</button>
+                  <button class="finish-button" data-finish="diamond" type="button">Diamond</button>
+                </div>
+              </div>
+              <div class="weapon-stats" id="weapon-stats"></div>
+              <p class="fire-instruction" id="fire-instruction">Press to fire. Automatic weapons can be held until the magazine is empty.</p>
+              <div class="stage-audio" id="weapon-audio"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="voices">
+      <div class="site-wrap">
+        <div class="section-heading">
+          <div>
+            <span class="section-no">02 // FIELD RECORDINGS</span>
+            <h2>The Four</h2>
+          </div>
+          <p>Combat reactions and radio dialogue for Dempsey, Nikolai, Takeo, and Richtofen, arranged by character and incident.</p>
+        </div>
+        <div class="sound-groups" id="voice-groups"></div>
+      </div>
+    </section>
+
+    <section class="section" id="effects">
+      <div class="site-wrap">
+        <div class="section-heading">
+          <div>
+            <span class="section-no">03 // FACTORY RECORDS</span>
+            <h2>Effects Library</h2>
+          </div>
+          <p>Weapon handling, the undead, perks, machines, power-ups, rounds, footsteps, and music. Only one archive recording plays at a time.</p>
+        </div>
+        <div class="sound-groups" id="effect-groups"></div>
+      </div>
+    </section>
+
+    <section class="section music-credit-section" id="original-music">
+      <div class="site-wrap">
+        <div class="section-heading">
+          <div>
+            <span class="section-no">04 // ORIGINAL MUSIC CREDIT</span>
+            <h2>Featured Recording</h2>
+          </div>
+          <p>This recording is presented separately from the ElevenLabs-generated sound effects and voice designs used throughout Der Koloss.</p>
+        </div>
+
+        <article class="music-credit-card">
+          <div class="music-credit-intro">
+            <span class="music-credit-kicker">CALL OF DUTY: WORLD AT WAR // DER RIESE</span>
+            <h3>Beauty of Annihilation</h3>
+            <p>The original Der Riese Easter-egg song from <cite>Call of Duty: World at War</cite>, introduced with Map Pack 3.</p>
+            <div class="music-track-control" id="original-music-control"></div>
+          </div>
+          <dl class="music-credit-list">
+            <div class="music-credit-artists"><dt>Artist(s)</dt><dd><a href="https://callofduty.fandom.com/wiki/Kevin_Sherwood" rel="noopener">Kevin Sherwood</a> <span>(Writer &amp; Performer)</span><br><a href="https://callofduty.fandom.com/wiki/Elena_Siegman" rel="noopener">Elena Siegman</a> <span>(Performer)</span></dd></div>
+            <div><dt>Written by</dt><dd>Kevin Sherwood</dd></div>
+            <div><dt>Original appearance</dt><dd><cite>Call of Duty: World at War</cite> — Der Riese, Map Pack 3</dd></div>
+            <div><dt>Original in-game debut</dt><dd>August 6, 2009</dd></div>
+            <div><dt>Game credits</dt><dd>Developed by Treyarch · Published by Activision</dd></div>
+            <div><dt>Der Riese reference</dt><dd><a href="https://callofduty.fandom.com/wiki/Der_Riese" rel="noopener">Call of Duty Wiki ↗</a></dd></div>
+          </dl>
+          <p class="music-rights"><strong>Original copyrighted recording — not generated with ElevenLabs.</strong> Der Koloss claims no ownership of this song or master recording. All rights to the composition, lyrics, performance, recording, soundtrack, and associated Call of Duty material remain with their respective creators and rights holders. Its inclusion does not imply affiliation or endorsement.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <div class="audio-dock" id="audio-dock" role="region" aria-label="Audio player">
+    <button class="dock-toggle" id="dock-toggle" type="button" aria-label="Pause audio" data-ui-sound="off">❚❚</button>
+    <div class="dock-meta">
+      <strong id="dock-title">No recording selected</strong>
+      <div class="dock-progress">
+        <span id="dock-current">0:00</span>
+        <input id="dock-scrub" type="range" min="0" max="100" value="0" aria-label="Audio position">
+        <span id="dock-duration">0:00</span>
+      </div>
+    </div>
+    <span class="dock-kind" id="dock-kind">ARCHIVE AUDIO</span>
+  </div>
+
+  <footer class="site-footer">
+    <div class="site-footer-inner">
+      <span>DER KOLOSS // FAN-MADE TRIBUTE // FREE TO PLAY</span>
+      <span><a href="../NOTICE.md">Credits &amp; legal</a> · <a href="https://vesper.inc/" rel="noopener">Made by Vesper</a></span>
+    </div>
+  </footer>
+
+  <script type="module" src="../js/site-chrome.js?v=9"></script>
+  <script type="module" src="../js/assets-page.js?v=15"></script>
+</body>
+</html>

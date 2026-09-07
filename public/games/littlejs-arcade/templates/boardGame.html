@@ -1,0 +1,315 @@
+<!DOCTYPE html><head>
+<title>LittleJS Board Game Template</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<script src="engineLoader.js?1780767748506"></script>
+<script src="menus.js?1780767748506"></script>
+<script src="gameFx.js?1780767748506"></script>
+<script src="textureGenerator.js?1780767748506"></script>
+<script src="tweakables.js?1780767748506"></script>
+<script>
+'use strict';
+
+///////////////////////////////////////////////////////////////////////////////
+// BOARD GAME TEMPLATE
+// Two-player turn-based game on an NxN grid. Fork this file, then replace
+// placePiece(), aiMove(), and the piece-rendering loop in gameRender() with
+// the rules and visuals of your game. Menus (title / pause / options /
+// help / confirm) are wired via menus.js — see templates/menuGame.html for
+// the canonical menu demo.
+
+const BOARD_SIZE = 8;
+const CELL_SIZE = 1.8;
+const PIECE_DIAMETER = 1.4;
+
+const EMPTY = 0;
+const PLAYER_1 = 1; // human (in 'ai' mode)
+const PLAYER_2 = 2; // AI (in 'ai' mode)
+
+let board = [];
+let currentPlayer = PLAYER_1;
+let hoverCell = null;
+
+// Piece drop-shadow — a darkened circle drawn under each piece (press \ to tweak).
+let shadowEnable = true;
+let shadowOffset = 0.12;    // world-unit offset (down-right, opposite the highlight)
+let shadowDarkness = 0.35;  // 0..1 — how much it darkens the board underneath
+let shadowSize = 1.0;       // shadow diameter relative to the piece
+
+// gameMode picks between the two play modes (set in startGame).
+let gameMode = 'pvp'; // 'pvp' | 'ai'
+
+let sfxPlace;
+const AI_THINK_DELAY = 0.5;
+let aiThinkTimer = 0;
+
+let icons; // default-atlas icon map (initDefaultAtlas)
+
+///////////////////////////////////////////////////////////////////////////////
+// BOARD HELPERS
+
+function initBoard()
+{
+    board = [];
+    for (let row = 0; row < BOARD_SIZE; row++)
+    {
+        board[row] = [];
+        for (let col = 0; col < BOARD_SIZE; col++)
+            board[row][col] = EMPTY;
+    }
+    currentPlayer = PLAYER_1;
+    aiThinkTimer = 0;
+}
+
+function isInBounds(row, col)
+{
+    return row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE;
+}
+
+function getCellWorldPos(row, col)
+{
+    const offset = -(BOARD_SIZE * CELL_SIZE) / 2 + CELL_SIZE / 2;
+    return vec2(offset + col * CELL_SIZE, offset + (BOARD_SIZE - 1 - row) * CELL_SIZE);
+}
+
+function worldPosToCell(worldPos)
+{
+    const offset = -(BOARD_SIZE * CELL_SIZE) / 2;
+    const col = Math.floor((worldPos.x - offset) / CELL_SIZE);
+    const row = BOARD_SIZE - 1 - Math.floor((worldPos.y - offset) / CELL_SIZE);
+    return isInBounds(row, col) ? {row, col} : null;
+}
+
+function placePiece(row, col, player)
+{
+    // TODO: replace with your move validation (e.g. isValidMove)
+    if (board[row][col] !== EMPTY) return false;
+    board[row][col] = player;
+
+    // TODO: replace with your turn logic (e.g. skip turn, check win)
+    currentPlayer = currentPlayer === PLAYER_1 ? PLAYER_2 : PLAYER_1;
+
+    sfxPlace.play();
+    return true;
+}
+
+function aiMove()
+{
+    // TODO: replace with your AI move logic
+    const empties = [];
+    for (let r = 0; r < BOARD_SIZE; r++)
+        for (let c = 0; c < BOARD_SIZE; c++)
+            if (board[r][c] === EMPTY) empties.push({row: r, col: c});
+    if (empties.length === 0) return;
+    const pick = empties[Math.floor(Math.random() * empties.length)];
+    placePiece(pick.row, pick.col, PLAYER_2);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// GAME FLOW
+
+function startGame(mode)
+{
+    gameMode = mode;
+    initBoard();
+    setPlaying(true);
+    hideMenu('title');
+}
+
+function quitToTitle()
+{
+    setPlaying(false);
+    clearSubmenuStack();
+    hideAllMenus();
+    showMenu('title');
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// GAME LOOP
+
+async function gameInit()
+{
+    canvasClearColor = new Color().setHex('#0d0d14');
+    setSoundVolume(.8);
+
+    icons = initDefaultAtlas(); // bake 16 white-on-transparent icons into tiles 0-15
+
+    saveDataInit('LittleJS Board Demo');
+
+    // One callback drives `paused` for every menu (including dialogs).
+    setMenuVisibilityCallback(v => paused = v);
+
+    sfxPlace = new SoundGenerator({frequency: 440, release: 0.05, volume: 0.3});
+
+    // Piece shadow tweakables — press \ to open the panel and adjust live.
+    tweakDivider('Piece Shadow');
+    tweak('shadowEnable');
+    tweak('shadowOffset',   {min: 0, max: 0.5});
+    tweak('shadowDarkness', {min: 0, max: 1});
+    tweak('shadowSize',     {min: 0.5, max: 1.5});
+
+    // ----- title menu -----
+    // Two play modes, so raw createMenu (createTitleMenu assumes one PLAY).
+    // onStart wires gamepad Start to launch VS AI directly.
+    createMenu({
+        id: 'title',
+        title: 'BOARD GAME',
+        dismissable: false,
+        onStart: () => startGame('ai'),
+        items: [
+            {type:'button', label:'PLAYER VS AI',     onClick: () => startGame('ai')},
+            {type:'button', label:'PLAYER VS PLAYER', onClick: () => startGame('pvp')},
+            {type:'button', label:'OPTIONS',          onClick: () => pushMenu('options')},
+            {type:'button', label:'HELP',             onClick: () => pushMenu('help')},
+        ],
+    });
+
+    // ----- options menu (shared between title and pause) -----
+    createMenu({
+        id: 'options',
+        title: 'OPTIONS',
+        onHide: popMenu,
+        items: [
+            {type:'slider', id:'volume', label:'VOLUME', value: 0.8, min:0, max:1,
+                persist:'volume',
+                onChange: v => setSoundVolume(v)},
+            {type:'separator'},
+            {type:'button', label:'FULLSCREEN', onClick: toggleFullscreen},
+            {type:'button', label:'BACK',       onClick: () => hideMenu('options')},
+        ],
+    });
+
+    // ----- help menu -----
+    createMenu({
+        id: 'help',
+        title: 'HELP',
+        onHide: popMenu,
+        items: [
+            {type:'text', text:'A template for turn-based two-player board games on an NxN grid. ' +
+                'Fork this file and replace placePiece(), aiMove(), and the piece-rendering ' +
+                'loop in gameRender() with the rules and visuals of your game.'},
+            {type:'separator'},
+            {type:'button', label:'BACK', onClick: () => hideMenu('help')},
+        ],
+    });
+
+    // ----- pause menu -----
+    createMenu({
+        id: 'pause',
+        title: 'PAUSED',
+        initialItemId: 'resume',
+        items: [
+            {type:'button', id:'resume',  label:'RESUME',  onClick: () => hideMenu('pause')},
+            {type:'button', id:'restart', label:'RESTART', onClick: () => { initBoard(); hideMenu('pause'); }},
+            {type:'button', id:'options', label:'OPTIONS', onClick: () => pushMenu('options')},
+            {type:'button',               label:'QUIT TO TITLE', onClick: () =>
+            {
+                showConfirmDialog({message: 'Quit to title?', onYes: quitToTitle});
+            }},
+        ],
+    });
+
+    // ----- HUD toolbar (always visible — hamburger grays out while
+    // the title menu is on top, since pause is meaningless before play).
+    installDefaultToolbar({landscapeStack:true});
+
+    initBoard();
+    setPlaying(false);
+    showMenu('title');
+}
+
+function gameUpdate()
+{
+    // Esc / gamepad Start → pause. Safely no-ops when a menu is already up.
+    if (bindPauseKey({when: () => isPlaying()})) return;
+
+    if (!isPlaying()) return;
+
+    if (keyWasPressed('KeyR')) initBoard();
+
+    hoverCell = worldPosToCell(mousePos);
+
+    // AI turn
+    if (gameMode === 'ai' && currentPlayer === PLAYER_2)
+    {
+        aiThinkTimer += timeDelta;
+        if (aiThinkTimer >= AI_THINK_DELAY)
+        {
+            aiThinkTimer = 0;
+            aiMove();
+        }
+        return;
+    }
+
+    // Human input
+    if (mouseWasPressed(0) && hoverCell)
+        placePiece(hoverCell.row, hoverCell.col, currentPlayer);
+}
+
+function gameUpdatePost()
+{
+    const boardWorldSize = BOARD_SIZE * CELL_SIZE;
+
+    // setup camera leaving space for hud
+    cameraFit(vec2(0, 0), vec2(boardWorldSize), .5, { top: 100 });
+}
+
+function gameRender()
+{
+    const boardWorldSize = BOARD_SIZE * CELL_SIZE;
+
+    // Board background
+    drawRect(vec2(0, 0), vec2(boardWorldSize + 0.4), rgb(0.1, 0.1, 0.1));
+    drawRect(vec2(0, 0), vec2(boardWorldSize), rgb(0.15, 0.5, 0.15));
+
+    // Grid lines
+    for (let i = 1; i < BOARD_SIZE; i++)
+    {
+        const o = -boardWorldSize / 2 + i * CELL_SIZE;
+        drawLine(vec2(o, -boardWorldSize / 2), vec2(o, boardWorldSize / 2), 0.05, rgb(0.1, 0.35, 0.1));
+        drawLine(vec2(-boardWorldSize / 2, o), vec2(boardWorldSize / 2, o), 0.05, rgb(0.1, 0.35, 0.1));
+    }
+
+    // Hover highlight
+    if (hoverCell && board[hoverCell.row][hoverCell.col] === EMPTY)
+        drawRect(getCellWorldPos(hoverCell.row, hoverCell.col), vec2(CELL_SIZE * 0.95), rgb(1, 1, 1, 0.15));
+
+    // Pieces — TODO: replace with your piece rendering
+    for (let row = 0; row < BOARD_SIZE; row++)
+    for (let col = 0; col < BOARD_SIZE; col++)
+    {
+        const cell = board[row][col];
+        if (cell === EMPTY) continue;
+        const pos = getCellWorldPos(row, col);
+
+        // Soft drop-shadow: a darkening circle offset down-right (opposite the
+        // upper-left highlight). rgb(0,0,0,alpha) blends over the board to darken.
+        if (shadowEnable)
+            drawTile(pos.add(vec2(shadowOffset, -shadowOffset)),
+                vec2(PIECE_DIAMETER * shadowSize), icons.circle, rgb(0, 0, 0, shadowDarkness));
+
+        const color = cell === PLAYER_1 ? hsl(0, 0, 0.15) : hsl(0, 0, 0.95);
+        drawTile(pos, vec2(PIECE_DIAMETER), icons.circle, color);
+        // Specular highlight (upper-left), Othello-style
+        const off = PIECE_DIAMETER * 0.2;
+        drawTile(pos.add(vec2(-off, off)), vec2(PIECE_DIAMETER * 0.3), icons.circle, rgb(1, 1, 1, 0.45));
+    }
+}
+
+function gameRenderPost()
+{
+    if (isPlaying())
+    {
+        const text = 'PLAYER ' + currentPlayer;
+        drawTextScreen(text,
+            vec2(mainCanvasSize.x / 2, 70), 70,
+            rgb(0.7, 0.7, 0.7), 2, BLACK);
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+engineInit(gameInit, gameUpdate, gameUpdatePost, gameRender, gameRenderPost);
+
+</script>
+</body></html>

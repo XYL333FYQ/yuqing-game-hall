@@ -1,0 +1,6 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "noEmit": true },
+  "include": ["public/games/fruit-party/source/**/*.ts", "tests/**/*.ts"],
+  "exclude": ["public/games/fruit-party/source/main.ts", "public/games/fruit-party/source/server/worker.ts"]
+}

@@ -1,0 +1,42 @@
+# Local deployment state and environment configuration
+.vercel
+.env
+.env.*
+
+# Development-agent residue
+.claude
+
+# Local repository and ad-hoc dependency-audit metadata
+.git
+.github
+.gitignore
+.vercelignore
+README.md
+NOTICE.md
+LICENSE
+package.json
+package-lock.json
+node_modules
+npm-debug.log*
+
+# Internal trailer capture/debug surface (not part of the player experience)
+cinematic.html
+js/cinematic-director.js
+
+# Local regression tooling and agent instructions
+scripts
+AGENTS.md
+
+# Local operating-system metadata
+.DS_Store
+**/.DS_Store
+
+# Agent scratch/debug pages. These are working surfaces created while building
+# a feature (a face lab, a hound preview, a stair probe); they live in the repo
+# root because they need the real import map, and they are deliberately NOT
+# part of the player experience. `cinematic.html` above is the same idea.
+# scripts/validate-no-scratch-pages.mjs enforces that every root HTML file is
+# either a real page or excluded here, so a new lab cannot silently deploy.
+__*.html
+_*.html
+soldiers.html

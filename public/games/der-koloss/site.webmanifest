@@ -1,0 +1,13 @@
+{
+  "name": "Der Koloss — Browser Zombie Survival",
+  "short_name": "Der Koloss",
+  "description": "A free fan-made wave-based zombie survival game with solo and four-player browser co-op.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#070b12",
+  "theme_color": "#070b12",
+  "categories": ["games", "entertainment"]
+}

@@ -1,0 +1,18 @@
+Fonts bundled with Der Koloss
+=============================
+
+Staatliches
+  staatliches-latin.woff2, staatliches-latin-ext.woff2
+  Copyright (c) Brian LaRossa
+  SIL Open Font License, Version 1.1 — https://openfontlicense.org
+  Source: https://fonts.google.com/specimen/Staatliches
+
+Special Elite
+  special-elite-latin.woff2, special-elite-latin-ext.woff2
+  Copyright (c) Astigmatic (AOETI)
+  Apache License, Version 2.0 — https://www.apache.org/licenses/LICENSE-2.0
+  Source: https://fonts.google.com/specimen/Special+Elite
+
+Both licences permit redistribution, so these files ship with the game and it
+runs fully offline. Subsets are the Google Fonts latin and latin-ext slices
+(v20 / v15), unmodified.

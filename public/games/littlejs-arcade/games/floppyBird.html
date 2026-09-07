@@ -1,0 +1,959 @@
+<!DOCTYPE html><head>
+<title>LittleJS - Floppy Bird Prototype</title>
+<meta charset="utf-8">
+</head>
+<script src="../templates/engineLoader.js?1780767748506"></script>
+<script src="../templates/gameFx.js?1780767748506"></script>
+<script src="../templates/textureGenerator.js?1780767748506"></script>
+<script src="../templates/menus.js?1780767748506"></script>
+<script>
+'use strict';
+
+// The arcade cabinet loads games with #demo: there we run the live auto-fly demo
+// behind the title. A normal launch (menu mode) is a calm STATIC backdrop — no
+// bird, no auto-play, stationary camera. Clicking PLAY starts a real game.
+const inCabinet = /demo/.test(location.hash);
+function isAttract() { return !isPlaying(); }
+function isMenuStatic() { return !isPlaying() && !inCabinet; }
+
+// engine settings
+canvasFixedSize = vec2(1920, 1080);
+cameraScale = 64;
+
+///////////////////////////////////////////////////////////////////////////////
+// Flappy Bird (no external assets, primitives only)
+
+// world layout
+const worldSize = vec2(34, 20);
+const floorY = -worldSize.y/2;
+const ceilY  =  worldSize.y/2;
+
+// visible/solid ground surface (keep gameplay + visuals aligned)
+const groundY = floorY + .6;
+
+// bird
+const birdX = -8;
+const birdRadius = .6;
+const gravityAccel = -28;   // units/s^2 (negative = down)
+const flapVelocity = 15.5;  // units/s upward
+const maxFallSpeed = -18;
+
+// pipes
+const pipeSpeed = 10;       // units/s
+const pipeWidth = 2.4;
+const gapSize = 6.5;
+const pipeInterval = 1.45;  // seconds
+const pipeSpawnX = worldSize.x/2 + 10;
+const pipeDespawnX = -worldSize.x/2 - 14;
+// the first pipe of a run starts just inside the right edge (fully on-screen,
+// not clipped at the edge), and the first timer is shortened so pipe #2 follows
+// at the normal spacing instead of a big gap
+const firstPipeX = worldSize.x/2 - 3;
+const firstPipeTimer = pipeInterval + (firstPipeX - pipeSpawnX)/pipeSpeed;
+
+// visuals
+// base sky colors (we'll shift them warmer as score increases)
+const bgTopBase = {h:.55,s:.60,l:.75};
+const bgBotBase = {h:.55,s:.60,l:.90};
+const bgTopWarm = {h:.10,s:.70,l:.70};
+const bgBotWarm = {h:.08,s:.85,l:.90};
+
+// scenery
+const sunCore   = hsl(.12,.85,.62);
+const sunRim    = hsl(.12,.75,.72);
+
+const grassFarA = hsl(.28,.45,.40,.65);
+const grassFarB = hsl(.28,.55,.30,.65);
+const grassNearA= hsl(.26,.55,.35,.85);
+const grassNearB= hsl(.26,.65,.28,.85);
+
+// clouds (opaque white body with a soft blue-grey underside shadow)
+const cloudMain  = hsl(0,0,1);
+const cloudShade = hsl(.60,.30,.86);
+
+const farMount   = hsl(.60,.25,.62);
+const farMount2  = hsl(.60,.22,.55);
+const midMount   = hsl(.56,.28,.52);
+const midMount2  = hsl(.56,.30,.46);
+
+const nearMount   = hsl(.54,.32,.42);
+const nearMount2  = hsl(.54,.34,.36);
+
+// pipe colors (base + light highlight + dark shadow for a tube look)
+const pipeBase   = hsl(.33,.70,.35);
+const pipeDark   = hsl(.33,.80,.22);
+const pipeLight  = hsl(.33,.60,.50);
+
+const groundColor = hsl(.1,.55,.35);
+const groundTop = hsl(.12,.55,.45);
+
+// foreground dirt lip (drawn on top of pipes/grass)
+const dirtBase = hsl(.09,.55,.28);
+const dirtShade= hsl(.09,.65,.18);
+const dirtTop  = hsl(.11,.55,.38);
+
+// bird colors (simple shaded body)
+const birdBase     = hsl(.14,.85,.55);
+const birdOutline  = hsl(.09,.70,.10);
+const birdHighlight= hsl(.14,.55,.95,.30);
+const birdWing     = hsl(.1,.8,.45);
+const birdWingDk   = hsl(.1,.85,.25,.22);
+
+// default-atlas icons (baked in gameInit). Every sprite below is a tinted
+// instance of one of these 16 white icons instead of a raw primitive.
+let atlasIcons;
+// the baked icons now fill their tile, so an icon matches the footprint a raw
+// primitive of the same dimension would cover; ICON_FILL is a no-op multiplier.
+const ICON_FILL = 1.0;
+
+// game state
+const STATE_READY = 0;
+const STATE_PLAY  = 1;
+const STATE_DEAD  = 2;
+let state;
+let score;
+
+// menu / session state
+let birdPos;
+let birdVelY;
+let pipeTimer;
+let pipes;
+
+// scenery
+let bgScrollX;
+let clouds;
+let mountainLayers;
+let grassLayers;
+
+// sfx
+const sfxFlap  = new SoundGenerator({ volume:.65, frequency:520, attack:0, release:.08, slide:-1.2, noise:.03 });
+const sfxScore = new SoundGenerator({ volume:.7,  frequency:720, attack:0, release:.10, pitchJump:240, pitchJumpTime:.03 });
+const sfxHit   = new SoundGenerator({ volume:.8,  frequency:140, attack:0, release:.22, shapeCurve:0.6, noise:.12, slide:-0.8 });
+
+// The camera is shifted down (cameraPos.y = -1.25) to frame the ground, so the
+// visible top edge can sit below ceilY. Build the top pipe up to this edge (less
+// a small gap) instead of ceilY so its top stays slightly BELOW the top of the
+// visible play area rather than running off the top of the screen.
+const topPipeGap = -1; // gap above the top pipe (world units)
+function topPipeTopY()
+{
+    const visibleTop = cameraPos.y + getCameraSize().y/2;
+    return min(ceilY, visibleTop - topPipeGap);
+}
+
+function clampGapY(y)
+{
+    const pad = 1.4;
+    const minY = floorY + gapSize/2 + pad;
+    // never push the gap so high the top pipe would vanish/run off the visible top
+    const maxY = topPipeTopY() - gapSize/2 - pad;
+    return clamp(y, minY, maxY);
+}
+
+function resetRun(toReady=true)
+{
+    score = 0;
+    birdPos = vec2(birdX, 0);
+    birdVelY = 0;
+    pipeTimer = 0;
+    pipes = [];
+    bgScrollX = 0;
+    state = toReady ? STATE_READY : STATE_PLAY;
+}
+
+function spawnPipe()
+{
+    const gapY = clampGapY(rand(ceilY-2, floorY+2));
+    pipes.push({ x: pipeSpawnX, gapY, passed:false });
+}
+
+function inputJumpPressed()
+{
+    return keyWasPressed('Space') || keyWasPressed('ArrowUp') || mouseWasPressed(0) || gamepadWasPressed(0);
+}
+
+// demo attract-mode state
+let demoDeadTimer = 0;
+
+// simple auto-pilot: aim for the gap of the next pipe ahead and flap when the
+// bird drops below that target. Doesn't need to play perfectly, just look alive.
+function demoWantsFlap()
+{
+    // find the next pipe whose right edge hasn't passed the bird yet
+    let target = 0;
+    for (const p of pipes)
+    {
+        if (p.x + pipeWidth/2 > birdX - 1)
+        {
+            // a single flap shoves the bird up a lot, so wait until it has
+            // dropped into the LOWER part of the gap before flapping — aiming
+            // below the gap center keeps it from clipping the top pipe.
+            target = p.gapY - gapSize*.3;
+            break;
+        }
+    }
+    // flap when below target and not rising too fast (avoids over-flapping)
+    return birdPos.y < target && birdVelY < flapVelocity*.6;
+}
+
+function birdAabb()
+{
+    const s = vec2(birdRadius*2);
+    return { pos: birdPos, size: s };
+}
+
+function collideBirdRect(rectPos, rectSize)
+{
+    const b = birdAabb();
+    return isOverlapping(b.pos, b.size, rectPos, rectSize);
+}
+
+function killBird()
+{
+    if (state === STATE_DEAD) return;
+    state = STATE_DEAD;
+    birdVelY = 0; // freeze bird motion on death
+    sfxHit.play();
+
+    // crash burst using the engine particle emitter (feathers/puff)
+    new ParticleEmitter(
+        birdPos,            // pos
+        0,                  // angle
+        .6,                 // emitSize (circle diameter)
+        .1,                 // emitTime (short one-shot burst)
+        180,                // emitRate (~18 particles over the burst)
+        PI,                 // emitConeAngle (full circle)
+        atlasIcons.spark,   // tileInfo (atlas spark = feather sparkle)
+        hsl(.12,.95,.70),   // colorStartA
+        hsl(.04,.90,.55),   // colorStartB
+        hsl(.12,.95,.70,0), // colorEndA (fade to clear)
+        hsl(.04,.90,.55,0), // colorEndB
+        .6,                 // particleTime
+        .5,                 // sizeStart
+        .05,                // sizeEnd
+        .3,                 // speed (world units per FRAME)
+        .3,                 // angleSpeed
+        .92,                // damping
+        .95,                // angleDamping
+        0,                  // gravityScale (gravity is handled manually)
+        PI,                 // particleConeAngle
+        .25,                // fadeRate
+        .4,                 // randomness
+        false,              // collideTiles
+        false               // additive
+    );
+
+    if (!isAttract()) // don't let the auto-pilot pollute the player's best score
+        submitBestScore(score);
+}
+
+// rotate a Vector2 by angle (radians) using LittleJS clockwise-positive convention
+function rotateVec(v, a)
+{
+    const c = cos(a), s = sin(a);
+    return vec2(v.x*c + v.y*s, -v.x*s + v.y*c);
+}
+
+function scaleVec(v, s)
+{
+    return vec2(v.x*s, v.y*s);
+}
+
+function frac(x){ return x - floor(x); }
+
+// deterministic 1D noise in [-1,1]
+function noise1(x, seed)
+{
+    return frac(sin(x*12.9898 + seed*78.233) * 43758.5453) * 2 - 1;
+}
+
+function skyShiftT()
+{
+    // shift toward a warm sunset palette as score rises
+    // keep it subtle and cap out
+    return clamp(score / 35, 0, 1);
+}
+
+function skyTopColor()
+{
+    const t = skyShiftT();
+    return hsl(
+        lerp(bgTopBase.h, bgTopWarm.h, t),
+        lerp(bgTopBase.s, bgTopWarm.s, t),
+        lerp(bgTopBase.l, bgTopWarm.l, t)
+    );
+}
+
+function skyBotColor()
+{
+    const t = skyShiftT();
+    return hsl(
+        lerp(bgBotBase.h, bgBotWarm.h, t),
+        lerp(bgBotBase.s, bgBotWarm.s, t),
+        lerp(bgBotBase.l, bgBotWarm.l, t)
+    );
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// scenery generation + rendering
+
+function initScenery()
+{
+    // build repeating mountain layers
+    mountainLayers = [
+        // Simple solid mountains (no fog/snow overlays)
+        buildMountainField({ wrap: 170, parallax: .08, bottomY: groundY, baseY: floorY + 3.0,
+            minW: 10, maxW: 18, minH: 3.2, maxH: 5.2,
+            colorA: farMount, colorB: farMount2, seed: 10, snow: 0, snowLine: 999 }),
+
+        buildMountainField({ wrap: 150, parallax: .15, bottomY: groundY, baseY: floorY + 2.5,
+            minW: 9, maxW: 16, minH: 3.8, maxH: 6.2,
+            colorA: midMount, colorB: midMount2, seed: 25, snow: 0, snowLine: 999 }),
+
+        buildMountainField({ wrap: 130, parallax: .22, bottomY: groundY, baseY: floorY + 2.0,
+            minW: 8, maxW: 14, minH: 4.6, maxH: 7.4,
+            colorA: nearMount, colorB: nearMount2, seed: 40, snow: 0, snowLine: 999 }),
+    ];
+
+    // clouds (two parallax layers)
+    clouds = [];
+    const wrap = 80;
+    for (let i=0; i<9; ++i)
+    {
+        const layer = i < 5 ? 0 : 1;
+        const parallax = layer ? .18 : .11;
+        const y = rand(floorY + 7.0, ceilY - 1.5) + (layer ? 0 : 1.0);
+        clouds.push({
+            wrap,
+            parallax,
+            x: rand(-wrap/2, wrap/2),
+            y,
+            r: rand(.95, 1.8) * (layer ? 1.1 : .9),
+        });
+    }
+
+    // parallax grass tufts (two layers)
+    grassLayers = [
+        // sit right on the ground surface so it lines up with the dirt lip
+        buildGrassLayer({ wrap: 70, parallax: 1.0, y: groundY + .10, colorA: grassFarA,  colorB: grassFarB,  count: 95,  minH: .22, maxH: 1.55 }),
+        buildGrassLayer({ wrap: 55, parallax: 1.0, y: groundY + .16, colorA: grassNearA, colorB: grassNearB, count: 110, minH: .26, maxH: 1.72 }),
+    ];
+}
+
+function buildMountainField(o)
+{
+    const {
+        wrap, parallax, bottomY, baseY,
+        minW, maxW, minH, maxH,
+        colorA, colorB,
+        seed, snow, snowLine,
+    } = o;
+
+    const mountains = [];
+
+    // Fill the wrap with mountains of varying widths
+    let x = -wrap/2;
+    let i = 0;
+    while (x < wrap/2)
+    {
+        const w = rand(minW, maxW);
+        const h = rand(minH, maxH);
+        // small gap so mountains overlap and there are no sky holes
+        const gap = rand(.15, 1.0);
+
+        const cx = x + w/2;
+        const peakX = cx + rand(-w*.18, w*.18);
+        const peakY = baseY + h;
+
+        // build a jaggy silhouette with a few points per side
+        const pts = [];
+        pts.push(vec2(cx - w/2, bottomY));
+
+        const leftSteps = 3 + (i % 3);
+        for (let j=1; j<=leftSteps; ++j)
+        {
+            const t = j/(leftSteps+1);
+            const px = lerp(cx - w/2, peakX, t);
+            const ny = noise1(px*.55 + seed + i*3.1, seed) * (1-t) * h * .10;
+            const py = lerp(bottomY, peakY, t) + ny;
+            pts.push(vec2(px, py));
+        }
+
+        pts.push(vec2(peakX, peakY));
+
+        const rightSteps = 3 + ((i+1) % 3);
+        for (let j=1; j<=rightSteps; ++j)
+        {
+            const t = j/(rightSteps+1);
+            const px = lerp(peakX, cx + w/2, t);
+            const ny = noise1(px*.55 + seed + i*4.7, seed) * t * h * .10;
+            const py = lerp(peakY, bottomY, t) + ny;
+            pts.push(vec2(px, py));
+        }
+
+        pts.push(vec2(cx + w/2, bottomY));
+
+        mountains.push({ cx, w, h, pts, peak: vec2(peakX, peakY), snow });
+
+        x += w + gap;
+        i++;
+    }
+
+    return { wrap, parallax, bottomY, baseY, colorA, colorB, snowLine, mountains };
+}
+
+function drawMountainField(F)
+{
+    const off = -wrapOffset(bgScrollX * F.parallax, F.wrap);
+    const [vMin, vMax] = viewBoundsX(2);
+
+    // draw 3 copies to cover view
+    for (let k=-1; k<=1; ++k)
+    {
+        const shift = off + k*F.wrap;
+
+        // skip copies that fall entirely outside the view
+        if (shift + F.wrap/2 < vMin || shift - F.wrap/2 > vMax) continue;
+
+        // fill the base so there are no gaps between separate mountains
+        const baseH = F.bottomY - floorY;
+        if (baseH > 0)
+            drawRect(vec2(shift, floorY + baseH/2), vec2(F.wrap, baseH), F.colorA);
+
+        for (const m of F.mountains)
+        {
+            // cull individual peaks that are offscreen
+            const wx = m.cx + shift;
+            if (wx + m.w/2 < vMin || wx - m.w/2 > vMax) continue;
+
+            // each mountain is one upward triangle icon; base sits at bottomY,
+            // apex at the precomputed peak. Widen a touch so neighbours overlap
+            // and the base fill behind hides any seams.
+            const triH = m.peak.y - F.bottomY;
+            drawTile(vec2(wx, F.bottomY ), vec2(m.w*1.25, triH*ICON_FILL),
+                atlasIcons.triangle, F.colorA);
+        }
+    }
+}
+
+function wrapOffset(x, wrap)
+{
+    // stable modulo for negatives
+    x = x % wrap;
+    if (x < 0) x += wrap;
+    return x;
+}
+
+// horizontal view bounds (with margin) for culling offscreen scenery
+function viewBoundsX(margin=0)
+{
+    const half = getCameraSize().x/2 + margin;
+    return [cameraPos.x - half, cameraPos.x + half];
+}
+
+// puff layout shared by every cloud (offsets are in radius units)
+const cloudPuffs = [
+    [vec2(-1.05, -.10), .80],
+    [vec2(-.45,  .12), 1.15],
+    [vec2( .25,  .18), 1.25],
+    [vec2( .95, -.05), .95],
+    [vec2(-.10, -.20), 1.05],
+];
+
+function drawCloud(pos, r)
+{
+    // soft blue-grey shadow, offset down, sits behind the white body
+    for (const [o, s] of cloudPuffs)
+        drawTile(pos.add(o.scale(r)).add(vec2(0, -.22*r)), vec2(s*r*2*ICON_FILL), atlasIcons.circle, cloudShade);
+
+    // fluffy white body
+    for (const [o, s] of cloudPuffs)
+        drawTile(pos.add(o.scale(r)), vec2(s*r*2*ICON_FILL), atlasIcons.circle, cloudMain);
+}
+
+function buildGrassLayer(o)
+{
+    const { wrap, parallax, y, colorA, colorB, count, minH, maxH } = o;
+    const tufts = [];
+    for (let i=0; i<count; ++i)
+        tufts.push({ x: rand(-wrap/2, wrap/2), h: rand(minH, maxH), w: rand(.14,.26), c: (i&1)?colorA:colorB, ph: rand(PI*2) });
+    return { wrap, parallax, y, colorA, colorB, tufts };
+}
+
+function drawGrass()
+{
+    // draw after ground so it feels like a foreground edge
+    const [vMin, vMax] = viewBoundsX(1);
+    for (const L of grassLayers)
+    {
+        const off = -wrapOffset(bgScrollX * L.parallax, L.wrap);
+        for (const t of L.tufts)
+        {
+            for (let k=-1; k<=1; ++k)
+            {
+                const x = t.x + off + k*L.wrap;
+                if (x < vMin || x > vMax) continue; // cull offscreen tufts
+                // a single upward triangle blade, swayed by a small tilt angle
+                const sway = sin(time*1.6 + t.ph + x*.25) * .18;
+                const bladeW = t.w*2.6 + .12;
+                drawTile(vec2(x, L.y), vec2(bladeW, t.h*ICON_FILL),
+                    atlasIcons.triangle, t.c, sway);
+            }
+        }
+    }
+}
+
+function drawScenery()
+{
+    // sun position (world space)
+    const sunPos = vec2(11.5, 6.8);
+
+    // soft glow halo + two stacked circle icons for a shaded sun
+    drawTile(sunPos, vec2(9), atlasIcons.glow, hsl(.12,.85,.62,.5));
+    drawTile(sunPos, vec2(2.85*ICON_FILL), atlasIcons.circle, sunRim);
+    drawTile(sunPos, vec2(2.55*ICON_FILL), atlasIcons.circle, sunCore);
+
+    // clouds (behind mountains, cull offscreen copies)
+    {
+        const wrap = 80;
+        const [vMin, vMax] = viewBoundsX(3);
+        for (const c of clouds)
+        {
+            const off = -wrapOffset(bgScrollX * c.parallax, wrap);
+            // tile across view
+            for (let k=-1; k<=1; ++k)
+            {
+                const x = c.x + off + k*wrap;
+                if (x < vMin || x > vMax) continue;
+                drawCloud(vec2(x, c.y), c.r);
+            }
+        }
+    }
+
+    // mountains (back to front)
+    for (let li=0; li<mountainLayers.length; ++li)
+        drawMountainField(mountainLayers[li]);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// tiny runtime "tests" to catch accidental NaNs / bad constants
+function runSelfTests()
+{
+    console.assert(isFinite(birdRadius) && birdRadius > 0, 'birdRadius invalid');
+    console.assert(isFinite(pipeWidth) && pipeWidth > 0, 'pipeWidth invalid');
+    console.assert(isFinite(gapSize) && gapSize > 0, 'gapSize invalid');
+    console.assert(pipeInterval > 0, 'pipeInterval invalid');
+    console.assert(ceilY > floorY, 'world bounds invalid');
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Menus
+
+function startGame()
+{
+    resetRun(true);
+    initScenery();
+    spawnPipe();
+    pipes[0].x = firstPipeX;
+    setPlaying(true);
+    clearSubmenuStack();
+    hideAllMenus();
+}
+
+// attract mode: set up a live run for the auto-pilot to fly behind the title.
+// Does NOT call setPlaying — this runs while isPlaying() is false.
+function startDemo()
+{
+    resetRun(false); // STATE_PLAY, no ready/tap-to-start gate
+    initScenery();
+    spawnPipe();
+    pipes[0].x = firstPipeX;
+    pipeTimer = firstPipeTimer;
+    demoDeadTimer = 0;
+}
+
+// menu mode (normal title, not the cabinet): a calm STATIC backdrop — just the
+// parallax scenery, no bird and no pipes. The camera stays put and nothing
+// auto-plays; clicking PLAY starts a real game.
+function startMenuScene()
+{
+    resetRun(true);    // STATE_READY: sets birdPos/scroll; no gameplay runs
+    initScenery();
+    // a few static pipes across the scene (at gameplay spacing) so the title
+    // reads as a real level rather than empty sky — the bird just isn't drawn here
+    pipes = [];
+    const spacing = pipeInterval * pipeSpeed;  // ~14.5 world units, as in play
+    for (let x = firstPipeX; x > -worldSize.x/2 - 2; x -= spacing)
+        pipes.push({ x, gapY: clampGapY(rand(ceilY-2, floorY+2)), passed:false });
+}
+
+function buildMenus()
+{
+    if (typeof createMenu !== 'function') return;
+
+    // Only pause when a game is actually running. Title menu sits over
+    // the canvas without freezing anything, so the attract demo keeps flying.
+    installAutoPause(() => isPlaying());
+
+    setMenuTheme({accent:'#f2c014', font:'"Comic Sans MS", "Comic Sans", cursive'});
+    createTitleMenu({
+        title: 'FLOPPY BIRD',
+        titleFx: {fill:'shine', color:'#f00', motion:'float'},
+        subtitle: '',
+        onPlay: startGame,
+        revealOnClick: false,
+        items: [
+            {type:'button', label:'HELP', onClick: () => pushMenu('help')},
+        ],
+    });
+
+    createHelpMenu({
+        title: 'HELP',
+        text: 'Flap through the gaps between pipes without crashing. Each pipe you pass earns a point — how far can you go?',
+        extraItems: [
+            {type:'text', text:'Space / Up Arrow / Click · Tap to flap'},
+        ],
+    });
+
+    createPauseMenu({
+        onRestart: startGame,
+        // back to the title backdrop (static in menu mode, live demo in cabinet)
+        onQuit:    () => quitToTitle(inCabinet ? startDemo : startMenuScene),
+    });
+
+    installDefaultToolbar();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+async function gameInit()
+{
+    saveDataInit('flappyBird');
+    // mute all gameplay audio while at the title; menu clicks still play
+    setSilentAttract(true);
+
+    // bake the 16 built-in white icons into the atlas; we tint them per-instance
+    atlasIcons = initDefaultAtlas();
+
+    runSelfTests();
+
+    buildMenus();
+
+    // Cabinet (#demo): live auto-fly demo behind the title. Normal launch: a
+    // calm static backdrop (no bird, no auto-play). isPlaying() is false here.
+    if (inCabinet)
+        startDemo();
+    else
+        startMenuScene();
+    showMenu('title');
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function gameUpdate()
+{
+    if (bindPauseKey({when: () => isPlaying() && state !== STATE_DEAD})) return;
+
+    const dt = timeDelta;
+
+    // advance scenery scroll with gameplay (feels like the world moves)
+    if (state === STATE_PLAY)
+        bgScrollX += pipeSpeed * dt;
+
+    // menu mode (normal title): static backdrop — no autopilot, no input, no
+    // movement. The cabinet demo and real games fall through below.
+    if (isMenuStatic())
+        return;
+
+    // attract mode (at the title, isPlaying() === false): auto-pilot the bird and
+    // loop the run on crash. Never touches setPlaying / menus / best score.
+    if (isAttract())
+    {
+        if (state === STATE_DEAD)
+        {
+            demoDeadTimer += dt;
+            if (demoDeadTimer > 1.5)
+                startDemo();
+        }
+        else if (state === STATE_PLAY && demoWantsFlap())
+        {
+            birdVelY = flapVelocity;
+            sfxFlap.play();
+        }
+        // skip real input handling below
+    }
+    // start / flap / restart
+    else if (inputJumpPressed())
+    {
+        if (state === STATE_READY)
+        {
+            // begin the run WITHOUT resetting the level: keep the preview
+            // pipe in place so the first tap just starts the bird flying
+            state = STATE_PLAY;
+            pipeTimer = firstPipeTimer;
+            // fall through to apply the flap on this same tap
+        }
+
+        if (state === STATE_PLAY)
+        {
+            birdVelY = flapVelocity;
+            sfxFlap.play();
+        }
+
+        if (state === STATE_DEAD)
+        {
+            resetRun(true);
+            spawnPipe();
+            pipes[0].x = firstPipeX;
+        }
+    }
+
+    // idle bob in ready
+    if (state === STATE_READY)
+    {
+        birdPos.y = sin(time*3)*.6;
+        return;
+    }
+
+    // physics
+    if (state === STATE_PLAY)
+    {
+        birdVelY += gravityAccel * dt;
+        birdVelY = max(birdVelY, maxFallSpeed);
+        birdPos.y += birdVelY * dt;
+
+        // bounds
+        if (birdPos.y - birdRadius < groundY)
+        {
+            birdPos.y = groundY + birdRadius;
+            killBird();
+        }
+        if (birdPos.y + birdRadius > ceilY - .5)
+        {
+            birdPos.y = ceilY - .5 - birdRadius;
+            birdVelY = min(birdVelY, 0);
+        }
+
+        // pipes
+        pipeTimer -= dt;
+        if (pipeTimer <= 0)
+        {
+            pipeTimer += pipeInterval;
+            spawnPipe();
+        }
+
+        for (const p of pipes)
+            p.x -= pipeSpeed * dt;
+
+        // remove old
+        while (pipes.length && pipes[0].x < pipeDespawnX)
+            pipes.shift();
+
+        // scoring + collision
+        for (const p of pipes)
+        {
+            // score when passed center
+            if (!p.passed && p.x + pipeWidth/2 < birdX)
+            {
+                p.passed = true;
+                score++;
+                sfxScore.play();
+            }
+
+            const gapTop = p.gapY + gapSize/2;
+            const gapBot = p.gapY - gapSize/2;
+
+            // top pipe
+            {
+                const topY = topPipeTopY();
+                const h = topY - gapTop;
+                if (h > 0)
+                {
+                    const pos = vec2(p.x, (gapTop + topY)/2);
+                    const size = vec2(pipeWidth, h);
+                    if (collideBirdRect(pos, size))
+                        killBird();
+                }
+            }
+            // bottom pipe
+            {
+                const h = gapBot - floorY;
+                if (h > 0)
+                {
+                    const pos = vec2(p.x, (floorY + gapBot)/2);
+                    const size = vec2(pipeWidth, h);
+                    if (collideBirdRect(pos, size))
+                        killBird();
+                }
+            }
+        }
+    }
+    else if (state === STATE_DEAD)
+    {
+        // movement stops on death (bird/world freeze)
+        birdVelY = 0;
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function gameUpdatePost()
+{
+    // frame the ground so grass is visible
+    cameraPos = vec2(0, -1.25);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function drawPipe(p)
+{
+    const gapTop = p.gapY + gapSize/2;
+    const gapBot = p.gapY - gapSize/2;
+
+    // a simple shaded tube: base + light highlight band + shadow band
+    function drawPipeBody(centerPos, size)
+    {
+        drawRect(centerPos, size, pipeBase);
+        drawRect(centerPos.add(vec2(-size.x*.24, 0)), vec2(size.x*.22, size.y), pipeLight);
+        drawRect(centerPos.add(vec2( size.x*.34, 0)), vec2(size.x*.30, size.y), pipeDark);
+    }
+
+    // cap/rim at the gap opening (slightly wider, same shading)
+    function drawPipeCap(centerPos)
+    {
+        const cap = vec2(pipeWidth + .7, .9);
+        drawPipeBody(centerPos, cap);
+    }
+
+    // top pipe (hangs from the ceiling, but only down to the visible top edge
+    // so a small sky gap stays above it instead of running off the top)
+    {
+        const topY = topPipeTopY();
+        const h = topY - gapTop;
+        if (h > 0)
+            drawPipeBody(vec2(p.x, (gapTop + topY)/2), vec2(pipeWidth, h));
+        drawPipeCap(vec2(p.x, gapTop + .45));
+    }
+
+    // bottom pipe (rises from the ground)
+    {
+        const h = gapBot - floorY;
+        if (h > 0)
+            drawPipeBody(vec2(p.x, (floorY + gapBot)/2), vec2(pipeWidth, h));
+        drawPipeCap(vec2(p.x, gapBot - .45));
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function gameRender()
+{
+    // background (sky shifts warmer as score rises)
+    drawRectGradient(cameraPos, getCameraSize(), skyTopColor(), skyBotColor());
+
+    // scenery: sun, rays, mountains, clouds
+    drawScenery();
+
+    // pipes
+    for (const p of pipes)
+        drawPipe(p);
+
+    // ground (green base)
+    const groundHeight = 1.2;
+    // place the top of this base at the solid ground surface
+    drawRect(vec2(0, groundY - groundHeight/2), vec2(worldSize.x*3, groundHeight), groundColor);
+    drawRect(vec2(0, groundY + .08), vec2(worldSize.x*3, .15), groundTop);
+
+    // parallax grass (foreground edge)
+    if (grassLayers)
+        drawGrass();
+
+    // foreground dirt lip (covers grass + bottom of pipes)
+    {
+        const dirtH = 1.45;
+        const dirtY = groundY; // top edge aligned to solid ground surface
+        const center = vec2(0, dirtY - dirtH/2);
+
+        // base + subtle vertical shading band
+        drawRect(center, vec2(worldSize.x*3, dirtH), dirtBase);
+        drawRect(center.add(vec2(0, -.25)), vec2(worldSize.x*3, dirtH*.55), dirtShade);
+        drawRect(vec2(0, dirtY), vec2(worldSize.x*3, .18), dirtTop);
+    }
+
+    // bird (circle + simple wing) — hidden on the calm static menu backdrop
+    if (!isMenuStatic())
+    {
+        // LittleJS uses clockwise-positive angles; invert so "up" tilt looks right
+        const tilt = -clamp(birdVelY / 12, -1, 1) * .5;
+
+        // build local axes from tilt so we can place features in true local space
+        const forward = rotateVec(vec2(1,0), tilt);
+        const up = rotateVec(vec2(0,1), tilt);
+
+        // simple shaded body (outline + fill) — stacked circle icons
+        drawTile(birdPos, vec2(((birdRadius*2)+.10)*ICON_FILL), atlasIcons.circle, birdOutline);
+        drawTile(birdPos, vec2(birdRadius*2*ICON_FILL), atlasIcons.circle, birdBase);
+
+        // highlight (soft glossy spot up/front) — glow icon
+        {
+            const hiR = birdRadius*.46;
+            const hiOffset = scaleVec(forward, .16).add(scaleVec(up, .18));
+            drawTile(birdPos.add(hiOffset), vec2(hiR*2*1.6), atlasIcons.glow, birdHighlight);
+        }
+
+        // eye (in local space) — white circle + black pupil circle
+        {
+            const eyeWhiteR = .22;
+            const pupilR = .10;
+
+            const eyeLocal = vec2(.32, .18);
+            const pupilLocal = vec2(.39, .18);
+
+            const eyePos = birdPos.add(scaleVec(forward, eyeLocal.x)).add(scaleVec(up, eyeLocal.y));
+            const pupilPos = birdPos.add(scaleVec(forward, pupilLocal.x)).add(scaleVec(up, pupilLocal.y));
+
+            drawTile(eyePos, vec2(eyeWhiteR*2*ICON_FILL), atlasIcons.circle, hsl(.0,.0,1));
+            drawTile(pupilPos, vec2(pupilR*2*ICON_FILL), atlasIcons.circle, hsl(.0,.0,0));
+        }
+
+        // wing (droplet swept back behind the body, flapping)
+        const wingLocal = vec2(-.1, -0.05 + sin(time*18)*.06);
+        const wingPos = birdPos.add(rotateVec(wingLocal, tilt));
+        const wingAngle = tilt - PI/2; // point the droplet tip backward (-x local)
+        drawTile(wingPos, vec2(.5,.7), atlasIcons.droplet, birdWing, wingAngle);
+
+        // beak (triangle pointing forward, attached to the head)
+        const beakSize = vec2(.5, .60);
+        const beakOverlap = .1;
+
+        const beakBase = birdPos
+            .add(scaleVec(forward, birdRadius*.98))
+            .add(scaleVec(up, -.04));
+
+        const beakCenter = beakBase.add(scaleVec(forward, beakSize.x/2 - beakOverlap));
+        // triangle icon points up by default; +PI/2 turns it forward (+x), then tilt.
+        // size is pre-rotation so x<->y swap: width along beak length comes from .y.
+        drawTile(beakCenter, vec2(beakSize.y, beakSize.x*ICON_FILL), atlasIcons.triangle,
+            hsl(.12,.9,.55), tilt + PI/2);
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function gameRenderPost()
+{
+    if (!isPlaying()) return;
+
+    // score (top-left)
+    drawTextScreen('' + score, vec2(30, 54), 60, hsl(0,0,1), 6, hsl(0,0,0), 'left');
+
+    // best (right below the score)
+    drawTextScreen('BEST ' + max(score, getBestScore()), vec2(32, 96), 26, hsl(0,0,1), 4, hsl(0,0,0), 'left');
+
+    // prompts
+    if (state === STATE_DEAD)
+    {
+        drawTextScreen('CRASH!', vec2(mainCanvasSize.x/2, mainCanvasSize.y/2 - 30), 56, hsl(.02,.9,.55), 7, hsl(0,0,0));
+        drawTextScreen('SPACE / CLICK / TAP to restart', vec2(mainCanvasSize.x/2, mainCanvasSize.y/2 + 30), 30, hsl(0,0,1), 5, hsl(0,0,0));
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Startup LittleJS Engine
+engineInit(gameInit, gameUpdate, gameUpdatePost, gameRender, gameRenderPost);
+
+</script>

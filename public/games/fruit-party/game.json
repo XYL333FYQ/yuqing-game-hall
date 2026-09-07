@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "id": "fruit-party",
+  "order": 1,
+  "name": "果切派对",
+  "originalName": "Canvas Games · Fruit Ninja module",
+  "mark": "果切",
+  "category": "短局动作与好友对战",
+  "description": "90 秒动态街机、经典三命无尽，以及使用房间码的好友 1v1 果切比赛。",
+  "hosting": "static",
+  "hostingLabel": "正式可玩",
+  "featured": true,
+  "theme": {
+    "accent": "#dd5037",
+    "dark": "#231411"
+  },
+  "tags": ["单人", "1v1", "街机"],
+  "play": {
+    "modes": "90 秒街机 / 经典无尽 / 好友房间",
+    "players": "1–2 人",
+    "controls": "按住鼠标左键快速划过水果",
+    "inputs": ["mouse"],
+    "devices": ["desktop"],
+    "vision": false
+  },
+  "technology": "TypeScript · Canvas 2D · Cloudflare Durable Objects",
+  "license": "大厅代码 MIT；玩法底座与第三方资源许可见 THIRD_PARTY_NOTICES",
+  "sourceUrl": "https://github.com/forinda/canvas-games",
+  "localization": "完整中文界面；玩法、美术、音效、街机系统和联机房间已在本项目内重做与扩展。",
+  "fit": "它是游戏厅当前最完整的自有改造游戏，因此保留原生 TypeScript 开发和测试，而不是降级成难以调试的复制版静态页面。",
+  "highlights": ["两种完整单人模式", "共享种子的好友实时对战", "引擎、渲染、输入和音频均有独立模块"],
+  "cautions": ["目前仅支持电脑和鼠标", "体感实验室不再直接控制果切刀刃", "好友联机依赖 Cloudflare Worker 与 Durable Object"],
+  "capabilities": ["audio", "fullscreen", "storage"],
+  "permissions": ["fullscreen", "autoplay"],
+  "cover": "/games/fruit-party/assets/fruits/watermelon.svg",
+  "launch": {
+    "kind": "iframe",
+    "entry": "/games/fruit-party/index.html"
+  }
+}

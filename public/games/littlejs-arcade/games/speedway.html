@@ -1,0 +1,999 @@
+<!DOCTYPE html><head>
+<title>LittleJS Speedway</title>
+<meta charset=utf-8>
+</head><body>
+<script src="../templates/engineLoader.js?1780767748506"></script>
+<script src="../templates/gameFx.js?1780767748506"></script>
+<script src="../templates/menus.js?1780767748506"></script>
+<script src="../templates/tweakables.js?1780767748506"></script>
+<script src="../templates/textureGenerator.js?1780767748506"></script>
+<script>
+'use strict';
+
+///////////////////////////////////////////////////////////////////////////////
+// Pole Position (tiny playable prototype)
+
+// track + camera constants (tuned for a ~960x540 canvas)
+const DRAW_DIST       = 260;   // how many road segments to draw
+const ROAD_W          = 1.15;  // road half-width in world units
+var   CAMERA_HEIGHT   = 0.72;  // bigger = road appears lower (tweakable)
+var   CAMERA_DEPTH    = 1.00;  // perspective strength (tweakable)
+const RUMBLE_W        = 1.22;  // rumble extends beyond road
+
+// adaptive view: the projection was authored for a 16:9 reference. The canvas
+// is now responsive (canvasMaxSize). We cover-fit anchored to HEIGHT, so the
+// image always looks identical to landscape 16:9 and a narrower (portrait)
+// window simply crops more off the left & right edges (see computeView).
+const REF_W           = 960;   // reference (design) canvas width
+const REF_H           = 540;   // reference (design) canvas height
+var   HORIZON_FRAC    = 0.36;  // horizon position as a fraction of height (tweakable)
+
+// reference near-edge road half-width (px), computed at the design size with
+// the DEFAULT HORIZON_FRAC (0.36) and CAMERA_HEIGHT (0.72). The player car art
+// (drawn at scale 1 = 110px) was authored against this width, so sizing the car
+// by currentNearHalf / this keeps it matched to the road at every aspect and
+// camera tweak. Uses literals (not the tweakable vars) so it stays fixed.
+const REF_NEAR_ROAD_HALF =
+    ((REF_H + 2) - REF_H*0.36) / (0.72 * REF_H) * ROAD_W * (REF_W/2);
+
+// per-frame view (set by computeView): cx=screen center x, projW=horizontal
+// px per world-unit at scale 1, projH=vertical recession px, horizonY, and
+// viewScale (1 at the reference, used to size the screen-fixed cars/sprites).
+let view = {};
+
+// default texture atlas (name->TileInfo), baked once in gameInit. The round bits
+// (tree canopies, helmets) draw as the tinted 'circle' tile — instanced, fast.
+let icons = null;
+
+// the rear-view race car, split across two atlas tiles so the body tints per
+// car while the wheels/wing/cockpit/helmet keep fixed colors:
+//   tile 15 = body   (grayscale -> tinted the car's hue)
+//   tile 14 = detail (real colors -> drawn untinted on top)
+let carBodyTile = null;
+let carDetailTile = null;
+
+const MAX_SPEED       = 0.90;  // world segments per frame
+const ACCEL           = 0.012;
+const BRAKE           = 0.020;
+const COAST_DECEL     = 0.0015; // bleed off slowly when you release the gas — you should keep cruising
+const OFFROAD_DECEL   = 0.030;  // applied as engine drag toward GRASS_CRUISE_SPEED when in the grass
+const GRASS_CRUISE_SPEED = 0.18; // top speed achievable in the grass (still enough to steer back to the road)
+
+// steering (velocity-based for smooth handling)
+const STEER_ACCEL     = 0.010; // input accel (scaled by speed-factor)
+const STEER_DAMP      = 0.86;  // velocity damping per frame
+const STEER_MAX_VEL   = 0.055; // cap so curves are still recoverable
+const CENTRIFUGAL     = 0.9;   // curve pull applied to lateral velocity
+const MIN_STEER_SPEED = 0.08;  // need this much forward speed before steering engages (full at this and above)
+const MAX_OFF_X       = ROAD_W * 1.4; // cap how far off the road sideways you can wander
+
+// track data
+let segments = [];
+let trackLen = 0;
+
+// game state — round phase only. The title screen is the menu + isPlaying();
+// its backdrop renders as 'play'. resetGame() sets this before anything runs.
+let state = 'play'; // 'play' | 'timeup'
+let trackPos = 0;    // distance along track in segments
+let speed = 0;
+let playerX = 0;     // lateral offset in world units
+let playerVX = 0;    // lateral velocity
+let score = 0;
+let lap = 0;
+let timeLeftFrames = 60 * 60; // 60 seconds at 60 fps
+let crashTimer = 0;
+let bgScroll = 0;   // accumulated heading (curve*speed) -> distant parallax offset
+let inputSteer = 0; // -1..1, combined keyboard + mouse, shared with render
+
+// AI cars
+let aiCars = [];
+
+// cached projection for the visible road
+let proj = [];
+
+// sounds
+let sStart, sCrash, sRumble, sEngine;
+
+///////////////////////////////////////////////////////////////////////////////
+function buildTrack()
+{
+    segments = [];
+
+    const add = (count, curve=0)=>
+    {
+        for (let i=0; i<count; ++i)
+            segments.push({ curve });
+    };
+
+    // A simple repeating circuit: straights + wide left/right + S bends
+    add(160, 0);
+    add(120, -0.0020);
+    add(60,  -0.0010);
+    add(120, 0);
+    add(140, 0.0022);
+    add(80,  0.0012);
+    add(130, 0);
+
+    // S bend section
+    add(60,  -0.0024);
+    add(60,   0.0024);
+    add(60,  -0.0016);
+    add(60,   0.0016);
+
+    // long straight to feel fast
+    add(220, 0);
+
+    // big sweeping right back to start
+    add(180, 0.0020);
+    add(80,  0.0010);
+    add(120, 0);
+
+    // pad a bit for comfort
+    add(60, 0);
+
+    trackLen = segments.length;
+}
+
+function resetGame()
+{
+    state = 'play';
+    trackPos = 0;
+    speed = 0;
+    playerX = 0;
+    playerVX = 0;
+    score = 0;
+    lap = 0;
+    timeLeftFrames = 60 * 60;
+    crashTimer = 0;
+    bgScroll = 0;
+
+    // spawn some simple AI cars ahead
+    aiCars = [];
+    const carCount = 12;
+    for (let i=0; i<carCount; ++i)
+    {
+        aiCars.push({
+            z: (i*trackLen/carCount + 60) % trackLen,
+            speed: rand(0.35, 0.55),
+            offset: rand(0.9, -0.9),
+            wobble: rand(1000),
+            colorH: rand(),
+        });
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function gameInit()
+{
+    saveDataInit('polePosition');
+    buildTrack();
+
+    // bake the built-in icon atlas (tiles 0-15); we use the 'circle' tile for
+    // the round bits (tree canopies, helmets) via fillCircleS.
+    icons = initDefaultAtlas();
+
+    // overwrite two unused tiles with the race car: 15='arrow' -> tinted body,
+    // 14='bolt' -> fixed-color detail (wheels/wing/cockpit/helmet). Re-whiten the
+    // other icon tiles afterwards (drawToTexture re-uploads the canvas and would
+    // otherwise reintroduce the dark icon halo); [14,15] keeps the car colors.
+    carBodyTile   = drawToTexture(15, paintCarBody,   'race car body (tinted)');
+    carDetailTile = drawToTexture(14, paintCarDetail, 'race car wheels / wing / cockpit / helmet');
+    // ignore ONLY the car tiles (they carry real dark colors); whiten everything
+    // else so the tinted icons (incl. the triangle mountains) have no dark halo.
+    whitenAtlasAlpha([14, 15]);
+
+    // gamepad: on-screen touch pad with an analog left stick (steer) and one
+    // face-button area used as buttons for gas/brake on touch devices.
+    touchGamepadEnable = true;
+    touchGamepadAnalog = true;
+    touchGamepadButtonCount = 2; // A = gas, B = brake
+
+    // lightweight sfx
+    sStart  = new SoundGenerator({ volume:.6, frequency:420, attack:0, release:.08, pitchJump:80, pitchJumpTime:.02, noise:.02 });
+    sCrash  = new SoundGenerator({ volume:.8, frequency:90,  attack:0, release:.25, shapeCurve:0, noise:.35, bitCrush:6, slide:-.6 });
+    sRumble = new SoundGenerator({ volume:.25, frequency:120, attack:0, release:.05, noise:.15, bitCrush:10 });
+    // engine "vroom" pulse - replayed at a rate set by speed (see gameUpdate)
+    sEngine = new SoundGenerator({ volume:.22, frequency:55, attack:0, release:.06, shapeCurve:.3, noise:.05, bitCrush:7 });
+
+    proj = new Array(DRAW_DIST+2);
+
+    // live view/projection tuning — press \ to toggle the tweakables panel.
+    // These are read fresh every frame by computeView/projectPoint, so dragging
+    // a slider re-frames the road immediately (great for dialing in portrait).
+    if (typeof tweak === 'function')
+    {
+        tweakDivider('View');
+        tweak('HORIZON_FRAC',        {min:0.20, max:0.55}); // lower = higher horizon, more road
+        tweak('CAMERA_HEIGHT',       {min:0.40, max:1.40}); // bigger = road sits lower
+        tweak('CAMERA_DEPTH',        {min:0.60, max:1.80}); // perspective strength / zoom
+    }
+
+    buildMenus();
+    // Set up the world so the title screen shows the actual start state
+    // (road + starting cars), frozen behind the menu via installAutoPause.
+    resetGame();
+    showMenu('title');
+}
+
+function startGame()
+{
+    resetGame();
+    setPlaying(true);
+    sStart && sStart.play();
+    clearSubmenuStack();
+    hideAllMenus();
+}
+
+function quitToTitleWithCleanup()
+{
+    // Reset to fresh start state so the title backdrop shows what the
+    // game looks like at the start of a run (paused behind the menu).
+    quitToTitle(resetGame);
+}
+
+function buildMenus()
+{
+    if (typeof createMenu !== 'function') return;
+
+    installAutoPause();
+
+    setMenuTheme({accent:'#ffcc00'});
+    createTitleMenu({
+        title: 'SPEEDWAY',
+        titleFx: {fill:'hardshadow', color:'#fc0'},
+        subtitle: '',
+        onPlay: startGame,
+        revealOnClick: false,
+        items: [
+            {type:'button', label:'HELP', onClick: () => pushMenu('help')},
+        ],
+    });
+
+    createHelpMenu({
+        title: 'HELP',
+        text: 'Race against the clock on a looping circuit. Pass as many rival cars as possible before time runs out. Stay on the road — driving in the grass scrubs speed.',
+        extraItems: [
+            {type:'text', text:'Up accelerate · Down brake · Left / Right steer'},
+        ],
+    });
+
+    createPauseMenu({
+        onRestart: startGame,
+        onQuit:    quitToTitleWithCleanup,
+    });
+
+    installDefaultToolbar();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function gameUpdate()
+{
+    if (bindPauseKey({when: () => isPlaying() && state === 'play'})) return;
+    if (!isPlaying()) return;
+
+    // restart on timeup (gamepad A also restarts)
+    const startPressed = keyWasPressed('Enter') || keyWasPressed('Space') || mouseWasPressed(0) || gamepadWasPressed(0);
+    if (state !== 'play')
+    {
+        if (startPressed)
+            resetGame();
+        return;
+    }
+
+    // input
+    const dir = keyDirection();
+    // gamepad: merge left stick into the steer/gas axes (additive with keys)
+    const stick = gamepadStick(0);
+    const padSteer = abs(stick.x) > .2 ? stick.x : 0; // analog steer
+    // gas/brake: A(0) or RT(7) accelerate, B(1) brakes; stick up/down also work
+    const padGas   = gamepadIsDown(0) || gamepadIsDown(7) || stick.y > .4;
+    const padBrake = gamepadIsDown(1) || stick.y < -.4;
+    const up = dir.y > 0 || padGas, down = dir.y < 0 || padBrake;
+
+    // Left button/touch = gas, right button = brake.
+    const gas   = up   || mouseIsDown(0);
+    const brake = down || mouseIsDown(2);
+
+    // speed
+    if (gas)   speed += ACCEL;
+    else       speed -= COAST_DECEL;
+    if (brake) speed -= BRAKE;
+    speed = clamp(speed, 0, MAX_SPEED);
+
+    // engine pulse: pops faster and higher in pitch with speed.
+    // at rest -> low idle every 14 frames; at top speed -> rapid 3-frame pops.
+    const sn = speed / MAX_SPEED;
+    const enginePeriod = max(3, (14 - sn*11)|0);
+    if (frame % enginePeriod === 0)
+        sEngine.play(undefined, 0.5 + sn*0.35, 0.6 + sn*1.5);
+
+    // steering as lateral acceleration -> velocity (with damping)
+    // gives weight/inertia: car keeps drifting briefly after key release,
+    // so curves are about anticipating rather than spamming the key.
+    const kbSteer = dir.x;
+
+    // Active steering device by MOST-RECENT USE via gameFx.js usingMouseInput():
+    // pressing arrow/WASD switches to keyboard, moving the mouse hands control
+    // back (no click needed); idle keeps the last device.
+    const cx = mainCanvasSize.x / 2;
+    const pointerHeld = mouseIsDown(0) || mouseIsDown(2);
+
+    // cursor-position steering value; on touch there's no resting cursor, so
+    // require a held pointer there (desktop steers just by hovering).
+    const mouseUsable = !isTouchDevice || pointerHeld;
+    const mouseSteer = mouseUsable ? clamp((mousePosScreen.x - cx) / cx, -1, 1) : 0;
+
+    // steer priority: gamepad stick (when pushed) > active device (mouse/key)
+    const rawSteer = padSteer ? clamp(padSteer, -1, 1)
+                   : usingMouseInput() ? mouseSteer
+                   : kbSteer;
+    // need to be moving forward to steer at all — ramps from 0 (stopped) to
+    // full at MIN_STEER_SPEED, then stays at full. Prevents the car from
+    // sliding sideways from a dead stop just because the cursor is off-center.
+    const moveGate = clamp(speed / MIN_STEER_SPEED, 0, 1);
+    const steer = rawSteer * moveGate;
+    inputSteer = steer;
+    const speedFactor = 0.35 + (speed/MAX_SPEED) * 1.25; // less twitchy at low speed
+    playerVX += steer * STEER_ACCEL * speedFactor;
+
+    // centrifugal force from current curve - applied to velocity, not position,
+    // so it integrates smoothly and is dampened the same way as steering input.
+    const baseIndex = trackPos|0;
+    const curve = segments[baseIndex % trackLen].curve;
+    playerVX -= curve * speed * CENTRIFUGAL;
+
+    // distant-background parallax tracks your changing heading: integrate
+    // curve*speed so the sun/mountains scroll while you're going THROUGH a bend.
+    bgScroll += curve * speed;
+
+    // damp + clamp lateral velocity, then integrate
+    playerVX *= STEER_DAMP;
+    playerVX = clamp(playerVX, -STEER_MAX_VEL, STEER_MAX_VEL);
+    playerX += playerVX;
+
+    // cap how far off the side you can go and kill velocity into the wall so
+    // the car doesn't pile lateral momentum against an invisible boundary.
+    if (playerX < -MAX_OFF_X) { playerX = -MAX_OFF_X; playerVX = max(playerVX, 0); }
+    if (playerX >  MAX_OFF_X) { playerX =  MAX_OFF_X; playerVX = min(playerVX, 0); }
+
+    // crash recovery
+    if (crashTimer > 0)
+        crashTimer--;
+
+    // offroad: heavy drag toward a slow grass-cruise speed instead of a
+    // total stop. Holding gas while in the grass settles at GRASS_CRUISE_SPEED
+    // (slow enough to feel punished, fast enough that you can still steer
+    // back onto the road); releasing gas drains further toward 0.
+    const offRoad = abs(playerX) > ROAD_W*1.02;
+    if (offRoad)
+    {
+        const target = gas ? GRASS_CRUISE_SPEED : 0;
+        if (speed > target)
+            speed = max(target, speed - OFFROAD_DECEL);
+        if (speed > .15 && (frame & 7) === 0)
+            sRumble.play();
+    }
+
+    // advance along track
+    const lastPos = trackPos;
+    trackPos += speed;
+    if (trackPos >= trackLen)
+    {
+        trackPos -= trackLen;
+        lap++;
+    }
+
+    // score + timer
+    score += speed * 120 * (offRoad ? .6 : 1);
+    if (speed > .05)
+        timeLeftFrames--;
+
+    if (timeLeftFrames <= 0)
+    {
+        state = 'timeup';
+        speed = 0;
+        submitBestScore(score|0);
+        return;
+    }
+
+    // AI cars
+    for (const c of aiCars)
+    {
+        // slight lane wobble
+        c.wobble += 1;
+        c.offset += sin(c.wobble*.02) * 0.0012;
+        c.offset = clamp(c.offset, -1.1, 1.1);
+
+        c.z += c.speed;
+        if (c.z >= trackLen)
+            c.z -= trackLen;
+
+        // distance the car is AHEAD of the player along the loop (0..trackLen)
+        const dz = (c.z - trackPos + trackLen) % trackLen;
+
+        // collision when very close ahead
+        if (dz < 1.2 && dz > 0)
+        {
+            if (abs(playerX - c.offset) < .22 && crashTimer <= 0 && speed > .10)
+            {
+                crashTimer = 35;
+                speed *= .55;
+                playerX += sign(playerX - c.offset || randSign()) * .28;
+                sCrash.play();
+            }
+        }
+
+        // Once a car falls just behind the player it's off-screen (we only draw
+        // cars ahead), so recycle it as fresh traffic far up the road. This lets
+        // you actually OVERTAKE cars and keeps a steady stream ahead — the old
+        // code teleported a car +12 ahead the instant you caught it (dz<.25),
+        // which read as the car "popping" in front of you and made passing
+        // impossible.
+        if (dz > trackLen - 6)
+        {
+            c.z = (trackPos + 180 + rand(60)) % trackLen; // distant, near the horizon
+            c.offset = rand(0.9, -0.9);
+            c.speed = rand(0.35, 0.55);
+            c.colorH = rand();
+        }
+    }
+
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function gameUpdatePost()
+{
+    // no world-space camera needed, we render in screen space
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function computeView()
+{
+    const w = mainCanvasSize.x;
+    const h = mainCanvasSize.y;
+    const cx = w/2;
+
+    // Cover-fit anchored to HEIGHT. The scene always renders at the authored
+    // 16:9 proportions, scaled so the full design height fills the canvas
+    // height; the horizontal scale is locked to the same factor and centered
+    // on cx. So narrowing the window doesn't change the image at all — it just
+    // crops more off the left & right. Widening reveals more grass to the sides.
+    const projH = h;                       // vertical recession fills the height
+    const projW = h * (REF_W / REF_H) / 2; // horizontal scale locked to the same factor
+    const horizonY = h * HORIZON_FRAC;
+
+    // ground-plane scale at the near edge (screen bottom) — same inversion the
+    // near cap uses. Size the screen-fixed player car by the road's half-width
+    // here so it always sits correctly on the road, whatever the aspect or the
+    // CAMERA_HEIGHT/HORIZON_FRAC tweaks do to the near road width.
+    const groundScale = (h + 2 - horizonY) / (CAMERA_HEIGHT * projH);
+    const viewScale = groundScale * ROAD_W * projW / REF_NEAR_ROAD_HALF;
+
+    return view = { w, h, cx, projW, projH, horizonY, viewScale };
+}
+
+function projectPoint(z, x, v)
+{
+    const scale = CAMERA_DEPTH / z;
+    const screenX = v.cx + scale * (x - playerX) * v.projW;
+    const screenY = v.horizonY + scale * CAMERA_HEIGHT * v.projH;
+    const roadW = scale * ROAD_W * v.projW;
+    const rumbleW = roadW * RUMBLE_W;
+
+    return { screenX, screenY, scale, roadW, rumbleW };
+}
+
+// Screen-space draw helpers routed through LittleJS WebGL. Everything draws via
+// the instanced path (drawRect/drawTile) — no drawPoly anywhere — so the whole
+// scene batches without the per-quad ear-clipping triangulation + allocation
+// that drawPoly costs on the CPU (the real mobile bottleneck; see glPolyStrip).
+function fillRectS(x, y, w, h, color) // top-left origin, like ctx.fillRect
+{
+    // instanced draw — just writes a few floats, no triangulation or allocation
+    drawRect(vec2(x + w/2, y + h/2), vec2(w, h), color, 0, glEnable, true);
+}
+
+function fillCircleS(x, y, r, color)
+{
+    // tinted 'circle' atlas tile — instanced, so it stays in the fast batch with
+    // the road rects (no poly-mode triangulation). The atlas always bakes in
+    // gameInit, so no fallback path is needed.
+    drawTile(vec2(x, y), vec2(r*2), icons.circle, color, 0, undefined, undefined, glEnable, true);
+}
+
+// deterministic tiny hash for scenery variation
+const frac = (x)=> x - floor(x);
+const hash01 = (n)=> frac(sin(n*127.1) * 43758.5453123);
+
+function drawTree(x, yGround, size, seed)
+{
+    // size in pixels
+    const trunkH = size * 0.34;
+    const trunkW = size * 0.13;
+    const canopyR = size * 0.32;
+
+    const hJit = (hash01(seed+9) - .5) * size * 0.12;
+    // deeper, cooler green than the (warm, yellowish) grass so trees read as
+    // distinct shapes instead of blending into the ground.
+    const hue = .40 + (hash01(seed+2)-.5) * .06;
+
+    // trunk
+    fillRectS(x - trunkW/2, yGround - trunkH + hJit, trunkW, trunkH, hsl(.08, .50, .24));
+
+    // canopy (3 overlapping blobs, same opaque color so they read as one)
+    const canopy = hsl(hue, .60, .19);
+    const cY = yGround - trunkH + hJit;
+    const r1 = canopyR * (0.85 + hash01(seed+3)*0.25);
+    const r2 = canopyR * (0.75 + hash01(seed+4)*0.30);
+    const r3 = canopyR * (0.70 + hash01(seed+5)*0.35);
+    fillCircleS(x,                cY - canopyR*0.55, r1, canopy);
+    fillCircleS(x - canopyR*0.55, cY - canopyR*0.20, r2, canopy);
+    fillCircleS(x + canopyR*0.55, cY - canopyR*0.15, r3, canopy);
+
+    // sunlit highlight on the upper-left so the canopy reads as a 3D mass
+    fillCircleS(x - canopyR*0.30, cY - canopyR*0.80, r1*0.55, hsl(hue-.02, .55, .33));
+}
+
+function drawSign(x, yGround, size, seed)
+{
+    const postH = size * 0.60;
+    const postW = max(2, size * 0.07);
+    const boardW = size * (0.55 + hash01(seed+1)*0.25);
+    const boardH = size * 0.22;
+
+    // post
+    fillRectS(x - postW/2, yGround - postH, postW, postH, hsl(0, 0, .25));
+
+    // sign board
+    const hue = hash01(seed+7);
+    fillRectS(x - boardW/2, yGround - postH - boardH*0.85, boardW, boardH, hsl(hue, .75, .55));
+
+    // stripe detail
+    fillRectS(x - boardW*0.42, yGround - postH - boardH*0.62, boardW*0.84, max(2, boardH*0.18), hsl(0,0,1,.85));
+}
+
+// Distant parallax backdrop (sun + mountain ranges) along the horizon. Each
+// layer scrolls horizontally by bgScroll at its own rate — farther = slower —
+// so the scene rotates around you as you go through bends. All instanced tiles.
+function drawBackground(v)
+{
+    const w = v.w, horizonY = v.horizonY;
+
+    // sun: soft glow + bright disc, high in the sky, slowest parallax. Wrap it
+    // over a period a bit wider than the screen so it drifts off and re-enters.
+    const sunY = horizonY * 0.42;
+    const sunPeriod = w * 1.8;
+    const sunBaseX = w*0.62 - bgScroll * w * 1.2;
+    for (let s = -1; s <= 1; ++s) // a couple of copies cover the wrap seam
+    {
+        const sx = mod(sunBaseX, sunPeriod) + s*sunPeriod;
+        if (sx < -w*0.3 || sx > w*1.3) continue;
+        drawTile(vec2(sx, sunY), vec2(horizonY*1.4), icons.glow,
+            hsl(.09, .85, .62, .55), 0, undefined, undefined, glEnable, true);
+        drawTile(vec2(sx, sunY), vec2(horizonY*0.42), icons.circle,
+            hsl(.13, .70, .92), 0, undefined, undefined, glEnable, true);
+    }
+
+    // two mountain ranges: far (lighter/hazier/slower) behind near (darker/faster).
+    // Built from the 'triangle' icon: an equilateral peak with its apex at the
+    // tile's top-center and its base at ~0.75 of the tile height. We deliberately
+    // SINK the base below the horizon by a fraction of the peak height (SINK), so
+    // the bases (and the gaps between peaks) tuck under the ground — taller peaks
+    // sink proportionally more, so the near range doesn't float. The road, drawn
+    // afterward, covers everything below the horizon.
+    const SINK = 0.14; // base sits SINK*peakHeight below the horizon
+    const drawRange = (rate, color, peakH, span, horizon)=>
+    {
+        const scroll = -bgScroll * w * rate;
+        const k0 = floor((-span - scroll)/span);
+        const k1 = ceil((w + span - scroll)/span);
+        for (let k = k0; k <= k1; ++k)
+        {
+            const px  = k*span + scroll;
+            const visH = peakH * (0.6 + hash01(k*1.7 + rate)*0.85); // apex->base height
+            const H = visH / 0.75;                       // triangle base is 75% down the tile
+            const pw = span * (1.9 + hash01(k*2.3)*0.8); // wide (base is ~87% of tile) -> ridge
+            // base lands at horizon + SINK*H  ->  tile center = base - 0.25*H
+            const cy = horizon + (SINK - 0.25)*H;
+            drawTile(vec2(px, cy), vec2(pw, H), icons.triangle,
+                color, 0, undefined, undefined, glEnable, true);
+        }
+    };
+    drawRange(2.0, hsl(.62, .28, .60), horizonY*0.46, w*0.26, horizonY); // far
+    drawRange(3.3, hsl(.66, .34, .44), horizonY*0.66, w*0.20, horizonY); // near
+}
+
+function renderRoadAndCars()
+{
+    const v = computeView();
+    const w = v.w;
+    const h = v.h;
+    const horizonY = v.horizonY;
+
+    // sky: a true vertical gradient (deep blue up top -> pale at the horizon)
+    // in one draw via the engine's drawRectGradient — colorTop is the screen
+    // top, colorBottom the horizon edge.
+    drawRectGradient(vec2(w/2, horizonY/2), vec2(w, horizonY),
+        hsl(.60, .60, .52), hsl(.56, .45, .88), 0, glEnable, true);
+
+    // distant parallax backdrop (sun + mountains) — drawn before the haze so the
+    // haze softens their bases into the horizon.
+    drawBackground(v);
+
+    // horizon fog: a soft white haze densest at the horizon, fading to clear
+    // going up, so the mountain bases melt into the distance. colorBottom (at the
+    // horizon) is white; colorTop fades to fully transparent.
+    const fogH = horizonY * 0.40;
+    drawRectGradient(vec2(w/2, horizonY - fogH/2), vec2(w, fogH),
+        hsl(0,0,1,0), hsl(.58, .10, .97, .55), 0, glEnable, true);
+
+    // precompute visible road
+    const baseIndex = trackPos|0;
+    const offset = trackPos - baseIndex;
+
+    let x = 0;
+    let dx = 0;
+    for (let i=0; i<=DRAW_DIST+1; ++i)
+    {
+        const seg = segments[(baseIndex + i) % trackLen];
+        x += dx;
+        dx += seg.curve;
+
+        // proj[i].z = distance from camera to segment (baseIndex+i)'s far edge.
+        // Clamp the near plane at 1.2 so proj[0] doesn't splay across the whole
+        // screen at small z (which made the bottom-of-screen road balloon).
+        // The cap below extends from proj[0] down to the screen bottom using a
+        // separately-projected near plane so lateral perspective stays correct.
+        // Cars closer than this clamp use direct projection (see car loop) so
+        // the clamp doesn't make them snap to proj[0]'s z=1.2 plane.
+        const z = max(1.2, i + 1 - offset);
+        const p = projectPoint(z, x, v);
+        p.i = i;
+        p.curve = seg.curve;
+        p.xWorld = x; // accumulated lateral curve offset, sampled per scanline
+        proj[i] = p;
+    }
+
+    // dash pattern settings (in world segments)
+    const dashPeriod = 8;
+    const dashOn = 4;
+    const dashIsOn = (worldPos)=> ((worldPos % dashPeriod + dashPeriod) % dashPeriod) < dashOn;
+
+    // --- road as a stack of horizontal rects (instanced drawRect, no poly) -----
+    // We rasterize the road one thin horizontal band at a time. Each band samples
+    // the road's center-x, width and stripe colors at its OWN depth, so stacking
+    // the bands approximates the curved, tapering trapezoid without a single
+    // poly draw. Bands are a fixed pixel height, which automatically lays down
+    // MANY rects across the tall near-road (smooth) and few across the squashed
+    // far-road (cheap) — exactly "more up close, less far away". No near-cap
+    // special case is needed: bands below proj[0] just solve z straight from y.
+    const BAND_H = 2;                                  // band height in px (quality vs cost)
+    const projHCH = CAMERA_DEPTH * CAMERA_HEIGHT * v.projH; // z = projHCH / (y - horizonY)
+    // constant band colors, hoisted so we don't allocate a Color per band
+    const GRASS_A = hsl(.33,.85,.22), GRASS_B = hsl(.33,.80,.28);
+    const RUMBLE_LIGHT = hsl(0,0,1), RUMBLE_RED = hsl(0,1,.45);
+    const ROAD_LIGHT = hsl(0,0,.23), ROAD_DARK = hsl(0,0,.18);
+    const LINE_COLOR = hsl(0,0,.92,.9);
+    for (let yb = h; yb > horizonY; yb -= BAND_H)
+    {
+        const yTop = max(yb - BAND_H, horizonY);
+        const yMid = (yb + yTop) / 2;
+        const z = projHCH / max(1, yMid - horizonY);   // depth at this band
+        const scale = CAMERA_DEPTH / z;
+
+        // continuous segment position at this depth (inverse of z = i+1-offset),
+        // used to look up the accumulated curve offset and the stripe parity.
+        const s = z - 1 + offset;
+        const si = clamp(s|0, 0, DRAW_DIST);
+        const a = proj[si], b = proj[si+1] || a;
+        const xWorld = lerp(a.xWorld, b.xWorld, clamp(s - si, 0, 1));
+
+        const centerX = v.cx + scale * (xWorld - playerX) * v.projW;
+        const roadW = scale * ROAD_W * v.projW;
+        const rumbleW = roadW * RUMBLE_W;
+
+        const segWorld = baseIndex + si;
+        const grassAlt = ((segWorld / 12)|0) & 1;
+        const rumbleAlt = ((segWorld / 6)|0) & 1;
+        const bh = yb - yTop;
+
+        // grass (full width) -> rumble -> road -> dashed center line
+        fillRectS(0, yTop, w, bh, grassAlt ? GRASS_A : GRASS_B);
+        fillRectS(centerX - rumbleW, yTop, rumbleW*2, bh, rumbleAlt ? RUMBLE_LIGHT : RUMBLE_RED);
+        fillRectS(centerX - roadW,   yTop, roadW*2,   bh, rumbleAlt ? ROAD_LIGHT : ROAD_DARK);
+        if (dashIsOn(baseIndex + s + offset))
+        {
+            const lineW = max(1, roadW * .03);
+            fillRectS(centerX - lineW, yTop, lineW*2, bh, LINE_COLOR);
+        }
+    }
+
+    // sprites (trees, signs, AI cars) queued here and drawn far->near AFTER the
+    // road. Sort key is "proj-index depth": for a tree at proj[i] that's just
+    // `i`; for a car at world-distance dz it's `dz + offset - 1` (the same value
+    // used to lerp its projection). Sorting by this means a tree at i=8 correctly
+    // occludes a car at idx=8.3.
+    const sprites = [];
+
+    // queue roadside scenery (trees + signs) from the per-segment projection
+    for (let i=DRAW_DIST-1; i>=0; --i)
+    {
+        const cur = proj[i];
+        const yNear = clamp(ceil(cur.screenY) + 1, 0, h); // ground y at this segment
+        if (!(cur.scale > 0.003 && yNear > horizonY + 6))
+            continue;
+
+        const segIndex = (baseIndex + i) % trackLen;
+        const baseSize = clamp(cur.scale * v.projH * 1.15, 14, 230);
+
+        if ((segIndex % 7) === 0)
+        {
+            const xTreeL = cur.screenX - (cur.rumbleW + cur.roadW*0.85);
+            const seed = segIndex*3 + 1;
+            sprites.push({ depth: i, draw: ()=> drawTree(xTreeL, yNear, baseSize, seed) });
+        }
+        if ((segIndex % 11) === 0)
+        {
+            const xTreeR = cur.screenX + (cur.rumbleW + cur.roadW*0.85);
+            const seed = segIndex*3 + 2;
+            sprites.push({ depth: i, draw: ()=> drawTree(xTreeR, yNear, baseSize, seed) });
+        }
+        if ((segIndex % 13) === 0)
+        {
+            const side = (segIndex & 1) ? -1 : 1;
+            const xSign = cur.screenX + side * (cur.rumbleW + cur.roadW*0.55);
+            const seed = segIndex*5 + 7;
+            sprites.push({ depth: i, draw: ()=> drawSign(xSign, yNear, baseSize*0.85, seed) });
+        }
+    }
+
+    // queue AI cars into the same sprite list as trees/signs.
+    //
+    // For dz >= 3 the proj table is accurate: proj[i].z = i+1-offset is the
+    // exact distance to that segment's far edge (the z clamp at 1.2 only
+    // affects i=0 and possibly i=1, so dz >= 3 always lands on unclamped
+    // entries) and we solve i+t = dz+offset-1.
+    //
+    // For dz < 3 we project directly. This both bypasses the clamp (which
+    // would snap close cars onto proj[0]'s z=1.2 plane and make them jitter
+    // as offset cycles 0->1) and uses the same x=0 road-x approximation the
+    // near road bands use, so a car sitting close to the player tracks the
+    // road accurately. Curve drift is sub-pixel at this range, so the
+    // visual transition at dz=3 is seamless.
+    const DIRECT_DZ = 3;
+    for (const c of aiCars)
+    {
+        const dz = (c.z - trackPos + trackLen) % trackLen;
+        if (dz <= 0 || dz >= DRAW_DIST) continue;
+
+        let sx, sy, sc, depth;
+        if (dz < DIRECT_DZ)
+        {
+            sc = CAMERA_DEPTH / dz;
+            sx = v.cx + sc * (0 - playerX) * v.projW;
+            sy = horizonY + sc * CAMERA_HEIGHT * v.projH;
+            depth = dz + offset - 1; // matches the idx the proj path would use
+        }
+        else
+        {
+            const idx = dz + offset - 1;
+            const i = idx | 0;
+            const t = idx - i;
+            const a = proj[i];
+            const b = proj[i+1];
+            if (!a || !b) continue;
+            sx = lerp(a.screenX, b.screenX, t);
+            sy = lerp(a.screenY, b.screenY, t);
+            sc = lerp(a.scale,   b.scale,   t);
+            depth = idx;
+        }
+
+        const carX = sx + sc * c.offset * v.projW;
+        const carW = max(6, sc * 0.28 * v.projW);
+        const carH = max(8, sc * 0.36 * v.projH);
+
+        // simple occlusion: don't draw if behind horizon
+        if (sy - carH < h*0.08 || sy > h) continue;
+
+        const colorH = c.colorH;
+        sprites.push({ depth, draw: ()=> drawAICar(carX, sy, carW, carH, colorH) });
+    }
+
+    // draw queued sprites far -> near so trees can occlude cars and vice versa
+    sprites.sort((a, b)=> b.depth - a.depth);
+    for (const s of sprites) s.draw();
+
+    // player car (screen-fixed, like arcade view) — visual nudge mirrors the
+    // combined steer input (keyboard + mouse) for a touch of body roll feel.
+    const carScreenY = h * 0.86;
+    const carScreenX = v.cx + inputSteer * 6 * v.viewScale;
+    drawPlayerCar(carScreenX, carScreenY, v.viewScale);
+
+    // subtle vignette
+    fillRectS(0, 0, w, 12, hsl(0,0,0,.18));
+    fillRectS(0, h-12, w, 12, hsl(0,0,0,.18));
+}
+
+// The rear-view F1 car is painted across two atlas tiles (canvas 2D, 500x500
+// space) so the body can be tinted per car while the structural parts keep
+// fixed colors. Both tiles share the same coordinate space and draw rect, so
+// stacking carDetailTile over carBodyTile composites them into one car.
+//
+// BODY tile (tinted): painted GRAYSCALE so drawTile's color arg multiplies it
+// to the car's hue. Fills the tile so the draw rect == the car footprint.
+function paintCarBody(ctx)
+{
+    const S = 500, cx = S/2;
+
+    // body trapezoid (white -> takes the car color)
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(cx-150, 492);
+    ctx.lineTo(cx- 52,  70);
+    ctx.lineTo(cx+ 52,  70);
+    ctx.lineTo(cx+150, 492);
+    ctx.closePath();
+    ctx.fill();
+
+    // body side shading (darker -> a shaded edge of the hue)
+    ctx.fillStyle = '#c2c2c2';
+    ctx.beginPath();
+    ctx.moveTo(cx-150, 492); ctx.lineTo(cx-52, 70); ctx.lineTo(cx-30, 70); ctx.lineTo(cx-110, 492);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(cx+150, 492); ctx.lineTo(cx+52, 70); ctx.lineTo(cx+30, 70); ctx.lineTo(cx+110, 492);
+    ctx.closePath(); ctx.fill();
+}
+
+// DETAIL tile (NOT tinted — drawn white over the body): the wheels, wing,
+// cockpit, helmet, visor and stripe, in their real fixed colors so they look
+// the same on every car regardless of body hue.
+function paintCarDetail(ctx)
+{
+    const S = 500, cx = S/2;
+
+    // rear tires (out to the side edges)
+    ctx.fillStyle = '#1c1c1c';
+    ctx.fillRect(  4, 210,  96, 280);
+    ctx.fillRect(400, 210,  96, 280);
+    ctx.fillStyle = '#3a3a3a';            // lighter tops so they read as round
+    ctx.fillRect(  4, 210,  96, 46);
+    ctx.fillRect(400, 210,  96, 46);
+
+    // rear wing: dark plate + endplates
+    ctx.fillStyle = '#202020';
+    ctx.fillRect( 30, 120, 440, 46);
+    ctx.fillRect( 30,  74,  34, 92);
+    ctx.fillRect(436,  74,  34, 92);
+
+    // cockpit opening (dark)
+    ctx.fillStyle = '#101010';
+    ctx.beginPath();
+    ctx.moveTo(cx-58, 360);
+    ctx.lineTo(cx-34, 165);
+    ctx.lineTo(cx+34, 165);
+    ctx.lineTo(cx+58, 360);
+    ctx.closePath();
+    ctx.fill();
+
+    // driver helmet (stays white) + dark visor band
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(cx, 250, 40, 0, 7);
+    ctx.fill();
+    ctx.fillStyle = '#33384f';
+    ctx.fillRect(cx-34, 238, 68, 24);
+
+    // nose centerline stripe (stays white)
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(cx-16, 492);
+    ctx.lineTo(cx- 7,  80);
+    ctx.lineTo(cx+ 7,  80);
+    ctx.lineTo(cx+16, 492);
+    ctx.closePath();
+    ctx.fill();
+}
+
+// Draw a car: soft contact shadow, tinted body, fixed-color detail on top.
+// All instanced. centerPos is the tile center; the car's wheels sit on
+// centerPos.y + size.y/2.
+function drawCar(centerPos, size, bodyColor)
+{
+    // soft oval shadow under the wheels — a squashed 'glow' tile (radial
+    // falloff) tinted black, drawn wider than the car and peeking just below
+    // it so the car looks planted instead of floating.
+    const groundY = centerPos.y + size.y/2;
+    const shW = size.x * 1.15, shH = size.y * 0.13;
+    drawTile(vec2(centerPos.x, groundY - shH*0.15), vec2(shW, shH), icons.glow,
+        hsl(0,0,0,.5), 0, undefined, undefined, glEnable, true);
+
+    drawTile(centerPos, size, carBodyTile,   bodyColor, 0, undefined, undefined, glEnable, true);
+    drawTile(centerPos, size, carDetailTile, WHITE,     0, undefined, undefined, glEnable, true);
+}
+
+function drawAICar(cx, groundY, W, H, colorH)
+{
+    // two instanced tiles — no poly. Footprint matches the old silhouette:
+    // ~1.15*W wide (tire overhang), ~H tall, wheels on groundY.
+    const tileW = W * 1.15;
+    const tileH = H * 1.05;
+    drawCar(vec2(cx, groundY - tileH/2), vec2(tileW, tileH), hsl(colorH, .7, .55));
+}
+
+function drawPlayerCar(x, y, s=1)
+{
+    // Same baked car tile as the AI cars, just tinted red (white on a crash
+    // flash). Instanced — no poly. Drawn at the AI cars' ~1.32 height:width
+    // aspect so it reads as the identical car, only bigger and in the
+    // foreground; wheels sit on the ground line y.
+    const tileW = 130 * s;
+    const tileH = 172 * s;
+
+    const flash = crashTimer > 0 && (frame&3) < 2;
+    const color = flash ? hsl(0,0,1) : hsl(.01, .85, .52);
+
+    drawCar(vec2(x, y - tileH/2), vec2(tileW, tileH), color);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function gameRender()
+{
+    if (state === 'play')
+        renderRoadAndCars();
+    else
+    {
+        // background for title/timeup
+        const v = computeView(); // reuse the in-game car scale so sizes match
+        const w = v.w;
+        const h = v.h;
+        // same sky gradient as in-game, fading to the horizon at the grass line
+        drawRectGradient(vec2(w/2, h*0.275), vec2(w, h*0.55),
+            hsl(.60, .60, .52), hsl(.56, .45, .88), 0, glEnable, true);
+        fillRectS(0, h*0.55, w, h*0.45, hsl(.33, .85, .25));
+
+        // tiny fake road — a stack of horizontal rects (instanced) widening
+        // toward the bottom, so the title screen needs no poly draw either.
+        const roadTopY = h*0.58, roadColor = hsl(0,0,.2);
+        for (let yb = h; yb > roadTopY; yb -= 3)
+        {
+            const yTop = max(yb - 3, roadTopY);
+            const t = (h - (yb+yTop)/2) / (h - roadTopY); // 0 at bottom -> 1 at horizon
+            const halfW = lerp(w*.10, w*.04, t);          // .20w wide at bottom, .08w at top
+            fillRectS(w*.50 - halfW, yTop, halfW*2, yb - yTop, roadColor);
+        }
+
+        // parked car
+        drawPlayerCar(w*0.5, h*0.82, v.viewScale);
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function gameRenderPost()
+{
+    const w = mainCanvasSize.x;
+    const h = mainCanvasSize.y;
+
+    if (state === 'play' && isPlaying())
+    {
+        const mph = (speed / MAX_SPEED * 230) | 0;
+        const t = max(0, timeLeftFrames) / 60;
+
+        drawTextScreen(`SPEED  ${mph} mph`, vec2(14, 18), 28, hsl(0,0,1), 4, hsl(0,0,0), 'left', 'monospace');
+        drawTextScreen(`TIME   ${formatTime(t)}`, vec2(14, 48), 28, hsl(0,0,1), 4, hsl(0,0,0), 'left', 'monospace');
+        drawTextScreen(`LAP    ${lap}`, vec2(14, 78), 28, hsl(0,0,1), 4, hsl(0,0,0), 'left', 'monospace');
+        drawTextScreen(`SCORE  ${score|0}`, vec2(w-14, 18), 28, hsl(0,0,1), 4, hsl(0,0,0), 'right', 'monospace');
+    }
+    else if (state === 'timeup')
+    {
+        drawTextScreen('TIME UP!', vec2(w/2, h*0.22), 84, hsl(0,0,1), 10, hsl(0,0,0), 'center', 'monospace');
+        drawTextScreen(`FINAL SCORE  ${score|0}`, vec2(w/2, h*0.34), 38, hsl(.02,.9,.55), 6, hsl(0,0,0), 'center', 'monospace');
+        drawTextScreen('PRESS ENTER / SPACE TO TRY AGAIN', vec2(w/2, h*0.42), 26, hsl(0,0,1,.9), 5, hsl(0,0,0,.85), 'center', 'monospace');
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Startup LittleJS Engine
+engineInit(gameInit, gameUpdate, gameUpdatePost, gameRender, gameRenderPost);
+
+</script>

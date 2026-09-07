@@ -1,0 +1,1051 @@
+<!DOCTYPE html><head>
+<title>LittleJS Snake</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<script src="../templates/engineLoader.js?1780767748506"></script>
+<script src="../templates/gameFx.js?1780767748506"></script>
+<script src="../templates/textureGenerator.js?1780767748506"></script>
+<script src="../templates/menus.js?1780767748506"></script>
+<script>
+'use strict';
+
+// engine settings
+canvasFixedSize = vec2(1920, 1080);
+cameraScale = 50;
+
+// attract/demo mode — at the title (isPlaying() === false) the AI auto-plays a
+// classic game behind the menu and loops forever. Clicking PLAY starts a real,
+// player-controlled run. The launcher cabinet merely hides the menu chrome over
+// this same live title, so no URL flag is needed.
+let demoRestartTimer = 0; // counts down after a demo round ends, then restarts
+
+// touch controls
+touchGamepadEnable = true;
+touchGamepadAnalog = false;
+touchGamepadLeftStick = false;
+touchGamepadRightStick = true;
+touchGamepadButtonCount = 0;
+
+///////////////////////////////////////////////////////////////////////////////
+// Snake (grid-based)
+
+const gridW = 24;
+const gridH = 18;
+const cellSize = 1;
+
+// Tunables
+const stepIntervalStart = .12;
+const stepIntervalMin   = .06;
+const stepSpeedup       = .003;
+const deathFreezeTime   = .55; // brief freeze before game-over menu surfaces
+
+// bonus fruit (time-limited, positive)
+const bonusLifeTime = 6;    // seconds a bonus fruit stays on the board
+const bonusValue    = 5;    // points awarded for a bonus fruit
+const bonusGrow     = 2;    // segments gained from a bonus fruit
+const bonusChance   = 22;   // % roll per normal food eaten (once warmed up)
+const bonusMinScore = 5;    // bonuses only start appearing past this score
+
+// layout
+const fieldOffsetY  = .8;   // shift the playfield up to open a bottom HUD strip
+
+// versus mode (Tron-light-cycles flavored race vs an AI snake)
+const versusWinApples    = 10;  // first snake to this many apples wins the round
+const versusStepInterval = .11; // steady shared speed in versus (no ramp)
+const versusApples       = 2;   // apples kept on the board at once in versus
+const versusAppleStagger = .7;  // seconds before a fresh apple pops in (staggered)
+const versusSpawnOffset  = 7;   // cells each snake starts from center (more = further apart)
+const appleMinDist       = 6;   // keep a fresh apple at least this far from other apples
+const playerHue = .34;          // player snake hue (green)
+const aiHue     = .87;          // AI snake hue (cyan-blue) — edit to recolor the AI
+
+let versus;             // false = classic 1P, true = vs AI race
+let snakes;             // array of snake objects (player is always index 0)
+let player, ai;         // convenience refs (ai is null in classic)
+let foods;              // array of live apples: {pos, spawn} (spawn = grow-in timer)
+let appleTarget;        // how many apples to keep on the board
+let appleStagger;       // delay before topping up to appleTarget
+let appleSpawnTimer;    // countdown to the next staggered apple
+let bonus, bonusTimer, bonusLifeMax; // classic-only time-limited fruit (cell or 0)
+let score;              // classic player score — drives bestScore + HUD pop
+let roundOver;          // round finished (both modes); freezes the board
+let versusResult;       // 'win' | 'lose' | 'draw' | null
+let stepTimer, stepInterval;
+
+// juice
+let foodPulseTimer;  // ticks up from 0; used to pulse food size
+let scorePopTimer;   // brief score-bump animation
+let deathFreezeTimer;// counts down after a round ends before the menu surfaces
+// per-apple grow-in lives on each apple (.spawn); per-snake flash + grow-pulse
+// timers live on the snake object (see makeSnake)
+
+// sounds (created in gameInit so user-gesture audio is happy)
+let sEat, sBonus, sDie, sStep;
+
+// default-atlas icon map (name -> TileInfo)
+let icons;
+
+///////////////////////////////////////////////////////////////////////////////
+// Helpers
+
+// four grid directions, reused by movement + AI search
+const DIRS = [vec2(1,0), vec2(-1,0), vec2(0,1), vec2(0,-1)];
+
+// reject a 180° reversal for a given snake (can't turn back into your own neck)
+function clampDir(d, s)
+{
+    if (!s || !s.body.length) return d;
+    return (d.x === -s.dir.x && d.y === -s.dir.y) ? s.dir : d;
+}
+
+function cellToWorld(c)
+{
+    return vec2((c.x - gridW/2 + .5) * cellSize,
+                (c.y - gridH/2 + .5) * cellSize + fieldOffsetY);
+}
+
+function isCellInBounds(c)
+{
+    return c.x >= 0 && c.y >= 0 && c.x < gridW && c.y < gridH;
+}
+
+function cellEquals(a,b){ return a.x === b.x && a.y === b.y; }
+
+function cellOnAnySnake(c)
+{
+    for (const s of snakes)
+        for (const seg of s.body)
+            if (cellEquals(seg, c)) return true;
+    return false;
+}
+
+function cellOnAnyApple(c)
+{
+    for (const f of foods)
+        if (cellEquals(f.pos, c)) return true;
+    return false;
+}
+
+// minDist (optional) keeps the chosen cell away from existing apples; it is
+// relaxed in the deterministic fallback so a crowded board never deadlocks.
+function randEmptyCell(minDist = 0)
+{
+    for (let i=0; i<200; ++i)
+    {
+        const c = vec2(randInt(gridW), randInt(gridH));
+        if (cellOnAnySnake(c) || cellOnAnyApple(c)) continue;
+        if (bonus && cellEquals(c, bonus)) continue;
+        if (minDist > 0 && foods.some(f => f.pos.distance(c) < minDist)) continue;
+        return c;
+    }
+    for (let y=0; y<gridH; ++y)
+    for (let x=0; x<gridW; ++x)
+    {
+        const c = vec2(x,y);
+        if (!cellOnAnySnake(c) && !cellOnAnyApple(c) && (!bonus || !cellEquals(c, bonus)))
+            return c;
+    }
+    return vec2(0,0);
+}
+
+// a fresh apple with a small grow-in pop, spaced away from other apples
+function spawnApple()
+{
+    return {pos: randEmptyCell(appleMinDist), spawn: .25};
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Game state
+
+// build a length-4 snake heading in startDir, body trailing behind the head
+function makeSnake(startCell, startDir, hue, isAI)
+{
+    const body = [];
+    for (let i=0; i<4; ++i)
+        body.push(startCell.add(startDir.scale(-i)));
+    return {
+        body,
+        old: body.map(c => c.copy()), // pre-tick snapshot for smooth glide
+        dir: startDir.copy(),
+        nextDir: startDir.copy(),
+        grow: 0,
+        apples: 0,
+        alive: true,
+        hue, isAI,
+        flashTimer: 0,    // red flash on death
+        growPulse: 0,     // brief head swell when eating
+    };
+}
+
+function resetGame()
+{
+    const cy = gridH/2|0;
+    if (versus)
+    {
+        // mirrored spawns: player on the left heading right, AI on the right heading left
+        player = makeSnake(vec2((gridW/2|0) - versusSpawnOffset, cy), vec2( 1,0), playerHue, false);
+        ai     = makeSnake(vec2((gridW/2|0) + versusSpawnOffset, cy), vec2(-1,0), aiHue,     true);
+        snakes = [player, ai];
+    }
+    else
+    {
+        player = makeSnake(vec2(gridW/2|0, cy), vec2(1,0), playerHue, false);
+        ai = null;
+        snakes = [player];
+    }
+
+    score = 0;
+    roundOver = false;
+    versusResult = null;
+
+    stepInterval = versus ? versusStepInterval : stepIntervalStart;
+    stepTimer = stepInterval;
+
+    // apples: one on the board immediately, the rest stagger in
+    appleTarget  = versus ? versusApples : 1;
+    appleStagger = versus ? versusAppleStagger : 0;
+    foods = [];                     // must exist before spawnApple() reads it
+    foods.push(spawnApple());
+    appleSpawnTimer = appleStagger;
+
+    bonus = 0;
+    bonusTimer = 0;
+    bonusLifeMax = bonusLifeTime;
+
+    clearParticles();
+    foodPulseTimer = 0;
+    scorePopTimer = 0;
+    deathFreezeTimer = 0;
+}
+
+// One-shot radial burst via the engine's ParticleEmitter (was a hand-rolled
+// array). Squares that drag to a stop and shrink/fade out — no gravity (top-down).
+function spawnParticles(worldPos, color, count, speedMin, speedMax, life=.6)
+{
+    const fade = rgb(color.r, color.g, color.b, 0);
+    new ParticleEmitter(
+        worldPos, 0,                 // pos, angle
+        .3,                          // emitSize (circle ~ old +/-.15 jitter)
+        count/600, 600,              // emitTime, emitRate -> ~count particles
+        PI,                          // emitConeAngle (full radial)
+        undefined,                   // tileInfo (untextured square)
+        color, color,                // colorStartA/B
+        fade, fade,                  // colorEndA/B (fade alpha to 0)
+        life,                        // particleTime
+        .16, .096,                   // sizeStart, sizeEnd (was size*(.6+.4*t))
+        (speedMin+speedMax)/2/60,    // speed (per-frame; was per-sec)
+        0, .92, 1,                   // angleSpeed, damping (drag), angleDamping
+        0,                           // gravityScale (no gravity)
+        0,                           // particleConeAngle (axis-aligned squares)
+        .1,                          // fadeRate
+        .4,                          // randomness
+        false, true                  // collideTiles, additive (glow)
+    );
+}
+
+// clearParticles() lives in gameFx.js (shared).
+
+// depleting ring drawn as short line segments around a circle (frac of full)
+function drawTimerRing(center, radius, frac, color)
+{
+    const segs = 40;
+    const n = ceil(segs * clamp(frac, 0, 1));
+    for (let i=0; i<n; ++i)
+    {
+        const a0 = -PI/2 + (i  /segs) * PI*2;
+        const a1 = -PI/2 + ((i+1)/segs) * PI*2;
+        const p0 = center.add(vec2(cos(a0), sin(a0)).scale(radius));
+        const p1 = center.add(vec2(cos(a1), sin(a1)).scale(radius));
+        drawLine(p0, p1, .11, color);
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Step / consume / die
+
+function killSnake(s)
+{
+    if (!s.alive) return;
+    s.alive = false;
+    sDie && sDie.play();
+
+    // death feedback: particle burst at head (snake-tinted), screen shake, flash
+    const headWorld = cellToWorld(s.body[0]);
+    spawnParticles(headWorld, hsl(s.hue, .9, .6), 26, 4, 11, .8);
+    spawnParticles(headWorld, hsl(0,     .9, .6),  8, 2,  6, .55);
+    addScreenShake(.55, .35);
+    s.flashTimer = .4;
+}
+
+function eatFood(s, cell)
+{
+    s.apples++;
+    s.grow++;
+    sEat && sEat.play();
+
+    // juice — particles for either snake so you see who grabbed it; shake only for you
+    const fp = cellToWorld(cell);
+    spawnParticles(fp, hsl(.12, 1, .6), 14, 3, 8, .5);
+    spawnParticles(fp, hsl(.04, 1, .6),  4, 2, 5, .4);
+    s.growPulse = .25;
+    if (!s.isAI)
+    {
+        score++;
+        scorePopTimer = .35;
+        addScreenShake(.10, .12);
+    }
+    else
+        addScreenShake(.06, .10);
+
+    if (!versus)
+        stepInterval = max(stepIntervalMin, stepIntervalStart - score * stepSpeedup);
+
+    // remove the eaten apple; a replacement staggers back in via gameUpdate
+    const i = foods.findIndex(f => cellEquals(f.pos, cell));
+    if (i >= 0) foods.splice(i, 1);
+    appleSpawnTimer = appleStagger;
+
+    // classic-only: chance to spawn a time-limited bonus fruit once warmed up
+    if (!versus && !bonus && score >= bonusMinScore && randInt(100) < bonusChance)
+        spawnBonus();
+}
+
+function spawnBonus()
+{
+    bonus = randEmptyCell();
+    bonusTimer = bonusLifeMax = bonusLifeTime;
+}
+
+function eatBonus(s)
+{
+    score += bonusValue;
+    s.grow += bonusGrow;
+    sBonus && sBonus.play();
+
+    // big golden burst
+    const bp = cellToWorld(bonus);
+    spawnParticles(bp, hsl(.13, 1, .65), 24, 3, 9, .6);
+    spawnParticles(bp, hsl(.05, .9, .7),  8, 2, 6, .45);
+    addScreenShake(.18, .16);
+    scorePopTimer  = .45;
+    s.growPulse    = .25;
+
+    bonus = 0;
+    bonusTimer = 0;
+
+    stepInterval = max(stepIntervalMin, stepIntervalStart - score * stepSpeedup);
+}
+
+// Advance every snake one cell on a shared clock, resolving collisions
+// simultaneously so neither snake gets a turn-order advantage.
+function tick()
+{
+    const cellKey = c => c.x + ',' + c.y;
+
+    // snapshot positions for smooth glide rendering
+    for (const s of snakes)
+        if (s.alive) s.old = s.body.map(c => c.copy());
+
+    // 1) apply each snake's queued turn and compute its intended move
+    const intents = snakes.map(s =>
+    {
+        if (!s.alive) return null;
+        s.dir = clampDir(s.nextDir, s);
+        const newHead  = s.body[0].add(s.dir);
+        const inBounds = isCellInBounds(newHead);
+        const ate      = inBounds && cellOnAnyApple(newHead);
+        const ateBonus = inBounds && !versus && bonus && cellEquals(newHead, bonus);
+        const keepTail = s.grow > 0 || ate || ateBonus;
+        return {s, newHead, inBounds, ate, ateBonus, keepTail, dead:false, stationary:false};
+    });
+
+    // a snake that can't complete its move stays put and dies in place
+    const halt = it => { it.dead = true; it.stationary = true; };
+
+    // 2) out of bounds: dies against the wall, doesn't advance
+    for (const it of intents)
+        if (it && !it.inBounds) halt(it);
+
+    // 3) head-to-head: snakes aiming at the SAME empty cell all crash — it's a
+    //    mutual draw. They still glide INTO the shared cell (advance + die) so
+    //    they meet head-on instead of freezing a cell short of the gap.
+    const byTarget = {};
+    for (const it of intents)
+        if (it && !it.dead) (byTarget[cellKey(it.newHead)] ||= []).push(it);
+    for (const k in byTarget)
+    {
+        const group = byTarget[k];
+        if (group.length < 2) continue;
+        for (const it of group) { it.dead = true; it.advance = true; }
+    }
+
+    // 4) cells each snake occupies after this step: a halted snake keeps its
+    //    whole body (it never moved); a mover is head + body minus vacated tail.
+    const occupied = intents.map(it =>
+    {
+        if (!it) return null;
+        if (it.stationary) return it.s.body;
+        const cells = [it.newHead];
+        const lastIdx = it.s.body.length - 1;
+        for (let i=0; i<it.s.body.length; ++i)
+        {
+            if (!it.keepTail && i === lastIdx) break;
+            cells.push(it.s.body[i]);
+        }
+        return cells;
+    });
+
+    // 5) body collisions for snakes still trying to move
+    for (let a=0; a<intents.length; ++a)
+    {
+        const it = intents[a];
+        if (!it || it.dead) continue;
+        for (let b=0; b<intents.length && !it.dead; ++b)
+        {
+            const cells = occupied[b];
+            if (!cells) continue;
+            for (let c=0; c<cells.length; ++c)
+            {
+                if (b === a && c === 0) continue; // skip a snake's own new head
+                if (cellEquals(it.newHead, cells[c])) { it.dead = true; break; }
+            }
+        }
+    }
+
+    // 6) apply: kill the doomed, advance the survivors
+    for (const it of intents)
+    {
+        if (!it) continue;
+        const s = it.s;
+        if (it.dead)
+        {
+            // head-to-head losers glide into the shared cell before dying
+            if (it.advance) { s.body.unshift(it.newHead); s.body.pop(); }
+            killSnake(s);
+            continue;
+        }
+
+        s.body.unshift(it.newHead);
+        if (it.ate)           eatFood(s, it.newHead);
+        else if (it.ateBonus) eatBonus(s);
+        else                  sStep && sStep.play();
+
+        if (s.grow > 0) s.grow--;
+        else s.body.pop();
+    }
+
+    checkRoundEnd();
+}
+
+// Decide whether the round is over and, in versus, who won.
+function checkRoundEnd()
+{
+    if (roundOver) return;
+
+    if (!versus)
+    {
+        if (!player.alive)
+        {
+            roundOver = true;
+            deathFreezeTimer = deathFreezeTime;
+            if (isPlaying()) submitBestScore(score); // never bank attract-mode scores
+        }
+        return;
+    }
+
+    let result = null;
+    if (player.apples >= versusWinApples)      result = 'win';
+    else if (ai.apples >= versusWinApples)     result = 'lose';
+    else if (!player.alive && !ai.alive)       result = 'draw';
+    else if (!player.alive)                    result = 'lose';
+    else if (!ai.alive)                        result = 'win';
+    if (!result) return;
+
+    roundOver = true;
+    versusResult = result;
+    deathFreezeTimer = deathFreezeTime;
+    if (result === 'win' && isPlaying()) // never bank attract-mode versus wins
+    {
+        const wins = (getSaveData().versusWins || 0) + 1;
+        saveData({versusWins: wins});
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Input
+
+function handleInput()
+{
+    // Use keyDirection for arrow/WASD movement; gamepad d-pad / left stick.
+    const kd = keyDirection();
+    const stick = gamepadStick(0);
+    const gx = (gamepadIsDown(14) ? -1 : 0) + (gamepadIsDown(15) ? 1 : 0);
+    const gy = (gamepadIsDown(13) ? -1 : 0) + (gamepadIsDown(12) ? 1 : 0);
+
+    let want = vec2(0,0);
+    if (kd.x || kd.y) want = vec2(sign(kd.x), sign(kd.y));
+    else if (gx || gy) want = vec2(gx, gy);
+    else if (abs(stick.x) > .4 || abs(stick.y) > .4)
+    {
+        want = abs(stick.x) > abs(stick.y)
+            ? vec2(sign(stick.x), 0)
+            : vec2(0, sign(stick.y));
+    }
+
+    if (want.x || want.y)
+    {
+        // restrict to one axis at a time so diagonal taps pick a sane direction
+        if (want.x && want.y) want = vec2(want.x, 0);
+        player.nextDir = clampDir(want, player);
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// AI snake — greedy-but-safe: shortest free path to the apple, else survive
+
+// grid of cells that will still be occupied next step (tails that vacate are free)
+function buildBlockedGrid()
+{
+    const blocked = [];
+    for (let x=0; x<gridW; ++x)
+        blocked.push(new Array(gridH).fill(false));
+    for (const s of snakes)
+    {
+        if (!s.alive) continue;
+        const removeTail = !(s.grow > 0); // tail will move away unless mid-grow
+        for (let i=0; i<s.body.length; ++i)
+        {
+            if (removeTail && i === s.body.length-1) continue;
+            const c = s.body[i];
+            if (isCellInBounds(c)) blocked[c.x][c.y] = true;
+        }
+    }
+    return blocked;
+}
+
+// BFS shortest path; returns the first-step direction toward goal, or null
+function bfsStep(start, goal, blocked)
+{
+    if (cellEquals(start, goal)) return null;
+    const key = c => c.x + ',' + c.y;
+    const came = {};
+    came[key(start)] = null;
+    const q = [start];
+    let qi = 0, found = false;
+    while (qi < q.length)
+    {
+        const cur = q[qi++];
+        if (cellEquals(cur, goal)) { found = true; break; }
+        for (const d of DIRS)
+        {
+            const n = vec2(cur.x + d.x, cur.y + d.y);
+            if (!isCellInBounds(n)) continue;
+            const k = key(n);
+            if (k in came) continue;
+            if (blocked[n.x][n.y] && !cellEquals(n, goal)) continue;
+            came[k] = cur;
+            q.push(n);
+        }
+    }
+    if (!found) return null;
+    // walk parents back from goal until we reach the neighbor of start
+    let cur = goal;
+    while (came[key(cur)] && !cellEquals(came[key(cur)], start))
+        cur = came[key(cur)];
+    return vec2(cur.x - start.x, cur.y - start.y);
+}
+
+// count open cells reachable from start (flood fill) — used to avoid self-trapping
+function floodArea(start, blocked)
+{
+    if (!isCellInBounds(start) || blocked[start.x][start.y]) return 0;
+    const key = c => c.x + ',' + c.y;
+    const seen = {};
+    seen[key(start)] = 1;
+    const q = [start];
+    let qi = 0, count = 0;
+    while (qi < q.length)
+    {
+        const cur = q[qi++];
+        ++count;
+        for (const d of DIRS)
+        {
+            const n = vec2(cur.x + d.x, cur.y + d.y);
+            if (!isCellInBounds(n)) continue;
+            const k = key(n);
+            if (k in seen || blocked[n.x][n.y]) continue;
+            seen[k] = 1;
+            q.push(n);
+        }
+    }
+    return count;
+}
+
+// Greedy-but-safe steering for any snake: head for the nearest reachable apple
+// (plus the bonus fruit when considerBonus), else take the legal move that keeps
+// the most open room. Drives the versus AI (considerBonus false) and the
+// attract-mode player auto-drive (considerBonus true).
+function chooseDir(s, considerBonus)
+{
+    if (!s.alive) return;
+    const blocked = buildBlockedGrid();
+    const head = s.body[0];
+    const isFood = c => cellOnAnyApple(c) || (considerBonus && bonus && cellEquals(c, bonus));
+
+    const legal = d =>
+    {
+        if (!d) return false;
+        if (d.x === -s.dir.x && d.y === -s.dir.y) return false; // no reversing
+        const n = vec2(head.x + d.x, head.y + d.y);
+        if (!isCellInBounds(n)) return false;
+        if (blocked[n.x][n.y] && !isFood(n)) return false;
+        return true;
+    };
+
+    // 1) head for the closest reachable target (apples + live bonus fruit)
+    let chosen = null;
+    const targets = foods.map(f => f.pos);
+    if (considerBonus && bonus) targets.push(bonus);
+    targets.sort((a,b) =>
+        (abs(a.x-head.x) + abs(a.y-head.y)) -
+        (abs(b.x-head.x) + abs(b.y-head.y)));
+    for (const t of targets)
+    {
+        const step = bfsStep(head, t, blocked);
+        if (legal(step)) { chosen = step; break; }
+    }
+
+    // 2) no safe path: take the legal move that keeps the most open room
+    if (!chosen)
+    {
+        let best = null, bestArea = -1;
+        for (const d of DIRS)
+        {
+            if (!legal(d)) continue;
+            const n = vec2(head.x + d.x, head.y + d.y);
+            const area = floodArea(n, blocked) + (isFood(n) ? 1000 : 0);
+            if (area > bestArea) { bestArea = area; best = d; }
+        }
+        chosen = best;
+    }
+
+    if (chosen) s.nextDir = clampDir(chosen, s);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Menus
+
+function startClassic()
+{
+    versus = false;
+    resetGame();
+    setPlaying(true);
+    hideAllMenus();
+}
+
+function startVersus()
+{
+    versus = true;
+    resetGame();
+    setPlaying(true);
+    hideAllMenus();
+}
+
+// quit back to a clean classic title backdrop (the AI resumes the attract demo)
+function goTitle()
+{
+    quitToTitle(() => { versus = false; resetGame(); demoRestartTimer = 1.8; });
+}
+
+function buildMenus()
+{
+    setMenuTheme({accent:'#55ee99'});
+    createTitleMenu({
+        title: 'SNAKE',
+        titleFx: {fill:'neon', color:'#5e9'},
+        subtitle: 'Eat the apples. Grab the gold. Avoid the walls.',
+        onPlay: startClassic,
+        playLabel: 'PLAY',
+        canReveal: () => !isPlaying(),
+        showBest: true,
+        formatBest: n => `BEST  ${n}`,
+        items: [
+            {type:'button', label:'VERSUS',  onClick: startVersus},
+            {type:'button', label:'OPTIONS', onClick: () => pushMenu('options')},
+            {type:'button', label:'HELP',    onClick: () => pushMenu('help')},
+        ],
+    });
+
+    createOptionsMenu();
+
+    createMenu({
+        id: 'help',
+        title: 'HELP',
+        onHide: popMenu,
+        items: [
+            {type:'text',  text:'PLAY: eat the red apples to grow and score, but don\'t crash into ' +
+                'the walls or your own tail. Grab the golden fruit before it vanishes for a big bonus.'},
+            {type:'text',  text:`VERSUS: race a cyan AI snake to the same apple. First to ${versusWinApples} ` +
+                'apples wins — or trap your rival so it crashes into a wall or a snake. Longer = deadlier.'},
+            {type:'text',  text:'Arrows / WASD steer'},
+            {type:'separator'},
+            {type:'button', label:'BACK', onClick: () => hideMenu('help')},
+        ],
+    });
+
+    createPauseMenu({
+        onQuit: goTitle,
+        extraItems: [
+            {type:'button', label:'OPTIONS', onClick: () => pushMenu('options')},
+        ],
+    });
+
+    installDefaultToolbar({landscapeStack:true});
+}
+
+function showGameOverMenu()
+{
+    const newBest = score >= getBestScore() && score > 0;
+    // Destroy any prior instance so labels are current
+    const prev = getMenu('gameover');
+    if (prev) prev.destroy();
+
+    createMenu({
+        id: 'gameover',
+        title: 'GAME OVER',
+        dismissable: false,
+        initialItemId: 'again',
+        items: [
+            {type:'label', text: `Score: ${score}`},
+            {type:'label', text: newBest ? `New Best!` : `Best: ${getBestScore()}`},
+            {type:'separator'},
+            {type:'button', id:'again', label:'PLAY AGAIN', onClick: startClassic},
+            {type:'button', label:'TITLE', onClick: goTitle},
+        ],
+    });
+    showMenu('gameover');
+}
+
+function showVersusResultMenu()
+{
+    const prev = getMenu('versusresult');
+    if (prev) prev.destroy();
+
+    const title = versusResult === 'win'  ? 'YOU WIN!'
+                : versusResult === 'lose' ? 'AI WINS'
+                :                           'DRAW';
+    const wins = getSaveData().versusWins || 0;
+
+    createMenu({
+        id: 'versusresult',
+        title,
+        dismissable: false,
+        initialItemId: 'again',
+        items: [
+            {type:'label', text: `YOU ${player.apples}   —   AI ${ai.apples}`},
+            {type:'label', text: `Versus wins: ${wins}`},
+            {type:'separator'},
+            {type:'button', id:'again', label:'PLAY AGAIN', onClick: startVersus},
+            {type:'button', label:'TITLE', onClick: goTitle},
+        ],
+    });
+    showMenu('versusresult');
+}
+
+///////////////////////////////////////////////////////////////////////////////
+async function gameInit()
+{
+    saveDataInit('snake');
+    icons = initDefaultAtlas();
+    canvasClearColor = BLACK;
+    cameraPos = vec2(0,0);
+
+    // sounds (constructed after engine init so audio context can resume on gesture)
+    sEat    = new SoundGenerator({volume:.7, frequency:520, release:.06, shapeCurve:1.2, pitchJump:120, pitchJumpTime:.02});
+    sBonus  = new SoundGenerator({volume:.8, frequency:700, release:.18, shapeCurve:1.1, pitchJump:380, pitchJumpTime:.06});
+    sDie    = new SoundGenerator({volume:1,  frequency:90,  release:.35, noise:.25, shapeCurve:.6, slide:-.4, delay:.03});
+    sStep   = new SoundGenerator({volume:.10, frequency:380, release:.015, shapeCurve:1.4});
+
+    // Pause only when a gameplay menu (pause/dialog) is up DURING a real run.
+    // The title menu must NOT freeze the engine — the AI auto-plays a live
+    // classic game behind it (attract mode), so gate the pause on isPlaying().
+    // Default menu sounds ship in menus.js — no per-game setMenuSounds needed.
+    installAutoPause(() => isPlaying());
+
+    // Mute all game audio while sitting at the title (attract mode); menu
+    // click sounds still play. Un-mutes automatically once a real game starts.
+    setSilentAttract(true);
+
+    // initial state — title up, no run in progress, classic backdrop that the
+    // AI drives live (the demo loops while !isPlaying()).
+    setPlaying(false);
+    versus = false;
+    resetGame();
+    demoRestartTimer = 1.8; // attract-mode loop delay, armed for the first death
+
+    buildMenus();
+    showMenu('title');
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function gameUpdate()
+{
+    // Pause shortcut — only while a run is in progress (otherwise title owns Esc)
+    if (bindPauseKey({when: () => isPlaying() && !roundOver})) return;
+
+    // Reset camera to origin each frame so the gameFx screen-shake plugin
+    // (which adds to cameraPos after gameUpdate) can nudge cleanly.
+    cameraPos = vec2(0, 0);
+
+    if (!roundOver)
+    {
+        // At the title (!isPlaying) the AI auto-steers the player snake (attract
+        // mode); during a real run the human steers.
+        if (!isPlaying()) chooseDir(player, true);
+        else handleInput();
+    }
+
+    // animation timers
+    foodPulseTimer += timeDelta;
+    if (scorePopTimer > 0) scorePopTimer -= timeDelta;
+    for (const f of foods)
+        if (f.spawn > 0) f.spawn -= timeDelta;
+    for (const s of snakes)
+    {
+        if (s.growPulse  > 0) s.growPulse  -= timeDelta;
+        if (s.flashTimer > 0) s.flashTimer -= timeDelta;
+    }
+
+    // keep the board topped up to appleTarget, staggering each new apple in
+    if (!roundOver && foods.length < appleTarget)
+    {
+        appleSpawnTimer -= timeDelta;
+        if (appleSpawnTimer <= 0)
+        {
+            foods.push(spawnApple());
+            appleSpawnTimer = appleStagger;
+        }
+    }
+
+    // tick down the time-limited bonus fruit (classic only); puff away if it expires
+    if (!roundOver && bonus)
+    {
+        bonusTimer -= timeDelta;
+        if (bonusTimer <= 0)
+        {
+            spawnParticles(cellToWorld(bonus), hsl(0,0,.85), 8, 1, 4, .4);
+            bonus = 0;
+        }
+    }
+
+    if (roundOver)
+    {
+        if (!isPlaying())
+        {
+            // attract mode: pause on the dead board a moment, then loop a fresh
+            // run WITHOUT touching menus or scores — we stay at the title.
+            demoRestartTimer -= timeDelta;
+            if (demoRestartTimer <= 0)
+            {
+                versus = false;
+                resetGame();
+                demoRestartTimer = 1.8;
+            }
+            return;
+        }
+
+        // brief freeze, then surface the result menu (which pauses the game)
+        if (deathFreezeTimer > 0)
+        {
+            deathFreezeTimer -= timeDelta;
+            if (deathFreezeTimer <= 0)
+                versus ? showVersusResultMenu() : showGameOverMenu();
+        }
+        return;
+    }
+
+    stepTimer -= timeDelta;
+    while (stepTimer <= 0)
+    {
+        stepTimer += stepInterval;
+        if (versus) chooseDir(ai, false);
+        tick();
+        if (roundOver) break;
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function gameUpdatePost()
+{
+    // cameraPos is reset to origin at the top of gameUpdate so the gameFx
+    // screen-shake plugin (between gameUpdate and gameUpdatePost) can nudge it.
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function gameRender()
+{
+    // background
+    drawRectGradient(cameraPos, getCameraSize(), hsl(0,0,.06), hsl(0,0,.12));
+
+    // playfield — centered at (0, fieldOffsetY). cameraPos shake from the gameFx
+    // plugin moves all world-space drawing together.
+    const fieldSize   = vec2(gridW*cellSize, gridH*cellSize);
+    const fieldCenter = vec2(0, fieldOffsetY);
+    drawRect(fieldCenter, fieldSize.add(vec2(.7)), hsl(.34,.45,.30));        // soft frame
+    drawRect(fieldCenter, fieldSize.add(vec2(.4)), hsl(.34,.25,.16));
+    drawRectGradient(fieldCenter, fieldSize, hsl(.34,.20,.10), hsl(.34,.18,.07));
+
+    // subtle grid lines
+    {
+        const halfW = gridW/2;
+        const halfH = gridH/2;
+        const col = hsl(.34,.15,.35,.18);
+        for (let x=-halfW; x<=halfW; ++x)
+            drawLine(vec2(x,-halfH+fieldOffsetY), vec2(x,halfH+fieldOffsetY), .03, col);
+        for (let y=-halfH; y<=halfH; ++y)
+            drawLine(vec2(-halfW,y+fieldOffsetY), vec2(halfW,y+fieldOffsetY), .03, col);
+    }
+
+    // food — cute red apples with grow-in + gentle pulse, highlight and leaf
+    for (const f of foods)
+    {
+        const p = cellToWorld(f.pos);
+        const pulse  = .72 + sin(foodPulseTimer * 6) * .05;
+        const growIn = f.spawn > 0 ? clamp(1 - f.spawn/.25, 0, 1) : 1;
+        const size   = pulse * (.45 + .55*growIn);
+        drawTile(p, vec2(size + .22), icons.glow, hsl(.99, .8, .55, .18));                  // soft glow
+        drawTile(p, vec2(size),       icons.circle, hsl(.99, .75, .57));                    // apple body
+        drawTile(p.add(vec2(-.14,.14)), vec2(size*.28), icons.circle, hsl(.04,.7,.85,.9));  // highlight
+        drawTile(p.add(vec2(.10, size*.85)), vec2(size*.22), icons.circle, hsl(.34,.6,.45));// leaf
+    }
+
+    // bonus fruit — time-limited gold with a depleting timer ring; blinks late
+    if (bonus)
+    {
+        const p     = cellToWorld(bonus);
+        const frac  = clamp(bonusTimer / bonusLifeMax, 0, 1);
+        const warn  = bonusTimer < 1.8;
+        const blink = warn ? .55 + .45*sin(time*16) : 1;
+        const pulse = .80 + sin(foodPulseTimer * 8) * .07;
+        drawTile(p, vec2(pulse + .45), icons.glow, hsl(.13, 1, .60, .15*blink));            // glow
+        drawTile(p, vec2(pulse + .22), icons.glow, hsl(.13, 1, .62, .22*blink));
+        drawTile(p, vec2(pulse),       icons.circle, hsl(.13, 1, .56, blink));              // body
+        drawTile(p, vec2(pulse*.6),    icons.circle, hsl(.16, 1, .82, blink));              // bright core
+        drawTile(p.add(vec2(-.16,.16)), vec2(pulse*.18), icons.circle, hsl(0,0,1,.8*blink));// sparkle
+        drawTimerRing(p, pulse + .55, frac, hsl(.13, 1, .72, blink));
+    }
+
+    // snakes — draw AI first so the player tube sits on top where they overlap
+    for (let i=snakes.length-1; i>=0; --i)
+        drawSnake(snakes[i]);
+}
+
+// one snake as a rounded, connected tube with a gliding head + googly eyes
+function drawSnake(s)
+{
+    const body = s.body, old = s.old;
+    const flash     = s.flashTimer > 0 ? sin(s.flashTimer * 40) > 0 : false;
+    const headSwell = s.growPulse  > 0 ? .14 * (s.growPulse / .25) : 0;
+    const prog      = (!roundOver && s.alive) ? clamp(1 - stepTimer/stepInterval, 0, 1) : 1;
+
+    // interpolated world position of each segment (old[i] -> body[i])
+    const pts = [];
+    for (let i=0; i<body.length; ++i)
+    {
+        const from = old[i] || body[i];
+        pts.push(cellToWorld(from).lerp(cellToWorld(body[i]), prog));
+    }
+
+    // body: tail -> head so the head sits on top; capsule = thick line + round joints
+    const bodyW = .86;
+    for (let i=pts.length-1; i>=0; --i)
+    {
+        const t = i / max(1, body.length-1);
+        const col = (!s.alive && flash)
+            ? hsl(0, 1, lerp(.45, .65, 1-t))
+            : hsl(s.hue, .62, lerp(.32, .56, 1-t));   // brighter toward head
+        if (i > 0) drawLine(pts[i], pts[i-1], bodyW, col);
+        drawTile(pts[i], vec2(bodyW), icons.circle, col);
+    }
+
+    // head cap (brighter) + googly eyes + occasional tongue flick
+    const hp   = pts[0];
+    const hcol = (!s.alive && flash) ? hsl(0,1,.62) : hsl(s.hue, .72, .60);
+    drawTile(hp, vec2(bodyW + headSwell), icons.circle, hcol);
+
+    const forward = vec2(s.dir.x, s.dir.y);
+    const side    = vec2(-s.dir.y, s.dir.x); // perpendicular to forward
+    const eyeFwd  = .15;                      // toward leading edge of head
+    const eyeSep  = .20;                      // separation between eyes
+    const eyeA = hp.add(forward.scale(eyeFwd)).add(side.scale( eyeSep));
+    const eyeB = hp.add(forward.scale(eyeFwd)).add(side.scale(-eyeSep));
+
+    if (s.alive)
+    {
+        const eyeD      = .30;                    // eye diameter (white sclera)
+        const pupilD    = .15;                    // pupil diameter
+        const pupilLean = forward.scale(.05);     // pupils peek slightly forward
+
+        // playful tongue flick out the front
+        if (sin(time*3) > .9)
+        {
+            const base = hp.add(forward.scale(bodyW*.45));
+            drawLine(base, base.add(forward.scale(.30)), .07, hsl(.98,.85,.6));
+        }
+
+        drawTile(eyeA, vec2(eyeD), icons.circle, hsl(0,0,1));
+        drawTile(eyeB, vec2(eyeD), icons.circle, hsl(0,0,1));
+        drawTile(eyeA.add(pupilLean), vec2(pupilD), icons.circle, hsl(0,0,.05));
+        drawTile(eyeB.add(pupilLean), vec2(pupilD), icons.circle, hsl(0,0,.05));
+    }
+    else
+    {
+        // dead: X's where the eyes were — classic "expired" look
+        const r = .15, w = .07, xcol = hsl(0,0,.05);
+        for (const c of [eyeA, eyeB])
+        {
+            drawLine(c.add(vec2(-r,-r)), c.add(vec2( r, r)), w, xcol);
+            drawLine(c.add(vec2(-r, r)), c.add(vec2( r,-r)), w, xcol);
+        }
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function gameRenderPost()
+{
+    const cx = mainCanvasSize.x/2;
+    const by = mainCanvasSize.y - 42;   // bottom HUD baseline, below the playfield
+
+    // Versus only runs in a real game; in attract it's always classic. Show the
+    // classic score even at the title so it climbs live as the AI test-player eats.
+    if (versus)
+    {
+        if (!isPlaying()) return;
+        // race scoreboard: YOU (green, left) vs AI (cyan, right), target in the middle
+        const popScale = scorePopTimer > 0 ? 1 + .25 * (scorePopTimer / .35) : 1;
+        drawTextScreen(`FIRST TO ${versusWinApples}`, vec2(cx, by + 24), 16, hsl(0,0,1,.7), 2, hsl(0,0,0,.8));
+        drawTextScreen(`YOU ${player.apples}`, vec2(cx - 250, by), 36 * popScale, hsl(playerHue,.7,.78), 4, hsl(0,0,0));
+        drawTextScreen(`AI ${ai.apples}`,      vec2(cx + 250, by), 36,             hsl(aiHue,.75,.72),   4, hsl(0,0,0));
+        return;
+    }
+
+    // Classic — Score number only (pops on eat), centered in the bottom strip
+    const popScale  = scorePopTimer > 0 ? 1 + .35 * (scorePopTimer / .45) : 1;
+    const scoreSize = 54 * popScale;
+    drawTextScreen(`${score}`, vec2(cx, mainCanvasSize.y - 60), scoreSize, hsl(.34,.7,.88), 6, hsl(0,0,0));
+
+    // bonus indicator on the left of the bottom strip while a bonus is live
+    if (!roundOver && bonus)
+    {
+        const warn = bonusTimer < 1.8;
+        const a = warn ? .55 + .45*sin(time*16) : 1;
+        drawTextScreen(`★ +${bonusValue}`, vec2(150, by - 6), 24, hsl(.13,1,.7,a), 3, hsl(0,0,0,.8));
+        drawTextScreen(`${ceil(bonusTimer)}s`, vec2(150, by + 22), 16, hsl(0,0,1,.85), 2, hsl(0,0,0,.8));
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+engineInit(gameInit, gameUpdate, gameUpdatePost, gameRender, gameRenderPost);
+
+</script></body></html>

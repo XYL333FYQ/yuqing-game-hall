@@ -1,0 +1,14 @@
+5 Chiptunes (Action)
+
+Composer and producer: Juhani Junkala
+Publisher / OpenGameArt contributor: SubspaceAudio
+Source: https://opengameart.org/content/5-chiptunes-action
+License: Creative Commons CC0 1.0 Universal
+License deed: https://creativecommons.org/publicdomain/zero/1.0/
+
+The upstream INFO.txt explicitly releases these tracks under CC0 and permits
+unrestricted reuse. The source page likewise marks the collection CC0 and
+describes all five tracks as seamlessly looping.
+
+This project transcodes the original WAV files to OGG Vorbis for smaller local
+browser delivery. No composition or generated replacement audio was added.

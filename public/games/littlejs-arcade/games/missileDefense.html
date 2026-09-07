@@ -1,0 +1,1884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Missile Defense (LittleJS)</title>
+    <style>
+        html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:system-ui,Segoe UI,Roboto,Arial;}
+        #wrap{width:100%;height:100%;}
+    </style>
+</head>
+<body>
+<div id="wrap"></div>
+<script src="../templates/engineLoader.js?1780767748506"></script>
+<script src="../templates/gameFx.js?1780767748506"></script>
+<script src="../templates/textureGenerator.js?1780767748506"></script>
+<script src="../templates/menus.js?1780767748506"></script>
+<script>
+'use strict';
+
+// engine settings
+canvasFixedSize = vec2(1920, 1080);
+cameraScale = 48;
+
+
+// ------------------------------------------------------------
+// Missile Command
+// ------------------------------------------------------------
+
+const levelSize = vec2(40, 22);
+const groundHeight = 2.2;
+const groundY = groundHeight/2;
+
+const CITY_COUNT = 6;
+const BASE_COUNT = 3;
+const BASE_AMMO_MAX = 10;
+
+const enemySpeedBase = 4.6;
+const playerSpeed = 16;
+const explosionMaxRadius = 2.6;
+const explosionGrowRate = 7.5;
+const explosionHoldTime = .08;
+const explosionShrinkRate = 5.2;
+
+let cities = [];
+let bases = [];
+let enemyMissiles = [];
+let playerMissiles = [];
+let explosions = [];
+let fliers = [];
+let flierCooldown = 5;
+
+let score = 0;
+let waveIndex = 1;
+let missilesToSpawn = 0;
+let smartBombsToSpawn = 0;
+let spawnTimer = 0;
+let betweenWaves = false;
+let betweenWavesTimer = 0;
+let tally = null;
+let gameOver = false;
+let gameOverHoldTimer = 0; // seconds before the GAME OVER menu surfaces
+
+let nextBonusCityScore = 10000;
+let bankedCities = 0;
+let bonusCityToast = 0;
+
+let aiMode = false;
+// Arcade cabinet (#demo): self-running attract demo — the AI defends against an
+// occasional trickle of missiles, aiming a virtual (unrendered) cursor.
+const inCabinet = /demo/.test(location.hash);
+let demoAim;   // the cabinet's invisible aim point the turrets track
+let aiCooldown = 0;
+
+let sShoot, sBoom, sEnemyHit, sCityHit, sWave, sBonusCity, sBonusTick;
+
+// Visual effects
+let particles = [];
+let stars = [];
+let shootingStars = [];
+let mountains = [];
+let moonPos = vec2();
+let moonPhase = 0;
+let moonAngle = 0;
+
+// default-atlas icon map (name -> TileInfo)
+let icons;
+
+// ------------------------------------------------------------
+// Shape generation
+// ------------------------------------------------------------
+
+function makeCityShape()
+{
+    const blocks = [];
+
+    const mainW = .9 + rand() * .7;
+    const mainH = 1.2 + rand() * 1.1;
+    blocks.push({ x: 0, y0: 0, w: mainW, h: mainH });
+
+    if (rand() < .65)
+    {
+        const sideW = .35 + rand() * .4;
+        const sideH = .5 + rand() * (mainH - .4);
+        const dir = rand() < .5 ? -1 : 1;
+        blocks.push({ x: (mainW/2 + sideW/2 - .05) * dir, y0: 0, w: sideW, h: sideH });
+    }
+
+    let hasTopBlock = false;
+    if (rand() < .5)
+    {
+        hasTopBlock = true;
+        const topW = mainW * (.35 + rand() * .3);
+        const topH = .3 + rand() * .35;
+        const topX = (rand() - .5) * (mainW - topW) * .7;
+        blocks.push({ x: topX, y0: mainH, w: topW, h: topH });
+    }
+
+    const windows = [];
+    const cols = max(2, (mainW * 3.4) | 0);
+    const rows = max(2, (mainH * 3.4) | 0);
+    for (let cy = 0; cy < rows; cy++)
+    for (let cx = 0; cx < cols; cx++)
+    {
+        if (rand() < .58)
+        {
+            windows.push({
+                x: (cx + .5) / cols * mainW - mainW/2,
+                y: .15 + (cy + .5) / rows * (mainH - .25),
+                blink: rand() < .15 ? rand(.5, 2.2) : 0,
+                phase: rand() * 100,
+                warm: rand() < .85,
+            });
+        }
+    }
+
+    const hasAntenna = !hasTopBlock && rand() < .55;
+    const hasDome = !hasAntenna && !hasTopBlock && rand() < .35;
+    const antennaH = .4 + rand() * .55;
+    const antennaX = (rand() - .5) * mainW * .4;
+
+    const palette = (() => {
+        const r = rand();
+        if (r < .35) return { h: .56 + rand()*.08, s: .18, l: .34 };  // blue
+        if (r < .6)  return { h: .82 + rand()*.1,  s: .22, l: .36 };  // purple/pink
+        if (r < .8)  return { h: .04 + rand()*.05, s: .28, l: .35 };  // warm red
+        return            { h: .12 + rand()*.05, s: .18, l: .38 };  // tan/yellow
+    })();
+    const bodyColor = hsl(palette.h, palette.s, palette.l);
+    const rimColor  = hsl(palette.h, palette.s * 1.4, palette.l + .18);
+    const dirtColor = hsl(palette.h, palette.s * .5, palette.l - .15);
+
+    const rubble = [];
+    const rubbleCount = 5 + (rand() * 4 | 0);
+    for (let i = 0; i < rubbleCount; i++)
+    {
+        rubble.push({
+            x: (rand() - .5) * mainW * 1.1,
+            y: rand() * .35,
+            w: .2 + rand() * .35,
+            h: .15 + rand() * .3,
+            angle: (rand() - .5) * .6,
+        });
+    }
+
+    const embers = [];
+    for (let i = 0; i < 4 + (rand()*4|0); i++)
+    {
+        embers.push({
+            x: (rand() - .5) * mainW * .9,
+            y: .05 + rand() * .4,
+            phase: rand() * 100,
+            speed: rand(2, 4.5),
+        });
+    }
+
+    return {
+        blocks, windows, rubble, embers,
+        hasAntenna, antennaH, antennaX, hasDome,
+        mainH, mainW,
+        bodyColor, rimColor, dirtColor,
+    };
+}
+
+function generateBackground()
+{
+    // star field is built once in gameInit (stateless gameFx.js Starfield)
+    shootingStars = [];
+
+    mountains = [];
+    let mx = -2;
+    while (mx < levelSize.x + 2)
+    {
+        const r = 1.5 + rand() * 2.2;
+        mountains.push({
+            x: mx + rand(-.3, .3),
+            y: groundHeight - .3 + r * .3,
+            r,
+            shade: .12 + rand() * .05,
+        });
+        mx += r * .85;
+    }
+
+    moonPos = vec2(levelSize.x * rand(.2,.8), levelSize.y * rand(.4,.9));
+    moonPhase = rand();
+    moonAngle = PI/2 + rand(-.5,.5);
+}
+
+// ------------------------------------------------------------
+// Particles
+// ------------------------------------------------------------
+
+function addParticle(pos, vel, color, life, size, opts)
+{
+    opts = opts || {};
+    particles.push({
+        pos: pos.copy(),
+        vel: vel.copy(),
+        color,
+        life,
+        maxLife: life,
+        size,
+        gravity: opts.gravity || 0,
+        damping: opts.damping !== undefined ? opts.damping : .95,
+        fade: opts.fade || 'shrink',  // 'shrink' | 'fade' | 'both'
+        spin: opts.spin || 0,
+        angle: opts.angle || 0,
+        shape: opts.shape || 'circle',
+        rectSize: opts.rectSize || vec2(.15, .15),
+        additive: !!opts.additive,
+    });
+}
+
+function emitExplosionSparks(pos, friendly, count)
+{
+    for (let i = 0; i < count; i++)
+    {
+        const speed = rand(3, 10);
+        const vel = randVec2(speed);
+        const hue = friendly ? .55 + rand(-.05, .12) : .03 + rand(-.02, .12);
+        const light = .65 + rand() * .3;
+        addParticle(pos, vel, hsl(hue, .9, light, 1), rand(.45, .95), rand(.08, .18), {
+            damping: .92, gravity: 8, fade: 'shrink', additive: true,
+        });
+    }
+}
+
+function emitDebris(pos, baseColor, count)
+{
+    for (let i = 0; i < count; i++)
+    {
+        const angle = rand(PI * .15, PI * .85);
+        const speed = rand(3, 9);
+        const vel = vec2(cos(angle) * speed, sin(angle) * speed);
+        addParticle(pos, vel, baseColor, rand(.9, 1.7), rand(.15, .3), {
+            damping: .97, gravity: 16, shape: 'rect',
+            rectSize: vec2(rand(.15, .32), rand(.12, .26)),
+            angle: rand(0, PI*2), spin: rand(-7, 7),
+            fade: 'fade',
+        });
+    }
+}
+
+function emitGroundDust(pos, count)
+{
+    for (let i = 0; i < count; i++)
+    {
+        const angle = PI * (.1 + rand() * .8);
+        const speed = rand(1, 3.5);
+        const vel = vec2(cos(angle) * speed, sin(angle) * speed);
+        addParticle(pos, vel, hsl(.08, .25, .55, .55), rand(.7, 1.3), rand(.3, .55), {
+            damping: .96, gravity: -2.5, fade: 'both',
+        });
+    }
+}
+
+function emitMissileTrailSmoke(m)
+{
+    const dir = m.start.subtract(m.target);
+    if (dir.length() < .01) return;
+    const back = dir.normalize();
+    const p = m.pos.add(back.scale(.12));
+    addParticle(p, vec2(rand(-.3, .3), rand(-.1, .5)),
+                            hsl(.05, .35, .35, .4), rand(.5, .9), rand(.2, .32), {
+        damping: .98, gravity: -1.5, fade: 'both',
+    });
+}
+
+function emitEnemyKillBurst(pos)
+{
+    for (let i = 0; i < 12; i++)
+    {
+        const speed = rand(2, 7);
+        const vel = randVec2(speed);
+        addParticle(pos, vel, hsl(.13, 1, .85, 1), rand(.3, .55), rand(.08, .15), {
+            damping: .9, gravity: 3, fade: 'shrink', additive: true,
+        });
+    }
+    // bright flash particle
+    addParticle(pos, vec2(), hsl(.13, .3, 1, 1), .2, .8, {
+        damping: 1, fade: 'shrink', additive: true,
+    });
+}
+
+function emitMuzzleFlash(pos, dir)
+{
+    for (let i = 0; i < 8; i++)
+    {
+        const spread = rand(-.5, .5);
+        const a = atan2(dir.y, dir.x) + spread;
+        const speed = rand(2, 6);
+        addParticle(pos, vec2(cos(a), sin(a)).scale(speed),
+                                hsl(.55, .9, .9, 1), rand(.15, .3), rand(.1, .18),
+                                { damping: .88, fade: 'shrink', additive: true });
+    }
+}
+
+function updateParticles()
+{
+    for (const p of particles)
+    {
+        p.pos = p.pos.add(p.vel.scale(timeDelta));
+        p.vel = p.vel.scale(Math.pow(p.damping, timeDelta * 60));
+        p.vel.y -= p.gravity * timeDelta;
+        p.angle += p.spin * timeDelta;
+        p.life -= timeDelta;
+    }
+    particles = particles.filter(p => p.life > 0);
+}
+
+function drawOneParticle(p)
+{
+    const t = clamp(p.life / p.maxLife, 0, 1);
+    const c = p.color.copy();
+    const sizeMul = (p.fade === 'shrink' || p.fade === 'both') ? t : 1;
+    const alphaMul = (p.fade === 'fade' || p.fade === 'both') ? t : 1;
+    c.a *= alphaMul;
+    if (p.shape === 'rect')
+        drawRect(p.pos, p.rectSize.scale(sizeMul), c, p.angle);
+    else
+        drawTile(p.pos, vec2(p.size * 2 * sizeMul), icons.circle, c);
+}
+
+function drawParticles()
+{
+    // non-additive pass: smoke, debris, dust
+    for (const p of particles)
+        if (!p.additive)
+            drawOneParticle(p);
+
+    // additive pass: sparks, flashes, bright bursts
+    let anyAdditive = false;
+    for (const p of particles)
+        if (p.additive) { anyAdditive = true; break; }
+    if (anyAdditive)
+    {
+        setAdditiveBlendMode();
+        for (const p of particles)
+            if (p.additive)
+                drawOneParticle(p);
+        setAdditiveBlendMode(false);
+    }
+}
+
+// ------------------------------------------------------------
+// Game logic
+// ------------------------------------------------------------
+
+function waveMultiplier(w)
+{
+    return min(6, ((w + 1) / 2) | 0);
+}
+
+function resetWaveState(newWaveIndex)
+{
+    waveIndex = newWaveIndex;
+    missilesToSpawn = 10 + (waveIndex-1)*3;
+    spawnTimer = 1.0;
+    betweenWaves = false;
+    betweenWavesTimer = 0;
+
+    for (const b of bases)
+        if (b.alive)
+            b.ammo = BASE_AMMO_MAX;
+
+    flierCooldown = 5;
+    smartBombsToSpawn = clamp(waveIndex - 4, 0, 5) | 0;
+    sWave && sWave.play();
+}
+
+function newGame()
+{
+    enemyMissiles.length = 0;
+    playerMissiles.length = 0;
+    explosions.length = 0;
+    particles.length = 0;
+    fliers.length = 0;
+    flierCooldown = 5;
+    tally = null;
+
+    score = 0;
+    waveIndex = 1;
+    gameOver = false;
+    nextBonusCityScore = 10000;
+    bankedCities = 0;
+    bonusCityToast = 0;
+    smartBombsToSpawn = 0;
+    aiCooldown = 0;
+
+    cities = [];
+    const cityXs = [6.5, 10.5, 14.5, 25.5, 29.5, 33.5];
+    for (let i=0;i<CITY_COUNT;i++)
+        cities.push({
+            pos: vec2(cityXs[i], groundHeight + .55),
+            alive: true,
+            hitFlash: 0,
+            shape: makeCityShape(),
+        });
+
+    bases = [];
+    const baseXs = [4.2, 20.0, 35.8];
+    const baseSpeeds = [14, 22, 14];
+    for (let i=0;i<BASE_COUNT;i++)
+        bases.push({
+            pos: vec2(baseXs[i], groundHeight + .45),
+            alive: true,
+            ammo: BASE_AMMO_MAX,
+            flash: 0,
+            recoil: 0,
+            cannonAngle: 0,
+            missileSpeed: baseSpeeds[i],
+        });
+
+    generateBackground();
+    resetWaveState(1);
+}
+
+function anyCitiesAlive() { return cities.some(c=>c.alive); }
+function anyBasesAliveWithAmmo() { return bases.some(b=>b.alive && b.ammo>0); }
+
+function pickEnemyTarget()
+{
+    const aliveCities = cities.filter(c=>c.alive);
+    const aliveBases = bases.filter(b=>b.alive);
+
+    if (!aliveCities.length && !aliveBases.length)
+        return vec2(levelSize.x/2, groundHeight);
+
+    const targetCityChance = aliveCities.length ? .78 : 0;
+    if (rand() < targetCityChance)
+        return aliveCities[randInt(aliveCities.length)].pos.copy();
+
+    if (!aliveBases.length)
+        return aliveCities[randInt(aliveCities.length)].pos.copy();
+
+    return aliveBases[randInt(aliveBases.length)].pos.copy();
+}
+
+function mirvChance(wave)
+{
+    if (wave < 3) return 0;
+    return wave >= 7 ? .35 : .25;
+}
+
+function spawnFlier()
+{
+    const goingRight = rand() < .5;
+    const y = levelSize.y * .7 + rand(-1.5, 1.5);
+    const startX = goingRight ? -2 : levelSize.x + 2;
+    const speed = (goingRight ? 1 : -1) * rand(3.5, 5);
+    const dropCount = 1 + min(2, (waveIndex / 5) | 0);
+    const dropTimes = [];
+    for (let i = 0; i < dropCount; i++)
+        dropTimes.push(.2 + (.6 * (i + .5) / dropCount) + rand(-.05, .05));
+
+    fliers.push({
+        pos: vec2(startX, y),
+        vel: vec2(speed, 0),
+        type: rand() < .5 ? 'bomber' : 'satellite',
+        alive: true,
+        t: 0,
+        duration: (levelSize.x + 4) / abs(speed),
+        dropTimes,
+        phase: rand() * 100,
+    });
+}
+
+function updateFliers()
+{
+    if (!betweenWaves && !tally && waveIndex >= 2 && fliers.length === 0)
+    {
+        flierCooldown -= timeDelta;
+        if (flierCooldown <= 0)
+        {
+            spawnFlier();
+            flierCooldown = max(8, 18 - waveIndex);
+        }
+    }
+
+    for (const f of fliers)
+    {
+        if (!f.alive) continue;
+        f.pos = f.pos.add(f.vel.scale(timeDelta));
+        const prevT = f.t;
+        f.t += timeDelta / f.duration;
+
+        for (const dt of f.dropTimes)
+            if (prevT < dt && f.t >= dt)
+            {
+                const start = f.pos.copy();
+                const target = pickEnemyTarget();
+                const delta = target.subtract(start);
+                const len = max(.001, delta.length());
+                const speed = enemySpeedBase + (waveIndex-1)*.35 + rand(-.2,.2);
+                enemyMissiles.push({
+                    start, target,
+                    pos: start.copy(),
+                    t: 0,
+                    speed, len,
+                    alive: true,
+                    w: .07,
+                    smokeT: 0,
+                    mirv: rand() < mirvChance(waveIndex),
+                    pulsePhase: rand() * 100,
+                });
+            }
+
+        if (f.t >= 1)
+            f.alive = false;
+    }
+
+    fliers = fliers.filter(f => f.alive);
+}
+
+function smartBombsOnScreen()
+{
+    let n = 0;
+    for (const m of enemyMissiles)
+        if (m.alive && m.smart) n++;
+    return n;
+}
+
+function spawnEnemyMissile(smart)
+{
+    const start = vec2(rand(0, levelSize.x), levelSize.y + 2.5);
+    const target = pickEnemyTarget();
+    const delta = target.subtract(start);
+    const len = max(.001, delta.length());
+
+    const speed = enemySpeedBase + (waveIndex-1)*.35 + rand(-.2,.2);
+
+    enemyMissiles.push({
+        start, target,
+        pos: start.copy(),
+        t: 0,
+        speed, len,
+        alive: true,
+        w: smart ? .11 : .07,
+        smokeT: 0,
+        mirv: !smart && rand() < mirvChance(waveIndex),
+        smart: !!smart,
+        pulsePhase: rand() * 100,
+    });
+}
+
+function maybeSplitMirv(m)
+{
+    if (!m.mirv || !m.alive) return;
+    if (m.pos.y > levelSize.y * 0.6) return;
+    m.mirv = false;
+    m.split = true;
+    m.children = 2 + randInt(2);
+
+    for (let i = 0; i < m.children; i++)
+    {
+        const target = pickEnemyTarget();
+        const start = m.pos.copy();
+        const delta = target.subtract(start);
+        const len = max(.001, delta.length());
+        enemyMissiles.push({
+            start, target,
+            pos: start.copy(),
+            t: 0,
+            speed: m.speed,
+            len,
+            alive: true,
+            w: .07,
+            smokeT: 0,
+            mirv: false,
+            parent: m,
+            pulsePhase: rand() * 100,
+        });
+    }
+}
+
+function applySmartBombDodge(m)
+{
+    const dangerR = explosionMaxRadius * 2.5;
+    const heading = m.target.subtract(m.start).normalize();
+    const perp = vec2(-heading.y, heading.x);
+    let nudge = 0;
+    for (const e of explosions)
+    {
+        if (!e.friendly || e.r <= 0) continue;
+        const offset = m.pos.subtract(e.pos);
+        const d = offset.length();
+        if (d > dangerR) continue;
+        const side = sign(offset.dot(perp)) || (rand() < .5 ? -1 : 1);
+        const weight = (1 - d / dangerR);
+        nudge += side * weight * 4 * timeDelta;
+    }
+    if (nudge !== 0)
+        m.pos = m.pos.add(perp.scale(nudge));
+}
+
+function launchPlayerMissile(target)
+{
+    let best = -1;
+    let bestD = 1e9;
+    for (let i=0;i<bases.length;i++)
+    {
+        const b = bases[i];
+        if (!b.alive || b.ammo<=0) continue;
+        const d = abs(b.pos.x - target.x);
+        if (d < bestD) bestD = d, best = i;
+    }
+
+    if (best < 0)
+        return false;
+
+    const b = bases[best];
+    b.ammo--;
+    b.flash = .15;
+    b.recoil = .2;
+
+    const start = b.pos.add(vec2(0, .75));
+    const t = vec2(clamp(target.x, 0, levelSize.x), clamp(target.y, groundHeight+1, levelSize.y+2.5));
+    const delta = t.subtract(start);
+    const len = max(.001, delta.length());
+
+    playerMissiles.push({
+        start, target: t,
+        pos: start.copy(),
+        t: 0,
+        speed: b.missileSpeed, len,
+        alive: true,
+        w: .1,
+    });
+
+    emitMuzzleFlash(start, delta.normalize());
+    sShoot && sShoot.play();
+    return true;
+}
+
+// Find the best aim point to intercept incoming threats: cluster nearby
+// predicted positions and return the highest-value centroid that isn't
+// already covered by an in-flight ABM. Returns null when nothing's worth
+// shooting. Shared by the real-play AI assist and the title attract cursor.
+function pickAbmAimPoint()
+{
+    // Threats aimed at already-destroyed targets will land in a crater
+    // and don't need an ABM. Skip them.
+    const deadTargets = [];
+    for (const c of cities) if (!c.alive) deadTargets.push(c.pos);
+    for (const b of bases) if (!b.alive) deadTargets.push(b.pos);
+    const isHarmless = pos =>
+    {
+        for (const d of deadTargets)
+            if (pos.distance(d) < .5) return true;
+        return false;
+    };
+
+    const horizon = .8;
+    const threats = [];
+
+    for (const m of enemyMissiles)
+    {
+        if (!m.alive || m.split) continue;
+        // Smart bombs dodge — long shots whiff. Wait until they're low.
+        if (m.smart && m.pos.y > levelSize.y * .40) continue;
+        // Kill MIRV parents on sight: one ABM neutralizes a 3-missile
+        // threat with a single reliable shot. Don't apply the harmless
+        // filter to them — letting one through means its children re-pick
+        // fresh live targets at split.
+        if (!m.mirv && isHarmless(m.target)) continue;
+        const dir = m.target.subtract(m.start).normalize();
+        const pred = m.pos.add(dir.scale(m.speed * horizon));
+        threats.push({ pos: pred, altitude: m.pos.y, fromMirv: !!m.parent, isMirv: !!m.mirv });
+    }
+    for (const f of fliers)
+    {
+        if (!f.alive) continue;
+        threats.push({ pos: f.pos.add(f.vel.scale(horizon)), altitude: f.pos.y });
+    }
+    if (!threats.length) return null;
+
+    const inFlight = playerMissiles.filter(p => p.alive).map(p => p.target);
+
+    const clusterRadius = explosionMaxRadius * .9;
+    const coveredRadius = explosionMaxRadius * .9;
+    let best = null;
+    for (const seed of threats)
+    {
+        let centroid = seed.pos.copy();
+        const members = [seed];
+        let minAlt = seed.altitude;
+        let mirvCount = seed.fromMirv ? 1 : 0;
+        let added = true;
+        while (added)
+        {
+            added = false;
+            for (const t of threats)
+            {
+                if (members.includes(t)) continue;
+                if (t.pos.distance(centroid) > clusterRadius) continue;
+                members.push(t);
+                let sx = 0, sy = 0;
+                for (const mm of members) { sx += mm.pos.x; sy += mm.pos.y; }
+                centroid = vec2(sx / members.length, sy / members.length);
+                minAlt = min(minAlt, t.altitude);
+                if (t.fromMirv) mirvCount++;
+                added = true;
+            }
+        }
+
+        let covered = false;
+        for (const tgt of inFlight)
+            if (tgt.distance(centroid) < coveredRadius) { covered = true; break; }
+        if (covered) continue;
+
+        // MIRV children come in pre-formed fans and need fast cleanup so
+        // they don't spread out to multiple cities — boost their priority.
+        const score = members.length + mirvCount * .5;
+        const onlyMirvParent = members.length === 1 && seed.isMirv;
+        if (!best ||
+                score > best.score ||
+                (score === best.score && minAlt < best.minAlt))
+            best = { centroid, size: members.length, minAlt, score, onlyMirvParent };
+    }
+    return best;
+}
+
+function updateAI()
+{
+    aiCooldown -= timeDelta;
+    if (aiCooldown > 0) return;
+
+    const best = pickAbmAimPoint();
+    if (!best) return;
+
+    // Defer solo high threats so clusters can form — but never a MIRV
+    // parent: pre-emptive kill avoids the entire 3-missile family.
+    if (best.size === 1 && best.minAlt > levelSize.y * .45 && !best.onlyMirvParent)
+    {
+        aiCooldown = .15;
+        return;
+    }
+
+    if (launchPlayerMissile(best.centroid))
+        aiCooldown = .35;
+}
+
+// Title attract is now a CALM backdrop: cities and bases just sit there
+// peacefully. No incoming enemy missiles, no AI defense, no aiming cursor —
+// only the cosmetic shooting stars streak across the sky (see
+// maybeSpawnShootingStar). All gameplay below is gated on isPlaying().
+
+function addExplosion(pos, friendly)
+{
+    explosions.push({
+        pos: pos.copy(),
+        lifetime:0,
+        r: 0,
+        rMax: explosionMaxRadius * (friendly ? 1 : .7),
+        friendly,
+        state: 0,
+        hold: 0,
+        seed: rand() * 1000,
+    });
+
+    emitExplosionSparks(pos, friendly, friendly ? 20 : 24);
+    if (pos.y < groundHeight + 1.5)
+        emitGroundDust(pos, 10);
+
+    addScreenShake(friendly ? .15 : .25, friendly ? .08 : .18);
+
+    (friendly ? sBoom : sCityHit) && (friendly ? sBoom : sCityHit).play();
+}
+
+function updateMissile(m)
+{
+    if (!m.alive) return;
+    if (m.split) return;
+    m.t += (m.speed * timeDelta) / m.len;
+    const p = clamp(m.t, 0, 1);
+    if (m.smart)
+    {
+        const ideal = m.start.add(m.target.subtract(m.start).scale(p));
+        const v = m.target.subtract(m.start).normalize();
+        const perp = vec2(-v.y, v.x);
+        const sideways = m.pos.subtract(ideal).dot(perp);
+        m.pos = ideal.add(perp.scale(sideways));
+    }
+    else
+    {
+        m.pos = m.start.add(m.target.subtract(m.start).scale(p));
+    }
+
+    if (m.t >= 1)
+    {
+        m.alive = false;
+        return true;
+    }
+    return false;
+}
+
+function resolveEnemyImpact(pos)
+{
+    for (const c of cities)
+    {
+        if (c.alive && c.pos.distance(pos) < 1.0)
+        {
+            c.alive = false;
+            c.hitFlash = .4;
+            if (bankedCities > 0)
+            {
+                bankedCities--;
+                reviveCity(c);
+            }
+            addExplosion(c.pos, false);
+            emitDebris(c.pos.add(vec2(0, .2)), c.shape.bodyColor, 22);
+            // smaller bright-window shards
+            for (let i = 0; i < 8; i++)
+                emitDebris(c.pos.add(vec2(rand(-.4,.4), rand(.2, c.shape.mainH))),
+                                      hsl(.13, .9, .75), 1);
+            addScreenShake(.45, .4);
+            return;
+        }
+    }
+
+    for (const b of bases)
+    {
+        if (b.alive && b.pos.distance(pos) < 1.0)
+        {
+            b.alive = false;
+            b.ammo = 0;
+            b.flash = .35;
+            addExplosion(b.pos, false);
+            emitDebris(b.pos, hsl(.5, .25, .55), 18);
+            addScreenShake(.4, .35);
+            return;
+        }
+    }
+
+    addExplosion(pos, false);
+}
+
+function updateExplosions()
+{
+    for (const e of explosions)
+    {
+        e.lifetime += timeDelta;
+        if (e.state === 0)
+        {
+            e.r += explosionGrowRate * timeDelta;
+            if (e.r >= e.rMax)
+            {
+                e.r = e.rMax;
+                e.state = 1;
+                e.hold = explosionHoldTime;
+            }
+        }
+        else if (e.state === 1)
+        {
+            e.hold -= timeDelta;
+            if (e.hold <= 0)
+                e.state = 2;
+        }
+        else
+        {
+            e.r -= explosionShrinkRate * timeDelta;
+            if (e.r <= 0)
+                e.r = 0;
+        }
+    }
+
+    explosions = explosions.filter(e=>e.r>0);
+}
+
+function checkExplosionHits()
+{
+    for (const e of explosions)
+    {
+        if (!e.friendly || e.r <= 0) continue;
+
+        for (const m of enemyMissiles)
+        {
+            if (!m.alive || m.split) continue;
+            if (m.pos.distance(e.pos) <= e.r)
+            {
+                m.alive = false;
+                const base = m.smart ? 125 : 25;
+                score += base * waveMultiplier(waveIndex);
+                checkBonusCities();
+                emitEnemyKillBurst(m.pos);
+                sEnemyHit && sEnemyHit.play();
+            }
+        }
+
+        for (const f of fliers)
+        {
+            if (!f.alive) continue;
+            if (f.pos.distance(e.pos) <= e.r + .4)
+            {
+                f.alive = false;
+                score += 100 * waveMultiplier(waveIndex);
+                checkBonusCities();
+                emitEnemyKillBurst(f.pos);
+                sEnemyHit && sEnemyHit.play();
+            }
+        }
+    }
+}
+
+function checkWaveComplete()
+{
+    if (betweenWaves || gameOver) return;
+    const enemiesAlive = enemyMissiles.some(m=>m.alive);
+    const playersAlive = playerMissiles.some(m=>m.alive);
+
+    if (missilesToSpawn <= 0 && !enemiesAlive && !playersAlive)
+    {
+        betweenWaves = true;
+        const mult = waveMultiplier(waveIndex);
+        const ammoTotal = bases.reduce((a,b)=>a+(b.ammo|0),0);
+        const cityTotal = cities.filter(c=>c.alive).length;
+        tally = {
+            phase: 'hold',
+            t: 1.2,
+            ammoLeft: ammoTotal,
+            cityLeft: cityTotal,
+            ammoTotal,
+            cityTotal,
+            multiplier: mult,
+        };
+    }
+}
+
+function updateTally()
+{
+    if (!tally) return;
+    tally.t -= timeDelta;
+    if (tally.t > 0) return;
+
+    if (tally.phase === 'hold')
+    {
+        tally.phase = tally.ammoLeft > 0 ? 'ammo' : (tally.cityLeft > 0 ? 'cities' : 'done');
+        tally.t = tally.phase === 'done' ? .6 : 0;
+        return;
+    }
+
+    if (tally.phase === 'ammo')
+    {
+        tally.ammoLeft--;
+        score += 5 * tally.multiplier;
+        checkBonusCities();
+        sBonusTick && sBonusTick.play();
+        if (tally.ammoLeft <= 0)
+            tally.phase = tally.cityLeft > 0 ? 'cities' : 'done';
+        tally.t = tally.phase === 'done' ? .6 : .06;
+        return;
+    }
+
+    if (tally.phase === 'cities')
+    {
+        tally.cityLeft--;
+        score += 100 * tally.multiplier;
+        checkBonusCities();
+        sBonusTick && sBonusTick.play();
+        if (tally.cityLeft <= 0)
+            tally.phase = 'done';
+        tally.t = tally.phase === 'done' ? .6 : .25;
+        return;
+    }
+
+    if (tally.phase === 'done')
+    {
+        tally = null;
+        resetWaveState(waveIndex + 1);
+    }
+}
+
+function reviveCity(city)
+{
+    city.alive = true;
+    city.hitFlash = 0;
+    city.shape = makeCityShape();
+}
+
+function grantBonusCity()
+{
+    const dead = cities.filter(c => !c.alive);
+    if (dead.length)
+        reviveCity(dead[randInt(dead.length)]);
+    else
+        bankedCities++;
+    bonusCityToast = 2.0;
+    sBonusCity && sBonusCity.play();
+}
+
+function checkBonusCities()
+{
+    while (score >= nextBonusCityScore)
+    {
+        grantBonusCity();
+        nextBonusCityScore += 10000;
+    }
+}
+
+function maybeSpawnShootingStar()
+{
+    if (rand() < .003 && shootingStars.length < 2)
+    {
+        shootingStars.push({
+            pos: vec2(rand(0, levelSize.x*.5), rand(levelSize.y*.6, levelSize.y+4)),
+            vel: vec2(rand(8, 14), rand(-3, -1)),
+            life: 1.2,
+            maxLife: 1.2,
+        });
+    }
+    for (const s of shootingStars)
+    {
+        s.pos = s.pos.add(s.vel.scale(timeDelta));
+        s.life -= timeDelta;
+    }
+    shootingStars = shootingStars.filter(s => s.life > 0);
+}
+
+// ------------------------------------------------------------
+// LittleJS callbacks
+// ------------------------------------------------------------
+
+function gameInit()
+{
+    saveDataInit('missileCommand');
+    setCameraPos(levelSize.scale(.5));
+    icons = initDefaultAtlas();
+    // Background star field — stateless gameFx.js Starfield, built once here
+    // (after icons). Two size tiers = two layers; twinkle on alpha; the hue mix
+    // is a pale-blue base + ~20% warm/purple tints. (Old glow halo dropped.)
+    stars = new Starfield({
+        tile: icons.circle,
+        center: vec2(levelSize.x/2, (groundHeight + 2.5 + levelSize.y + 6)/2),
+        area: vec2(levelSize.x/2, (levelSize.y + 6 - groundHeight - 2.5)/2),
+        color: hsl(.58, .35, .9),
+        tints: [hsl(.12, .35, .9), hsl(.92, .35, .9)],
+        tintChance: .2,
+        twinkleBase: .4, twinkleAmp: .6,
+        layers: [
+            { count:136, sizeMin:.04, sizeMax:.12, alphaMin:.35, alphaMax:.85, twSpeedMin:.064, twSpeedMax:.286 }, // far
+            { count:24,  sizeMin:.12, sizeMax:.22, alphaMin:.6,  alphaMax:1,   twSpeedMin:.064, twSpeedMax:.286 }, // close
+        ],
+    });
+    setSoundVolume(.28);
+
+    sShoot    = new SoundGenerator({volume:.7, frequency:520, attack:0, release:.08, shapeCurve:1.4, slide:-.25, randomness:.02});
+    sBoom     = new SoundGenerator({volume:1,  frequency:140, attack:0, release:.22, shapeCurve:.7, noise:.25, randomness:.12});
+    sEnemyHit = new SoundGenerator({volume:.65, frequency:260, attack:0, release:.1,  shapeCurve:1.1, noise:.08, randomness:.08, pitchJump:120, pitchJumpTime:.02});
+    sCityHit  = new SoundGenerator({volume:1,  frequency:80,  attack:0, release:.35, shapeCurve:.6, noise:.35, randomness:.15, slide:-.05});
+    sWave     = new SoundGenerator({volume:.5, frequency:420, attack:0, release:.18, shapeCurve:1.2, pitchJump:180, pitchJumpTime:.04});
+    sBonusCity = new SoundGenerator({volume:.7, frequency:660, attack:0, release:.4, shapeCurve:1.6, pitchJump:540, pitchJumpTime:.05});
+    sBonusTick = new SoundGenerator({volume:.45, frequency:780, attack:0, release:.06, shapeCurve:1.6});
+
+    // Keep the title UNPAUSED so the attract demo runs behind the menu;
+    // real games still pause when a menu (pause/options/etc.) is shown.
+    installAutoPause(() => isPlaying());
+    // Mute all game audio at the title; menu clicks still sound.
+    setSilentAttract(true);
+    setOrientationLock('landscape');
+
+    buildMenus();
+
+    // Title attract: build the layout (cities, bases) so the title shows a
+    // calm, intact backdrop behind the menu. isPlaying() stays false, so
+    // gameUpdate skips all gameplay and only runs the cosmetic sky.
+    newGame();
+    setPlaying(false);
+
+    if (inCabinet)
+    {
+        // self-run a calm AI defense demo behind the (hidden) menu chrome
+        startGame();
+        if (typeof hideAllMenus === 'function') hideAllMenus();
+        aiMode = true;
+        demoAim = levelSize.scale(.5);
+    }
+}
+
+function startGame()
+{
+    newGame();
+    setPlaying(true);
+}
+
+function quitToTitleWithCleanup()
+{
+    quitToTitle(newGame);
+}
+
+function buildMenus()
+{
+    if (typeof createMenu !== 'function') return;
+
+    setMenuTheme({accent:'#ff6a2b', font:'"Lucida Console", Monaco, monospace'});
+    createTitleMenu({
+        title: 'MISSILE DEFENSE',
+        titleFx: {fill:'fire'},
+        subtitle: 'Defend the cities',
+        onPlay: startGame,
+        revealOnClick: false,
+        canReveal: () => !isPlaying(),
+        showBest: true,
+        formatBest: n => 'BEST ' + n,
+        items: [
+            {type:'button', label:'OPTIONS',     onClick: () => pushMenu('options')},
+            {type:'button', label:'HELP',  onClick: () => pushMenu('help')},
+        ],
+    });
+
+    createOptionsMenu();
+
+    createMenu({
+        id: 'help',
+        title: 'HELP',
+        onHide: popMenu,
+        items: [
+            {type:'text', text:
+                'Defend your cities from waves of incoming missiles. Click where you ' +
+                'want your explosion to detonate — shots take time to arrive, so lead ' +
+                'the targets. Lose every city and it\'s game over.'},
+            {type:'text', text:'Click to fire · aim ahead of incoming missiles'},
+            {type:'separator'},
+            {type:'button', label:'BACK', onClick: () => hideMenu('help')},
+        ],
+    });
+
+    createPauseMenu({
+        onRestart: startGame,
+        onQuit:    quitToTitleWithCleanup,
+        extraItems: [
+            {type:'button', id:'options', label:'OPTIONS', onClick: () => pushMenu('options')},
+        ],
+    });
+
+    createMenu({
+        id: 'gameOver',
+        title: 'GAME OVER',
+        dismissable: false,
+        onShow: () =>
+        {
+            const m = getMenu('gameOver');
+            if (m)
+            {
+                m.getItem('finalScore')?.setLabel(`SCORE  ${score}`);
+                m.getItem('bestScore')?.setLabel(`BEST   ${getBestScore()}`);
+                m.getItem('waveReached')?.setLabel(`WAVE   ${waveIndex}`);
+            }
+        },
+        items: [
+            {type:'label', id:'finalScore',  text:'SCORE  0'},
+            {type:'label', id:'bestScore',   text:'BEST   0'},
+            {type:'label', id:'waveReached', text:'WAVE   0'},
+            {type:'separator'},
+            {type:'button', label:'PLAY AGAIN', onClick: () =>
+            {
+                hideMenu('gameOver');
+                startGame();
+            }},
+            {type:'button', label:'QUIT TO TITLE', onClick: quitToTitleWithCleanup},
+        ],
+    });
+
+    installDefaultToolbar();
+
+    // Show the title menu immediately — no click-to-reveal step. The attract
+    // demo runs live behind it (installAutoPause keeps the title unpaused).
+    showMenu('title');
+}
+
+function gameUpdate()
+{
+    // Reset camera to playfield center each frame so the gameFx screen-shake
+    // plugin (between gameUpdate and gameUpdatePost) can nudge cameraPos.
+    setCameraPos(levelSize.scale(.5));
+
+    // Title attract: a CALM backdrop. The cities and bases just sit there
+    // peacefully — no incoming missiles, no AI/cursor, no aiming or firing.
+    // Only cosmetic shooting stars streak across the sky. Bail out before any
+    // gameplay below.
+    if (!isPlaying())
+    {
+        for (const b of bases)
+        {
+            b.flash = max(0, b.flash - timeDelta);
+            b.recoil = max(0, b.recoil - timeDelta * 1.5);
+            if (b.alive)
+                b.cannonAngle = 0;  // cannons rest pointing straight up
+        }
+        for (const c of cities)
+            c.hitFlash = max(0, c.hitFlash - timeDelta);
+
+        maybeSpawnShootingStar();
+        updateParticles();
+        return;
+    }
+
+    // Pause hotkey (Esc / gamepad Start) — bindPauseKey handles it and won't fire
+    // while a menu (e.g. gameOver) is up.
+    if (bindPauseKey({when: () => isPlaying()})) return;
+
+    // While playing, dev keys: R restarts, T toggles AI assist.
+    if (isPlaying() && !gameOver && keyWasPressed('KeyR'))
+        return startGame();
+
+    if (isPlaying() && !gameOver && keyWasPressed('KeyT'))
+        aiMode = !aiMode;
+
+    // Manual fire.
+    if (!gameOver && !betweenWaves && !tally && mouseWasPressed(0))
+    {
+        launchPlayerMissile(mousePos);
+    }
+
+    // Optional AI assist (T) uses the instant-react AI (disabled in the cabinet
+    // demo, which fires its own calmer, mid-screen shots below).
+    if (!gameOver && !betweenWaves && !tally && aiMode && !inCabinet)
+        updateAI();
+
+    // Cabinet demo: a calm, one-shot-per-missile defense. Each incoming missile
+    // gets a single interceptor, timed to meet it around mid-screen (30–70% high).
+    // Bases stay stocked so the demo never runs dry.
+    if (inCabinet && !gameOver && !betweenWaves && !tally)
+    {
+        for (const b of bases) if (b.alive) b.ammo = BASE_AMMO_MAX;   // keep bolts full
+
+        const lo = levelSize.y * .30, hi = levelSize.y * .70;
+
+        for (const m of enemyMissiles)
+        {
+            if (!m.alive || m.demoShot) continue;
+            if (m.target.y >= m.start.y) continue;             // descending threats only
+            if (m.demoMidY === undefined)
+                m.demoMidY = clamp((lo + hi)/2 + rand(-3, 3), lo, hi);  // a touch above/below middle
+            if (m.pos.y <= m.demoMidY) continue;               // already past the strike height
+
+            // P = where this missile's straight path crosses its mid-screen height
+            const p = percent(m.demoMidY, m.start.y, m.target.y);
+            const P = vec2(m.start.x + (m.target.x - m.start.x) * p, m.demoMidY);
+
+            // nearest stocked base (the one launchPlayerMissile will fire from)
+            let base = null, bd = 1e9;
+            for (const b of bases)
+                if (b.alive && b.ammo > 0) { const d = abs(b.pos.x - P.x); if (d < bd) { bd = d; base = b; } }
+            if (!base) continue;
+
+            // fire once the missile is as close to P (in time) as the interceptor,
+            // so the two meet there
+            const tMissile = m.pos.distance(P) / max(.001, m.speed);
+            const tInt = base.pos.add(vec2(0, .75)).distance(P) / max(.001, base.missileSpeed);
+            if (tMissile <= tInt && launchPlayerMissile(P))
+            { m.demoShot = true; demoAim = P; }
+        }
+
+        // glide the (unrendered) cursor toward the nearest threat so turrets track it
+        let next = null, nd = 1e9;
+        for (const e of enemyMissiles)
+            if (e.alive) { const d = abs(e.pos.x - demoAim.x); if (d < nd) { nd = d; next = e; } }
+        const goal = next ? vec2(next.pos.x, clamp(next.pos.y, lo, hi))
+                          : vec2(levelSize.x/2, (lo + hi) / 2);
+        demoAim = demoAim.lerp(goal, .08);
+    }
+
+    for (const b of bases)
+    {
+        b.flash = max(0, b.flash - timeDelta);
+        b.recoil = max(0, b.recoil - timeDelta * 1.5);
+        if (b.alive)
+        {
+            // Cannon tracks the aim point (the AI's virtual cursor in the cabinet).
+            const aim = inCabinet ? demoAim : mousePos;
+            const dx = aim.x - b.pos.x;
+            const dy = max(.2, aim.y - (b.pos.y + .4));
+            b.cannonAngle = vec2(dx, dy).angle();
+        }
+    }
+    for (const c of cities)
+        c.hitFlash = max(0, c.hitFlash - timeDelta);
+
+    maybeSpawnShootingStar();
+    updateParticles();
+
+    if (gameOver)
+    {
+        updateExplosions();
+        if (inCabinet)
+        {
+            // loop the demo: brief hold on the wreckage, then a fresh defense
+            gameOverHoldTimer -= timeDelta;
+            if (gameOverHoldTimer <= 0) { startGame(); aiMode = true; }
+            return;
+        }
+        // Brief on-canvas hold (lets the final explosions play out) before the
+        // GAME OVER menu surfaces.
+        const gameOverShowing = (typeof getTopMenu === 'function') && getTopMenu()?.id === 'gameOver';
+        if (!gameOverShowing)
+        {
+            gameOverHoldTimer -= timeDelta;
+            if (gameOverHoldTimer <= 0 && typeof showMenu === 'function')
+                showMenu('gameOver');
+        }
+        return;
+    }
+
+    if (inCabinet)
+    {
+        // calm trickle: occasional single missiles, never a full wave (the wave
+        // system stays dormant since missilesToSpawn is left untouched here)
+        spawnTimer -= timeDelta;
+        if (spawnTimer <= 0)
+        {
+            if (enemyMissiles.reduce((a, m) => a + (m.alive ? 1 : 0), 0) < 2)
+                spawnEnemyMissile(false);
+            spawnTimer = rand(2.5, 4.5);
+        }
+    }
+    else if (!betweenWaves && !tally)
+    {
+        spawnTimer -= timeDelta;
+        if (spawnTimer <= 0 && missilesToSpawn > 0)
+        {
+            const activeAttacks = enemyMissiles.reduce(
+                (a, m) => a + (m.alive ? (m.smart ? 2 : 1) : 0), 0);
+            if (activeAttacks >= 8)
+            {
+                spawnTimer = .15;
+            }
+            else
+            {
+                const onScreenCap = waveIndex < 8 ? 1 : 2;
+                const wantSmart = smartBombsToSpawn > 0
+                                              && smartBombsOnScreen() < onScreenCap
+                                              && rand() < .25;
+                if (wantSmart)
+                {
+                    spawnEnemyMissile(true);
+                    smartBombsToSpawn--;
+                }
+                else
+                {
+                    spawnEnemyMissile(false);
+                }
+                missilesToSpawn--;
+
+                const base = max(.25, .85 - (waveIndex-1)*.05);
+                spawnTimer = base + rand(-.12, .18);
+            }
+        }
+    }
+
+    for (const m of enemyMissiles)
+    {
+        if (m.alive && m.smart)
+            applySmartBombDodge(m);
+
+        const impacted = updateMissile(m);
+        if (m.alive && !m.split)
+        {
+            m.smokeT -= timeDelta;
+            if (m.smokeT <= 0)
+            {
+                emitMissileTrailSmoke(m);
+                m.smokeT = .07;
+            }
+            maybeSplitMirv(m);
+        }
+        if (impacted)
+            resolveEnemyImpact(m.target);
+    }
+
+    for (const m of playerMissiles)
+    {
+        const impacted = updateMissile(m);
+        if (impacted)
+            addExplosion(m.target, true);
+    }
+
+    updateExplosions();
+    checkExplosionHits();
+    updateFliers();
+
+    // Notify split-parent MIRVs when a child dies; parent persists as a
+    // frozen trail until all its children are gone.
+    for (const m of enemyMissiles)
+    {
+        if (!m.alive && m.parent && !m.parentNotified)
+        {
+            m.parentNotified = true;
+            m.parent.children--;
+            if (m.parent.children <= 0)
+                m.parent.alive = false;
+        }
+    }
+
+    // filter AFTER checkExplosionHits so missiles killed by an explosion
+    // don't get one final draw with their trail cutting through it
+    enemyMissiles = enemyMissiles.filter(m=>m.alive);
+    playerMissiles = playerMissiles.filter(m=>m.alive);
+
+    checkWaveComplete();
+    updateTally();
+
+    if (!anyCitiesAlive())
+    {
+        gameOver = true;
+        gameOverHoldTimer = 1.6;
+        // Only record a best from a real game — the attract demo never saves.
+        if (isPlaying() && !inCabinet)
+            submitBestScore(score);
+    }
+}
+
+function gameUpdatePost()
+{
+    // cameraPos is centered in gameUpdate so the gameFx screen-shake plugin
+    // (between gameUpdate and gameUpdatePost) can nudge it.
+}
+
+// ------------------------------------------------------------
+// Drawing
+// ------------------------------------------------------------
+
+function wavePalette(w)
+{
+    const palettes = [
+        { skyTop:.68, skyHoriz:.56, enemyHue:.04, abmHue:.55, groundHue:.08, mountainHue:.66 },
+        { skyTop:.88, skyHoriz:.92, enemyHue:.02, abmHue:.13, groundHue:.95, mountainHue:.85 },
+        { skyTop:.32, skyHoriz:.36, enemyHue:.98, abmHue:.55, groundHue:.28, mountainHue:.30 },
+        { skyTop:.98, skyHoriz:.02, enemyHue:.13, abmHue:.55, groundHue:.02, mountainHue:.95 },
+        { skyTop:.10, skyHoriz:.07, enemyHue:.95, abmHue:.55, groundHue:.07, mountainHue:.12 },
+        { skyTop:.52, skyHoriz:.48, enemyHue:.02, abmHue:.13, groundHue:.50, mountainHue:.55 },
+        { skyTop:.78, skyHoriz:.72, enemyHue:.13, abmHue:.55, groundHue:.75, mountainHue:.80 },
+        { skyTop:.06, skyHoriz:.08, enemyHue:.55, abmHue:.13, groundHue:.07, mountainHue:.10 },
+    ];
+    return palettes[(w - 1) % palettes.length];
+}
+
+function drawGround()
+{
+    const pal = wavePalette(waveIndex);
+
+    // sky as a single vertical gradient
+    const skyTop   = hsl(pal.skyTop,   .6, .03);
+    const skyHoriz = hsl(pal.skyHoriz, .5, .14);
+    const skyBottom = groundHeight;
+    const skyTopY   = levelSize.y + 10;
+    const skyH = skyTopY - skyBottom;
+    drawRectGradient(vec2(levelSize.x/2, skyBottom + skyH/2),
+                                      vec2(levelSize.x, skyH),
+                                      skyTop, skyHoriz);
+
+    // stars
+    stars.draw();
+
+    // shooting stars
+    for (const ss of shootingStars)
+    {
+        const t = clamp(ss.life / ss.maxLife, 0, 1);
+        const tail = ss.pos.subtract(ss.vel.scale(.06));
+        drawLine(tail, ss.pos, .08, hsl(.13, .8, .9, t));
+        drawTile(ss.pos, vec2(.25), icons.circle, hsl(.13, .8, .95, t));
+    }
+
+    // full moon with soft radial halo and craters
+    drawTile(moonPos, vec2(9.0), icons.glow, hsl(.13, .3, .9, .25));
+    drawTile(moonPos, vec2(3.0), icons.circle, hsl(.13, .15, .93, .95));
+    drawCrescent(moonPos, 3.08, moonPhase, hsl(0,0,.3), moonAngle); // bright crescent
+    // craters
+    const shadowColor = hsl(0,0,0,.2);
+    drawTile(moonPos.add(vec2(-.55,  .55)), vec2(.45), icons.circle, shadowColor);
+    drawTile(moonPos.add(vec2( .7,  -.25)), vec2(.32), icons.circle, shadowColor);
+    drawTile(moonPos.add(vec2( .15, -.85)), vec2(.25), icons.circle, shadowColor);
+    drawTile(moonPos.add(vec2(-.85, -.4 )), vec2(.28), icons.circle, shadowColor);
+    drawTile(moonPos.add(vec2( .4,   .8 )), vec2(.2),  icons.circle, shadowColor);
+
+    // distant mountains
+    for (const m of mountains)
+        drawTile(vec2(m.x, m.y), vec2(m.r * 2), icons.circle, hsl(pal.mountainHue, .35, m.shade));
+    // secondary closer hill band
+    drawRect(vec2(levelSize.x/2, groundHeight + .1), vec2(levelSize.x, .2),
+                      hsl(pal.mountainHue, .3, .1));
+
+    // backdrop below ground prevents sky bleed-through on shake
+    drawRect(vec2(levelSize.x/2, -5), vec2(levelSize.x, 10), hsl(pal.groundHue, .35, .06));
+
+    // ground as a vertical gradient (lighter at horizon, darker below)
+    drawRectGradient(vec2(levelSize.x/2, groundY),
+                                      vec2(levelSize.x, groundHeight),
+                                      hsl(pal.groundHue, .4, .17), hsl(pal.groundHue, .35, .07));
+
+    // ground stripes
+    for (let i = 0; i < 6; i++)
+    {
+        const y = (i / 6) * groundHeight + .15;
+        drawLine(vec2(0, y), vec2(levelSize.x, y), .04, hsl(pal.groundHue, .4, .14, .35));
+    }
+
+    // horizon glow
+    drawRect(vec2(levelSize.x/2, groundHeight + .06), vec2(levelSize.x, .12),
+                      hsl(.07, .9, .35, .8));
+    drawLine(vec2(0, groundHeight), vec2(levelSize.x, groundHeight), .08,
+                      hsl(.1, .9, .5, .6));
+}
+
+function drawCity(c)
+{
+    const cx = c.pos.x;
+    const floorY = groundHeight;
+    const s = c.shape;
+
+    if (c.alive)
+    {
+        drawTile(vec2(cx, floorY - .03), vec2(s.mainW + .8, .25), icons.circle, hsl(0, 0, 0, .4));
+
+        for (const b of s.blocks)
+        {
+            const center = vec2(cx + b.x, floorY + b.y0 + b.h/2);
+            drawRect(center, vec2(b.w, b.h), s.bodyColor);
+            // dirt streak at bottom
+            drawRect(vec2(cx + b.x, floorY + b.y0 + .04), vec2(b.w, .08), s.dirtColor);
+            // top highlight
+            drawRect(vec2(cx + b.x, floorY + b.y0 + b.h - .04), vec2(b.w, .08), s.rimColor);
+            // side shading (left edge)
+            drawRect(vec2(cx + b.x - b.w/2 + .04, floorY + b.y0 + b.h/2),
+                              vec2(.06, b.h - .15), s.dirtColor);
+        }
+
+        for (const w of s.windows)
+        {
+            let lit = 1;
+            if (w.blink > 0)
+                lit = .3 + .7 * max(0, sin(w.phase + time * w.blink));
+            const hue = w.warm ? .13 : .55;
+            const sat = w.warm ? .85 : .5;
+            drawRect(vec2(cx + w.x, floorY + w.y), vec2(.1, .14),
+                              hsl(hue, sat, .72, .9 * lit));
+        }
+
+        if (s.hasAntenna)
+        {
+            const ax = cx + s.antennaX;
+            const ay0 = floorY + s.mainH;
+            const ay1 = ay0 + s.antennaH;
+            drawLine(vec2(ax, ay0), vec2(ax, ay1), .05, hsl(.55, .1, .55));
+            const blink = .5 + .5 * sin(time * 4 + ax);
+            drawTile(vec2(ax, ay1), vec2(.15), icons.circle, hsl(0, 1, .6, .35 + .65 * blink));
+        }
+
+        if (s.hasDome)
+            drawTile(vec2(cx, floorY + s.mainH), vec2(.5), icons.circle, s.rimColor);
+
+        if (c.hitFlash > 0)
+            drawRect(vec2(cx, floorY + s.mainH/2), vec2(s.mainW * 1.3, s.mainH * 1.2),
+                              hsl(.06, 1, .8, clamp(c.hitFlash * 2, 0, 1)));
+    }
+    else
+    {
+        // rubble silhouette
+        for (const r of s.rubble)
+        {
+            drawRect(vec2(cx + r.x, floorY + r.y + r.h/2), vec2(r.w, r.h),
+                              hsl(0, 0, .13), r.angle);
+            drawRect(vec2(cx + r.x, floorY + r.y + r.h - .03), vec2(r.w * .85, .04),
+                              hsl(.05, .35, .22), r.angle);
+        }
+        // glowing embers
+        for (const e of s.embers)
+        {
+            const flicker = .45 + .55 * sin(e.phase + time * e.speed);
+            drawTile(vec2(cx + e.x, floorY + e.y), vec2(.18 + .06 * flicker), icons.circle,
+                                  hsl(.04, 1, .55 + .15 * flicker, .8));
+            drawTile(vec2(cx + e.x, floorY + e.y), vec2(.35 + .1 * flicker), icons.glow,
+                                  hsl(.05, 1, .55, .15));
+        }
+        // smoke pillars
+        for (let i = 0; i < 3; i++)
+        {
+            const t = time + cx * .3 + i * 1.7;
+            const drift = sin(t * .6) * .35;
+            const yOff = .6 + i * .55 + (sin(t * .8) + 1) * .35;
+            const a = .4 - i * .09;
+            drawTile(vec2(cx + drift + (i - 1) * .15, floorY + yOff),
+                                  vec2(.6 + i * .15), icons.circle, hsl(0, 0, .22 + i * .04, a));
+        }
+    }
+}
+
+function drawBase(b)
+{
+    const bx = b.pos.x;
+    const floorY = groundHeight;
+
+    if (b.alive)
+    {
+        drawTile(vec2(bx, floorY - .03), vec2(2.3, .25), icons.circle, hsl(0, 0, 0, .45));
+
+        // bunker body
+        drawRect(vec2(bx, floorY + .25), vec2(1.95, .5), hsl(.5, .15, .32));
+        drawRect(vec2(bx, floorY + .58), vec2(1.45, .35), hsl(.52, .2, .42));
+        drawRect(vec2(bx, floorY + .75), vec2(1.45, .04), hsl(.55, .3, .65));
+
+        // sandbag dots along the base
+        for (let i = -2; i <= 2; i++)
+        {
+            drawTile(vec2(bx + i * .38, floorY + .12), vec2(.28), icons.circle, hsl(.1, .25, .32));
+            drawTile(vec2(bx + i * .38, floorY + .14), vec2(.22), icons.circle, hsl(.1, .35, .48));
+        }
+
+        // turret cannon
+        const pivot = vec2(bx, floorY + .78);
+        const a = b.cannonAngle;
+        const recoil = b.recoil;
+        const dir = vec2().setAngle(a);
+        const len = 1.1 - recoil * .35;
+        const pivotShifted = pivot.subtract(dir.scale(recoil * .15));
+        const tip = pivotShifted.add(dir.scale(len));
+        drawLine(pivotShifted, tip, .26, hsl(.55, .2, .35));
+        drawLine(pivotShifted, tip, .14, hsl(.55, .25, .55));
+        drawTile(pivotShifted, vec2(.42), icons.circle, hsl(.5, .25, .55));
+        drawTile(pivotShifted, vec2(.28), icons.circle, hsl(.55, .35, .7));
+        drawTile(tip, vec2(.15), icons.circle, hsl(.55, .35, .45));
+
+        // ammo readout - dots
+        for (let i = 0; i < BASE_AMMO_MAX; i++)
+        {
+            const lit = i < b.ammo;
+            const col = lit ? hsl(.32, .9, .55) : hsl(0, 0, .22);
+            drawRect(vec2(bx - .9 + i * .2, floorY + 1.05), vec2(.13, .1), col);
+            if (lit)
+                drawRect(vec2(bx - .9 + i * .2, floorY + 1.05), vec2(.13, .1),
+                                  hsl(.32, .9, .8, .3));
+        }
+
+        if (b.flash > 0)
+        {
+            drawTile(tip, vec2(1.2 * b.flash), icons.glow, hsl(.13, 1, .9, b.flash * 4));
+            drawTile(tip, vec2(.6 * b.flash), icons.circle, hsl(.5, .2, 1, b.flash * 5));
+        }
+    }
+    else
+    {
+        drawRect(vec2(bx - .35, floorY + .22), vec2(1.1, .45), hsl(0, 0, .14), -.25);
+        drawRect(vec2(bx + .55, floorY + .17), vec2(.7, .35), hsl(0, 0, .11), .35);
+        drawRect(vec2(bx, floorY + .08), vec2(1.6, .2), hsl(0, 0, .12));
+
+        const flicker = .5 + .5 * sin(time * 5 + bx);
+        drawTile(vec2(bx, floorY + .3), vec2(.2 * (1 + flicker * .3)), icons.circle,
+                              hsl(.04, 1, .5 + .2 * flicker, .8));
+        drawTile(vec2(bx, floorY + .3), vec2(.5 * (1 + flicker * .2)), icons.glow,
+                              hsl(.05, 1, .5, .2));
+
+        for (let i = 0; i < 2; i++)
+        {
+            const t = time + bx * .3 + i * 2;
+            drawTile(vec2(bx + (i-.5)*.5 + sin(t*.7)*.25, floorY + .6 + i * .45 + (sin(t*.9)+1)*.25),
+                                  vec2(.55 + i*.1), icons.circle, hsl(0, 0, .28, .35 - i*.08));
+        }
+    }
+}
+
+function drawInstallations()
+{
+    for (const c of cities) drawCity(c);
+    for (const b of bases) drawBase(b);
+}
+
+function drawMissiles()
+{
+    const pal = wavePalette(waveIndex);
+
+    for (const m of enemyMissiles)
+    {
+        if (m.split || m.mirv)
+        {
+            drawLine(m.start, m.pos, m.w * 4.8, hsl(.88, 1, .55, .32));
+            drawLine(m.start, m.pos, m.w * 1.7, hsl(.88, .95, .9));
+
+            if (m.mirv)
+            {
+                const pulse = .85 + .15 * sin(time * 10 + m.pulsePhase);
+                drawTile(m.pos, vec2(.50 * pulse), icons.glow, hsl(0, 0, 1, .35));
+                drawTile(m.pos, vec2(.32), icons.circle, hsl(.88, 1, .7));
+                drawTile(m.pos, vec2(.20), icons.circle, hsl(.88, 1, .85));
+                drawTile(m.pos, vec2(.10), icons.circle, hsl(0, 0, 1));
+            }
+            continue;
+        }
+        drawLine(m.start, m.pos, m.w * 2.4, hsl(pal.enemyHue, 1, .55, .2));
+        drawLine(m.start, m.pos, m.w, hsl(pal.enemyHue, .95, .65));
+        if (m.smart)
+        {
+            const pulse = .8 + .2 * sin(time * 14 + m.pulsePhase);
+            drawTile(m.pos, vec2(.55 * pulse), icons.glow, hsl(pal.enemyHue, 1, .7, .35));
+            drawTile(m.pos, vec2(.32), icons.circle, hsl(.95, .9, .55));
+            drawTile(m.pos, vec2(.18), icons.circle, hsl(.0,  1,  .9));
+            drawTile(m.pos, vec2(.08), icons.circle, hsl(.13, 1, 1));
+        }
+        else
+        {
+            drawTile(m.pos, vec2(.35), icons.glow, hsl(pal.enemyHue, 1, .7, .5));
+            drawTile(m.pos, vec2(.22), icons.circle, hsl(pal.enemyHue, 1, .8));
+            drawTile(m.pos, vec2(.1), icons.circle, hsl(.15, 1, 1));
+        }
+    }
+
+    for (const m of playerMissiles)
+    {
+        drawLine(m.start, m.pos, m.w * 2.6, hsl(pal.abmHue, 1, .8, .18));
+        drawLine(m.start, m.pos, m.w, hsl(pal.abmHue, .95, .75));
+        drawTile(m.pos, vec2(.26), icons.glow, hsl(pal.abmHue, 1, .85, .6));
+        drawTile(m.pos, vec2(.14), icons.circle, hsl(.5, .2, 1));
+    }
+}
+
+function drawFliers()
+{
+    for (const f of fliers)
+    {
+        const wobble = sin(time * 3 + f.phase) * .08;
+        const p = vec2(f.pos.x, f.pos.y + wobble);
+        if (f.type === 'bomber')
+        {
+            const dir = f.vel.x > 0 ? 1 : -1;
+            const body   = hsl(.55, .1, .55);
+            const accent = hsl(.55, .12, .40);
+            // swept wings — V shape angled back from mid-fuselage
+            drawLine(p.add(vec2(.15 * dir, 0)), p.add(vec2(-.45 * dir,  .60)), .22, accent);
+            drawLine(p.add(vec2(.15 * dir, 0)), p.add(vec2(-.45 * dir, -.60)), .22, accent);
+            // tail fins
+            drawLine(p.add(vec2(-.55 * dir, 0)), p.add(vec2(-.75 * dir,  .28)), .12, accent);
+            drawLine(p.add(vec2(-.55 * dir, 0)), p.add(vec2(-.75 * dir, -.28)), .12, accent);
+            // fuselage
+            drawLine(p.add(vec2(-.60 * dir, 0)), p.add(vec2(.55 * dir, 0)), .28, body);
+            // nose cone
+            drawTile(p.add(vec2(.65 * dir, 0)), vec2(.26), icons.circle, body);
+            // cockpit
+            drawTile(p.add(vec2(.30 * dir, .02)), vec2(.14), icons.circle, hsl(.55, .55, .82));
+            // wing-tip nav lights (aviation red on port / green on starboard)
+            const blink = .5 + .5 * sin(time * 8 + f.phase);
+            drawTile(p.add(vec2(-.45 * dir,  .60)), vec2(.11), icons.circle, hsl(0,   1, .6, .55 + .45 * blink));
+            drawTile(p.add(vec2(-.45 * dir, -.60)), vec2(.11), icons.circle, hsl(.33, 1, .6, .55 + .45 * blink));
+        }
+        else
+        {
+            drawLine(p, p.add(vec2(-.6, .5)), .1, hsl(.55, .1, .6));
+            drawLine(p, p.add(vec2( .6, .5)), .1, hsl(.55, .1, .6));
+            drawTile(p, vec2(.55), icons.circle, hsl(.13, .15, .7));
+            drawTile(p, vec2(.35), icons.circle, hsl(.55, .25, .55));
+            const blink = .5 + .5 * sin(time * 6 + f.phase);
+            drawTile(p, vec2(.1), icons.circle, hsl(.13, 1, .8, .5 + .5 * blink));
+        }
+    }
+}
+
+function drawExplosions()
+{
+    if (!explosions.length) return;
+    setAdditiveBlendMode();
+    for (const e of explosions)
+    {
+        if (e.r <= 0) continue;
+        const phase = clamp(e.r / e.rMax, 0, 1);
+        const d = e.r * 2;
+        const flicker = .82 + .18 * sin(time * 28 + e.seed);
+
+        if (e.friendly)
+        {
+            // outer glow (soft halo)
+            drawTile(e.pos, vec2(d * 2.2), icons.glow, hsl(.55, .85, .65, .55 * phase));
+            // hot core
+            drawTile(e.pos, vec2(d * 1.0), icons.glow, hsl(.45, .15, 1, .95 * flicker));
+            // shockwave ring
+            drawTile(e.pos, vec2( e.lifetime*8), icons.ring, hsl(.55, 1, .95, .2 * phase));
+        }
+        else
+        {
+            // outer glow
+            drawTile(e.pos, vec2(d * 2.2), icons.glow, hsl(.07, 1, .55, .55 * phase));
+            // hot core (yellow-white)
+            drawTile(e.pos, vec2(d * 1.0), icons.glow, hsl(.14, .8, .98, .95 * flicker));
+            // shockwave ring
+            drawTile(e.pos, vec2(e.lifetime*8), icons.ring, hsl(.06, 1, .8, .2 * phase));
+        }
+    }
+    setAdditiveBlendMode(false);
+}
+
+function drawCrosshair(atPos, alpha)
+{
+    alpha = alpha === undefined ? 1 : alpha;
+    const src = atPos || mousePos;
+    const p = vec2(clamp(src.x, 0, levelSize.x),
+                                  clamp(src.y, groundHeight, levelSize.y+2.5));
+    const s = .55;
+    const c = hsl(.55, .85, .95, .85 * alpha);
+    // gapped cross
+    drawLine(p.add(vec2(-s, 0)), p.add(vec2(-.2, 0)), .06, c);
+    drawLine(p.add(vec2(.2, 0)), p.add(vec2(s, 0)),  .06, c);
+    drawLine(p.add(vec2(0, -s)), p.add(vec2(0, -.2)), .06, c);
+    drawLine(p.add(vec2(0, .2)), p.add(vec2(0, s)),  .06, c);
+    drawTile(p, vec2(.14), icons.circle, hsl(.55, 1, .95, .9 * alpha));
+    drawTile(p, vec2(.4), icons.glow, hsl(.55, 1, .95, .12 * alpha));
+}
+
+function gameRender()
+{
+    drawGround();
+    drawInstallations();
+    drawMissiles();
+    drawFliers();
+    drawExplosions();
+    drawParticles();
+    if (isPlaying() && !inCabinet)
+        drawCrosshair();
+    // Attract demo: the virtual cursor stays invisible — the turrets just track it.
+}
+
+function gameRenderPost()
+{
+    if (!isPlaying()) return; // title screen — menu owns the display
+
+    const topLeft = vec2(24, 44);
+
+    // Hide the live score + wave readout in the cabinet demo (clean attract screen).
+    if (!inCabinet)
+    {
+        drawTextScreen(`SCORE ${score}`, topLeft, 70, hsl(.12,.1,.95), 4, hsl(0,0,0,.6), 'left');
+        drawTextScreen(`WAVE ${waveIndex}`, topLeft.add(vec2(0, 50)), 40, hsl(.12,.08,.9), 3, hsl(0,0,0,.6), 'left');
+    }
+
+    if (!gameOver && !anyBasesAliveWithAmmo())
+        drawTextScreen('NO AMMO! (protect what\'s left)', vec2(mainCanvasSize.x/2, 30), 22, hsl(.06,1,.65), 4, hsl(0,0,0,.7));
+
+    if (aiMode && !inCabinet)
+        drawTextScreen('AI MODE  [T]', vec2(mainCanvasSize.x/2, 58), 22, hsl(.55,1,.85), 3, hsl(0,0,0,.7));
+
+    if (tally && !gameOver)
+    {
+        const cx = mainCanvasSize.x/2;
+        drawTextScreen('WAVE CLEARED!', vec2(cx, 70), 42, hsl(.16,.15,.95), 6, hsl(0,0,0,.7));
+        const ammoDone = tally.ammoTotal - tally.ammoLeft;
+        const cityDone = tally.cityTotal - tally.cityLeft;
+        const ammoPts = ammoDone * 5 * tally.multiplier;
+        const cityPts = cityDone * 100 * tally.multiplier;
+        drawTextScreen(`AMMO  ${ammoDone}/${tally.ammoTotal}  ×${tally.multiplier}  =  ${ammoPts}`,
+                                      vec2(cx, 120), 26, hsl(.12,.1,.95), 4, hsl(0,0,0,.6));
+        drawTextScreen(`CITIES  ${cityDone}/${tally.cityTotal}  ×${tally.multiplier}  =  ${cityPts}`,
+                                      vec2(cx, 156), 26, hsl(.12,.1,.95), 4, hsl(0,0,0,.6));
+    }
+
+    if (bonusCityToast > 0 && isPlaying())
+    {
+        const a = min(1, bonusCityToast * 2);
+        drawTextScreen('BONUS CITY!', vec2(mainCanvasSize.x/2, 210),
+                                      36, hsl(.32, .9, .8, a), 5, hsl(0,0,0,.7*a));
+        bonusCityToast -= timeDelta;
+    }
+
+    // gameOver menu (DOM) now owns the GAME OVER banner.
+}
+
+engineInit(gameInit, gameUpdate, gameUpdatePost, gameRender, gameRenderPost, [], document.getElementById('wrap'));
+</script>
+</body>
+</html>

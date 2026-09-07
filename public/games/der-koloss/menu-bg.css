@@ -1,0 +1,91 @@
+/* ============================================================================
+   MENU BACKGROUND PLATE — everything here is scoped to #menu-bg.
+   #menu-bg is the first child of .menu-scene and sits *behind* the parallax,
+   fog, grain and vignette layers that own the rest of that stack. Nothing in
+   this file may style anything outside #menu-bg.
+
+   Layer order inside #menu-bg (bottom to top):
+     1. the poster still  — always present, so the panel is never a black hole
+     2. the looping video — fades in only once it is actually playing
+     3. the scrim         — keeps the title and menu list legible over it
+   ========================================================================== */
+
+#menu-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+  /* the void colour of the front-end palette: whatever fails, this remains */
+  background-color: #04060b;
+  contain: layout paint style;
+}
+
+#menu-bg .menu-bg-still,
+#menu-bg .menu-bg-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border: 0;
+}
+
+/* The poster is the video's own first frame, so the hand-off is invisible. */
+#menu-bg .menu-bg-still {
+  opacity: 0.92;
+  filter: saturate(0.94);
+}
+
+/* Hidden until 'playing' fires. If the video 404s, is blocked by autoplay
+   policy, or cannot be decoded, this simply never happens and the still
+   stays on screen. */
+#menu-bg .menu-bg-video {
+  opacity: 0;
+  transition: opacity 1100ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity;
+}
+#menu-bg.is-live .menu-bg-video { opacity: 0.92; }
+
+/* Sits over the footage: pushes the left third down so the title block and the
+   numbered menu list keep their contrast, cools the whole plate toward the
+   in-game steel-blue, and lets the floor fall away at the bottom. */
+#menu-bg .menu-bg-scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(4, 6, 11, 0.88) 0%,
+      rgba(4, 6, 11, 0.72) 26%,
+      rgba(4, 6, 11, 0.34) 54%,
+      rgba(4, 6, 11, 0.16) 74%,
+      rgba(4, 6, 11, 0.42) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(4, 6, 11, 0.62) 0%,
+      rgba(4, 6, 11, 0.14) 22%,
+      rgba(4, 6, 11, 0.2) 64%,
+      rgba(6, 9, 15, 0.86) 100%
+    ),
+    radial-gradient(ellipse at 62% 46%, rgba(28, 46, 74, 0.16), transparent 62%);
+}
+
+/* Reduced motion: the still only. `display: none` also stops the browser from
+   ever starting the download, so the clip costs nothing for these users. */
+@media (prefers-reduced-motion: reduce) {
+  #menu-bg .menu-bg-video { display: none; }
+  #menu-bg .menu-bg-still { opacity: 1; }
+}
+
+/* Narrow viewports crop hard into the centre of the hall, which is the part
+   that reads: the teleporter ring and the light shafts. */
+@media (max-width: 760px) {
+  #menu-bg .menu-bg-scrim {
+    background:
+      linear-gradient(180deg, rgba(4, 6, 11, 0.72) 0%, rgba(4, 6, 11, 0.3) 30%, rgba(4, 6, 11, 0.42) 66%, rgba(6, 9, 15, 0.9) 100%),
+      radial-gradient(ellipse at 50% 44%, rgba(28, 46, 74, 0.14), transparent 66%);
+  }
+}

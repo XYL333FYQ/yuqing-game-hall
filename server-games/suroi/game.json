@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "suroi",
+  "order": 3,
+  "name": "荒野生存",
+  "originalName": "Suroi",
+  "mark": "生存",
+  "category": "多人俯视角生存竞技",
+  "description": "搜集装备、躲避毒圈、判断枪声方向，在快节奏战局里成为最后的幸存者。",
+  "hosting": "server",
+  "hostingLabel": "需专用服务器",
+  "theme": { "accent": "#57b86b", "dark": "#102416" },
+  "tags": ["多人", "生存", "射击"],
+  "play": {
+    "modes": "单排 / 双排 / 四排",
+    "players": "多人匹配",
+    "controls": "键盘移动 · 鼠标瞄准射击",
+    "inputs": ["keyboard", "mouse"],
+    "devices": ["desktop"],
+    "vision": false
+  },
+  "technology": "Bun · TypeScript · PixiJS · WebSocket",
+  "license": "GPL-3.0",
+  "sourceUrl": "https://github.com/HasangerGames/suroi",
+  "localization": "游戏厅中文说明已完成；当前进入的是原作者在线服务，内部语言和服务状态由上游维护。自建版汉化需要和服务端版本一起固定后再做。",
+  "fit": "完成度和真实多人质量最高，适合研究权威服务端、毒圈、拾取、队伍和大量实时玩家同步。",
+  "highlights": ["完整匹配、毒圈、枪械、护甲与投掷物", "服务端权威结算，客户端反馈依然迅速", "活跃的线上版本，可直接检验真实战局"],
+  "cautions": ["玩法偏 PvP，不是合作打怪", "GPL 代码复用会带来对应开源义务", "Bun 服务端不能原样部署到 Cloudflare Worker"],
+  "launch": { "kind": "external", "url": "https://suroi.io/" }
+}

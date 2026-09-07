@@ -1,0 +1,860 @@
+<!DOCTYPE html><head>
+<title>LittleJS Moon Lander</title>
+<meta charset=utf-8>
+</head>
+<script src="../templates/engineLoader.js?1780767748506"></script>
+<script src="../templates/textureGenerator.js?1780767748506"></script>
+<script src="../templates/gameFx.js?1780767748506"></script>
+<script src="../templates/menus.js?1780767748506"></script>
+<script>
+'use strict';
+
+// The arcade cabinet loads the game with #demo: there the autopilot flies + lands
+// the lander, looping. A normal launch shows a calm static lander resting on the pad.
+const inCabinet = /demo/.test(location.hash);
+
+// on-screen touch pad
+touchGamepadEnable = true;
+touchGamepadAnalog = true;
+touchGamepadButtonCount = 1;
+
+///////////////////////////////////////////////////////////////////////////////
+// Lunar Lander (solid-color primitives only) - smooth terrain + level ramp
+
+// World / terrain
+const WORLD_HALF_WIDTH = 32;
+const TERRAIN_BASE     = -8;       // average ground height
+
+// Landing pad
+const PAD_THICK = .5;
+
+// Flight model (base values; some scale per level)
+const GRAVITY_BASE  = -.0012;      // moon-ish
+const THRUST_POWER  = .0030;       // main engine
+const TURN_POWER    = .0022;       // angular accel
+const FUEL_BURN     = 20;          // fuel units / second while thrusting
+
+const SAFE_SPEED = .10;
+const SAFE_ANGLE = .22;            // radians (~12.6 deg)
+
+// Camera tuning (cameraScale = pixels per world unit; smaller = zoomed out)
+const CAMERA_SCALE_FAR  = 22;      // start / wide view
+// In-flight camera uses cameraFit (canvas-size-independent): it frames a box
+// around the ship + pad, never smaller than this, so the touchdown isn't
+// over-zoomed on the now-responsive canvas (~2x wider than a tight close-up).
+const CAMERA_FIT_MIN    = vec2(30, 22);  // smallest framed box, world units
+const CAMERA_FIT_MARGIN = 3;             // breathing room around the ship + pad
+// Menu (resting lander): frame the surface near the bottom with sky above so the
+// lander isn't buried deep in the ground.
+const CAMERA_MENU_SKY    = 18;   // world units of sky shown above the surface
+const CAMERA_MENU_GROUND = 2.5;  // world units of ground shown below the surface
+const CAMERA_MENU_MINW   = 18;   // minimum framed width (world units)
+
+let icons;                         // default-atlas icon map (name -> TileInfo)
+let player, landingPad;
+let gameState = 0;                 // 0=playing, 1=landed, 2=crashed
+let level = 1;
+let totalScore = 0;
+let lastLevelScore = 0;
+let messageTimer = new Timer();
+let camTarget = vec2();
+let camScale = CAMERA_SCALE_FAR;
+let camSize = CAMERA_FIT_MIN.copy();   // current framed box size for cameraFit
+let lastTouchdownSpeed = 0;        // speed at moment of ground contact (for scoring)
+
+// terrain state (analytic, generated per level)
+let terrain, distFar, distMid;     // octave sets {base, arr:[{amp,freq,phase}]}
+let padX = 0, padY = TERRAIN_BASE, padWidth = 6;
+
+// background
+let starfield;   // stateless Starfield (gameFx.js), built in gameInit
+
+// Sounds
+const sfxThrust = new SoundGenerator({ volume:.18, frequency:90, release:.08, noise:.25, shapeCurve:.7, slide:-.4, randomness:.15 });
+const sfxBoom   = new SoundGenerator({ volume:.65, frequency:65, release:.35, noise:.6,  shapeCurve:.2, slide:-1.5, bitCrush:3, delay:.04 });
+const sfxLand   = new SoundGenerator({ volume:.35, frequency:520, release:.12, shapeCurve:1.2, pitchJump:-120, pitchJumpTime:.02, delay:.03 });
+
+///////////////////////////////////////////////////////////////////////////////
+// Smooth analytic terrain
+
+function makeOctaves(base, amp0, freq0, count, ampMul, freqMul)
+{
+    const arr = [];
+    let amp = amp0, freq = freq0;
+    for (let i = 0; i < count; ++i)
+    {
+        arr.push({ amp, freq, phase: rand(2*PI) });
+        amp *= ampMul;
+        freq *= freqMul;
+    }
+    return { base, arr };
+}
+
+function evalOctaves(o, x)
+{
+    let y = o.base;
+    for (const w of o.arr)
+        y += w.amp * sin(w.freq*x + w.phase);
+    return y;
+}
+
+// terrain height at world x, with the flat pad mesa blended in
+function getTerrainY(x)
+{
+    const raw = evalOctaves(terrain, x);
+    const d = abs(x - padX);
+    const half = padWidth/2;
+    if (d <= half) return padY;
+    const t = clamp((d - half)/(padWidth*.9 + 2), 0, 1);
+    return lerp(padY, raw, smoothStep(t));
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Level setup
+
+function difficulty()
+{
+    // gentle ramp, all capped so it stays playable
+    const n = level - 1;
+    return {
+        amp:      clamp(3 + n*.65, 3, 9.5),        // terrain roughness
+        gravity:  GRAVITY_BASE - min(n, 8)*.00006, // a touch heavier each level
+        padWidth: clamp(6 - n*.45, 3.2, 6),        // smaller pad
+        fuel:     clamp(80 - n*6, 42, 80),         // less fuel
+    };
+}
+
+function startLevel(n)
+{
+    engineObjectsDestroy();
+    level = n;
+    gameState = 0;
+    messageTimer.unset();
+
+    const cfg = difficulty();
+    gravity.y = cfg.gravity;
+    padWidth = cfg.padWidth;
+
+    // generate smooth terrain + two distant silhouette layers
+    const amp = cfg.amp;
+    terrain = makeOctaves(TERRAIN_BASE,       amp,     .060, 5, .50, 2.1);
+    distMid = makeOctaves(TERRAIN_BASE + 1.5, amp*.90, .045, 3, .55, 2.0);
+    distFar = makeOctaves(TERRAIN_BASE + 3.0, amp*.75, .032, 2, .55, 2.0);
+
+    // choose a pad location; pad surface follows the natural terrain height there
+    padX = rand(WORLD_HALF_WIDTH - 8, -WORLD_HALF_WIDTH + 8);
+    padY = clamp(evalOctaves(terrain, padX), TERRAIN_BASE - 4, TERRAIN_BASE + 3);
+
+    // pad is a plain object (custom collision); camera + render read it
+    landingPad = { pos: vec2(padX, padY + PAD_THICK/2), size: vec2(padWidth, PAD_THICK) };
+
+    // player starts well above the pad, offset to one side...
+    player = new Player(vec2(padX + rand(11, -11), padY + 22));
+    player.fuel = cfg.fuel;
+    player.maxFuel = cfg.fuel;
+
+    // ...but at the title the lander rests as a calm static scene — frozen upright
+    // on the surface where it spawned. Keep its x exactly (don't snap to the pad
+    // center); just drop it onto the ground there and point it straight up.
+    if (!isPlaying())
+    {
+        gameState = 1;
+        player.angle = 0;
+        player.angleVelocity = 0;
+        player.velocity = vec2();
+        player.pos.y = getTerrainY(player.pos.x) + 1.5;   // rest on the surface; keep x
+        player.trail.emitRate = 0;
+    }
+
+    // start framed on the whole approach
+    camTarget = player.pos.lerp(landingPad.pos, .5);
+    cameraPos = camTarget.copy();
+    camScale = CAMERA_SCALE_FAR;
+    cameraScale = camScale;
+
+    // the title's resting-lander framing is handled every frame by
+    // frameMenuCamera() (in gameUpdatePost) so it adapts to the canvas size
+}
+
+function startGame()
+{
+    level = 1;
+    totalScore = 0;
+    setPlaying(true);   // set BEFORE startLevel so it builds a real (un-frozen) level
+    startLevel(1);
+    clearSubmenuStack();
+    hideAllMenus();
+}
+
+// quit back to the title and rebuild a fresh idle scene (onCleanup runs AFTER
+// quitToTitle's setPlaying(false), so startLevel sees !isPlaying() and freezes
+// the lander resting on the pad — a clean calm backdrop, not a mid-game wreck)
+function quitToIdleTitle()
+{
+    quitToTitle(() => { level = 1; totalScore = 0; startLevel(1); });
+}
+
+///////////////////////////////////////////////////////////////////////////////
+class Debris extends EngineObject
+{
+    constructor(pos, vel, color)
+    {
+        super(pos, vec2(rand(.25,.08)), 0, rand(PI, -PI), color);
+        this.velocity = vel;
+        this.angleVelocity = rand(.25, -.25);
+        this.life = rand(1.2, .5);
+        this.maxLife = this.life;
+        this.damping = .98;
+        this.angleDamping = .98;
+        this.gravityScale = .4;
+    }
+
+    update()
+    {
+        this.life -= timeDelta;
+        if (this.life <= 0)
+            this.destroy();
+    }
+
+    render()
+    {
+        const a = clamp(this.life/this.maxLife, 0, 1);
+        drawTile(this.pos, vec2(this.size.x), icons.circle, rgb(this.color.r, this.color.g, this.color.b, a));
+    }
+}
+
+// expanding blast ring + initial flash for explosions
+class ShockWave extends EngineObject
+{
+    constructor(pos)
+    {
+        super(pos, vec2());
+        this.t = 0;
+        this.renderOrder = 1e9;
+    }
+
+    update()
+    {
+        this.t += timeDelta*2.6;
+        if (this.t >= 1) this.destroy();
+    }
+
+    render()
+    {
+        const a = 1 - this.t;
+        if (this.t < .4) // bright flash
+            drawTile(this.pos, vec2(lerp(3, 7, this.t)), icons.circle, rgb(1,.95,.7, (.4-this.t)*1.4));
+        // expanding ring (transparent fill, glowing outline)
+        drawTile(this.pos, vec2(lerp(1.5, 13, this.t)), icons.ring, rgb(1,.8,.5, a*.7));
+    }
+}
+
+// fireball + sparks + chunks + shockwave
+function makeExplosion(pos, vel = vec2())
+{
+    new ShockWave(pos);
+
+    // additive fireball
+    new ParticleEmitter(
+        pos, 0,
+        .9, .12, 380, PI,                  // emitSize, emitTime(burst), emitRate, emitConeAngle
+        undefined,
+        rgb(1,.92,.5), rgb(1,.5,.12),      // bright core colors
+        rgb(1,.2,0,0), rgb(.4,0,0,0),      // fade to transparent (additive)
+        .75, .95, .12, .32, .1,            // particleTime, sizeStart, sizeEnd, speed, angleSpeed
+        .9, 1, .25,                        // damping, angleDamping, gravityScale
+        PI, .25,                           // particleConeAngle, fadeRate
+        .9, false, true, true,            // randomness, collide, additive, randomColorLinear
+        1e9                                // renderOrder
+    );
+
+    // additive spark streaks (stretched in direction of motion)
+    const sparks = new ParticleEmitter(
+        pos, 0,
+        .3, .1, 260, PI,
+        undefined,
+        rgb(1,1,.8), rgb(1,.8,.4),
+        rgb(1,.5,.1,0), rgb(1,.2,0,0),
+        .55, .3, .05, .7, 0,
+        .96, 1, .35,
+        PI, .2,
+        .5, false, true, true,
+        1e9
+    );
+    sparks.trailScale = .6;
+
+    // solid debris chunks
+    for (let i = 0; i < 28; ++i)
+    {
+        const v = randVec2(rand(.3, .06)).add(vel.scale(.5));
+        new Debris(pos.add(randVec2(rand(.7,.1))), v, randColor(rgb(1,.7,.2), rgb(.9,.2,.05), true));
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+class Player extends EngineObject
+{
+    constructor(pos)
+    {
+        super(pos, vec2(1,2), 0, 0, rgb(.9,.9,.95));
+        this.angleDamping = .95;
+        this.damping = .995;
+        this.fuel = 80;
+        this.maxFuel = 80;
+        this.thrusting = false;
+        this.thrustSoundTimer = new Timer();
+
+        // rocket exhaust: additive, local-space particle emitter (drives the flame).
+        // pos/angle/emitRate are updated every frame from update(); emits out the nozzle.
+        this.trail = new ParticleEmitter(
+            this.pos, 0,                       // pos, angle (set each frame)
+            .22, 0, 0, .42,                    // emitSize, emitTime(0=forever), emitRate(off), emitConeAngle
+            undefined,                         // tileInfo (untextured = solid glow)
+            rgb(1,.95,.6), rgb(1,.6,.15),      // colorStartA/B  (bright flame core)
+            rgb(1,.3,.05,0), rgb(.7,.1,0,0),   // colorEndA/B    (fade to transparent - additive)
+            .5, .62, .08, .22, .12,            // particleTime, sizeStart, sizeEnd, speed, angleSpeed
+            .9, 1, 0,                          // damping, angleDamping, gravityScale
+            .4, .35,                           // particleConeAngle, fadeRate
+            .3, false, true, true,             // randomness, collideTiles, additive, randomColorLinear
+            1e9, false                          // renderOrder, localSpace
+        );
+    }
+
+    isSafeLanding()
+    {
+        return abs(this.angle) < SAFE_ANGLE && this.velocity.length() < SAFE_SPEED;
+    }
+
+    // world-space points used for terrain contact (foot pads + body base)
+    contactPoints()
+    {
+        return [vec2(-.92,-1.5), vec2(.92,-1.5), vec2(0,-.85)]
+            .map(p => this.pos.add(p.rotate(this.angle)));
+    }
+
+    land()
+    {
+        gameState = 1;
+        this.trail.emitRate = 0;
+        sfxLand.play();
+        addScreenShake(.4, .25);
+
+        // snap upright and rest legs on the pad — but keep the x it landed at
+        // (don't recenter on the pad, which reads as a snap)
+        this.angle = 0;
+        this.angleVelocity = 0;
+        this.velocity = vec2();
+        this.pos.y = padY + PAD_THICK + 1.5;
+
+        // score: level bonus + leftover fuel + soft-touchdown bonus (only counted
+        // during real play; the title's idle lander never flies, so never lands here)
+        const soft = max(0, 100 - lastTouchdownSpeed*900) | 0;
+        lastLevelScore = (level*100) + (this.fuel*4 | 0) + soft;
+        if (isPlaying())
+        {
+            totalScore += lastLevelScore;
+            // never bank the autopilot demo's score (the cabinet runs isPlaying=true)
+            if (!inCabinet) submitBestScore(totalScore);
+        }
+        messageTimer.set(.6);   // brief beat to admire the landing, then the menu
+    }
+
+    explode()
+    {
+        if (gameState) return;
+        gameState = 2;
+        this.trail.emitRate = 0;
+        messageTimer.set(1.2);  // let the explosion play out before the menu pauses it
+        sfxBoom.play();
+        addScreenShake(1.6, .6);
+
+        makeExplosion(this.pos, this.velocity);
+        // best score is submitted by the game-over dialog (so it can flag NEW BEST)
+        this.destroy();
+    }
+
+    // demo autopilot: steer toward the pad and brake before touchdown.
+    // returns {rotate:-1..1, thrust:bool}. Not meant to play perfectly, just alive.
+    autoInput()
+    {
+        const dx = padX - this.pos.x;                 // horizontal offset to pad
+        const dy = this.pos.y - (padY + PAD_THICK + 1.5);
+        const v = this.velocity;
+
+        // desired tilt: a PD on horizontal position — lean toward the pad (dx term)
+        // and BRAKE against sideways drift (-v.x term) so it settles over the pad
+        // instead of sailing past. (dx is flipped from the original port because the
+        // engine's thrust-vs-angle direction is mirrored; the brake term opposes v.x.)
+        let wantAngle = clamp(dx*.05 - v.x*3, -.5, .5);
+        if (dy < 6) wantAngle = clamp(dx*.02 - v.x*4, -SAFE_ANGLE*.6, SAFE_ANGLE*.6);
+
+        // rotate toward wantAngle, damping out spin (stable PD controller)
+        const rotate = clamp((wantAngle - this.angle)*8 - this.angleVelocity*40, -1, 1);
+
+        // thrust to arrest descent / climb back up; ease off near a soft touchdown
+        const targetFall = dy < 4 ? -.03 : (dy < 12 ? -.06 : -.10);
+        let thrust = v.y < targetFall && abs(this.angle) < .55;
+        if (dy < 1 && v.length() < SAFE_SPEED*.7) thrust = false; // settle onto pad
+
+        return {rotate, thrust};
+    }
+
+    update()
+    {
+        if (gameState) return;
+
+        // rotation: keyboard + analog stick + shoulder buttons
+        const moveInput = keyDirection();
+        let rotateInput = moveInput.x;
+        const stickX = gamepadStick(0).x;
+        if (abs(stickX) > .2) rotateInput += stickX;
+        if (gamepadIsDown(4)) rotateInput += 1;
+        if (gamepadIsDown(5)) rotateInput -= 1;
+        rotateInput = clamp(rotateInput, -1, 1);
+
+        // main thrust (Up/W/Space + gamepad A + touch button)
+        let thrustHeld = moveInput.y > 0 || keyIsDown('Space') || gamepadIsDown(0);
+
+        // demo (cabinet #demo): the autopilot supplies all input — fly and land
+        if (inCabinet)
+        {
+            const ai = this.autoInput();
+            rotateInput = ai.rotate;
+            thrustHeld = ai.thrust;
+        }
+        // menu mode (title, not playing): the lander rests idle on the pad — no
+        // autopilot, no input drives it (a calm static scene behind the menu)
+        else if (!isPlaying())
+        {
+            rotateInput = 0;
+            thrustHeld = false;
+        }
+
+        this.applyAngularAcceleration(rotateInput * TURN_POWER);
+
+        const canThrust = thrustHeld && this.fuel > 0;
+        this.thrusting = canThrust;
+
+        // drive the exhaust plume from the nozzle, firing opposite the ship's "up"
+        this.trail.pos = this.pos.add(vec2(0,-1.08).rotate(this.angle));
+        this.trail.angle = this.angle + PI;
+        this.trail.emitRate = canThrust ? 280 : 0;
+
+        if (canThrust)
+        {
+            this.applyAcceleration(this.getUp(THRUST_POWER));
+            this.fuel = max(0, this.fuel - FUEL_BURN*timeDelta);
+            this.applyAcceleration(randVec2(.00015)); // tiny hover jitter
+
+            if (!this.thrustSoundTimer.active())
+            {
+                sfxThrust.play();
+                this.thrustSoundTimer.set(.08);
+            }
+        }
+
+        // out of bounds -> crash
+        if (abs(this.pos.x) > WORLD_HALF_WIDTH + 12 || this.pos.y < TERRAIN_BASE - 60)
+            this.explode();
+    }
+
+    updatePhysics()
+    {
+        if (gameState) return;   // frozen once landed; gone once crashed
+        super.updatePhysics();
+
+        // custom collision against the smooth terrain surface
+        let hit = false, onPad = true;
+        for (const p of this.contactPoints())
+        {
+            if (p.y <= getTerrainY(p.x))
+            {
+                hit = true;
+                if (abs(p.x - padX) > padWidth/2 - .15)
+                    onPad = false;
+            }
+        }
+
+        if (hit)
+        {
+            lastTouchdownSpeed = this.velocity.length();
+            if (onPad && this.isSafeLanding())
+                this.land();
+            else
+                this.explode();
+        }
+    }
+
+    render()
+    {
+        if (this.destroyed) return;
+        const w = v => this.pos.add(v.rotate(this.angle));
+        const outline = rgb(.08,.10,.16);
+
+        // landing legs + foot pads (behind body)
+        const legCol = rgb(.66,.69,.76);
+        for (const sx of [-1, 1])
+        {
+            drawLine(w(vec2(sx*.34,-.74)), w(vec2(sx*.82,-1.46)), .12, legCol);
+            drawLine(w(vec2(sx*.62,-1.46)), w(vec2(sx*1.0,-1.46)), .15, legCol); // foot
+        }
+
+        // engine nozzle (the flame connects right here)
+        drawPoly([vec2(-.22,-.9), vec2(.22,-.9), vec2(.14,-1.12), vec2(-.14,-1.12)],
+            rgb(.28,.30,.36), .05, outline, this.pos, this.angle);
+
+        // fins
+        const finCol = rgb(.82,.30,.26);
+        drawPoly([vec2(-.46,-.18), vec2(-.82,-.84), vec2(-.4,-.66)], finCol, .05, outline, this.pos, this.angle);
+        drawPoly([vec2(.46,-.18),  vec2(.82,-.84),  vec2(.4,-.66)],  finCol, .05, outline, this.pos, this.angle);
+
+        // main hull (sleek capsule, pointed nose)
+        const body = [
+            vec2(0,1.18), vec2(.34,.6), vec2(.46,-.18),
+            vec2(.4,-.78), vec2(-.4,-.78), vec2(-.46,-.18), vec2(-.34,.6),
+        ];
+        drawPoly(body, rgb(.88,.90,.95), .1, outline, this.pos, this.angle);
+
+        // soft cylindrical shading down the right side
+        drawPoly([vec2(.06,1.0), vec2(.34,.6), vec2(.46,-.18), vec2(.4,-.78), vec2(.06,-.78)],
+            rgb(.32,.36,.46,.45), 0, undefined, this.pos, this.angle);
+        // highlight stripe down the left
+        drawLine(w(vec2(-.2,.5)), w(vec2(-.3,-.62)), .09, rgb(1,1,1,.5));
+
+        // nose cone accent
+        drawPoly([vec2(0,1.18), vec2(.34,.6), vec2(-.34,.6)], finCol, .05, outline, this.pos, this.angle);
+
+        // porthole window (rim + glass + glint)
+        const win = w(vec2(0,.28));
+        drawTile(win, vec2(.66), icons.circle, rgb(.62,.66,.74));
+        drawTile(win, vec2(.5),  icons.circle, rgb(.28,.55,1));
+        drawTile(win.add(vec2(-.1,.1).rotate(this.angle)), vec2(.18), icons.circle, rgb(.85,.92,1,.85));
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function buildMenus()
+{
+    if (typeof createMenu !== 'function') return;
+
+    // keep the title UNPAUSED so the calm idle scene keeps breathing behind the
+    // menu (twinkling stars, pulsing pad beacons — the lander itself sits still);
+    // pause only happens for menus surfaced during a real game (pause / dialogs)
+    installAutoPause(() => isPlaying());
+
+    setMenuTheme({accent:'#9cc4ff', font:'"Lucida Console", Monaco, monospace'});
+    createTitleMenu({
+        title: 'MOON LANDER',
+        titleFx: {fill:'outline', color:'#cdf'},
+        subtitle: 'Land gently on the glowing pad',
+        onPlay: startGame,
+        revealOnClick: false,
+        showBest: true,
+        formatBest: n => 'BEST ' + n,
+        items: [
+            {type:'button', label:'HELP', onClick: () => pushMenu('help')},
+        ],
+    });
+
+    createHelpMenu({
+        title: 'HELP',
+        text: 'Guide your lander to the glowing pad without crashing. Score points for each safe landing — earn bonuses for a gentle touchdown and leftover fuel. Each level the pad gets smaller and fuel is scarcer.',
+        extraItems: [
+            {type:'text', text:'Left / Right · Rotate   Up / Space · Thrust'},
+        ],
+    });
+
+    createPauseMenu({
+        onRestart: startGame,
+        onQuit:    quitToIdleTitle,
+    });
+
+    installDefaultToolbar({landscapeStack:true});
+}
+
+// End-of-round menus. Routed through menus.js dialogs (DOM pointer events) so
+// CONTINUE / GAME OVER work on touch — the on-screen gamepad owns raw touches,
+// so a tap never reaches mouseWasPressed and a canvas "tap to continue" can't fire.
+function showLevelCleared()
+{
+    showAlertDialog({
+        title:   `LEVEL ${level} CLEARED!`,
+        message: `+${lastLevelScore}\nTotal ${totalScore}`,
+        okLabel: 'CONTINUE',
+        onOk:    () => startLevel(level + 1),
+    });
+}
+
+function showGameOver()
+{
+    showGameOverDialog({
+        score:      totalScore,
+        format:     s => 'Score ' + s,
+        extraLines: [`Reached level ${level}`],
+        onContinue: quitToIdleTitle,
+    });
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function gameInit()
+{
+    saveDataInit('lunarLander');
+
+    icons = initDefaultAtlas();
+
+    // build a deep, layered starfield once (screen-space, parallax by depth)
+    // stateless seeded starfield (gameFx.js Starfield). size/alpha ranges
+    // reproduce L.size*rand(1.3,.7) and L.alpha*rand(1,.5); twSpeed range is
+    // rand(L.twk,.3); twinkleBase:.55 + twinkleAmp:.45 is the old oscillate pulse.
+    const _starTints = [rgb(.7,.8,1), rgb(1,.85,.7)];
+    starfield = new Starfield({
+        screenSpace: true,
+        area: vec2(2000),
+        twinkleBase: .55, twinkleAmp: .45,
+        layers: [
+            { count:180, parallax:.7,  sizeMin:.97,  sizeMax:1.79, alphaMin:.225, alphaMax:.45, twSpeedMin:.3, twSpeedMax:1.5, tintChance:.15, tints:_starTints }, // far
+            { count:90,  parallax:1.8, sizeMin:1.45, sizeMax:2.69, alphaMin:.35,  alphaMax:.7,  twSpeedMin:.3, twSpeedMax:2.5, tintChance:.25, tints:_starTints }, // mid
+            { count:40,  parallax:3.4, sizeMin:2.09, sizeMax:3.89, alphaMin:.475, alphaMax:.95, twSpeedMin:.3, twSpeedMax:4.0, tintChance:.4,  tints:_starTints }, // near
+        ],
+    });
+
+    startLevel(1);
+    buildMenus();
+
+    // mute all game audio while sitting at the title (menu clicks still play)
+    setSilentAttract(true);
+
+    if (inCabinet)
+        // cabinet: skip the title and self-run a live game — the autopilot flies
+        // and lands the lander; gameUpdate loops it (next level / restart on crash).
+        startGame();
+    else
+        // normal launch: a calm idle scene — the lander rests on the pad behind the
+        // menu (nothing flying) until the player presses PLAY to start a game.
+        showMenu('title');
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function gameUpdate()
+{
+    if (bindPauseKey({when: () => isPlaying() && !gameState})) return;
+
+    // title-screen attract: a calm static scene — the lander rests idle on the
+    // pad behind the menu. No autopilot, no menus, no scoring, nothing to advance.
+    if (!isPlaying())
+        return;
+
+    if (keyWasPressed('KeyR'))
+        startGame();
+
+    // cabinet demo loops itself with no menus: next level on a landing, restart
+    // on a crash (once the landing/explosion message has played out)
+    if (inCabinet)
+    {
+        if (gameState && messageTimer.elapsed())
+        {
+            if (gameState === 1) startLevel(level + 1);
+            else                 startGame();
+        }
+        return;
+    }
+
+    // once the landing/explosion has played, surface the end-of-round menu;
+    // it handles continue on every device (keyboard, mouse, gamepad, touch)
+    if (gameState && messageTimer.elapsed() && !isMenuVisible())
+    {
+        if (gameState === 1) showLevelCleared();
+        else                 showGameOver();
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Title attract: frame the resting lander + the pad with the surface near the
+// bottom of the screen and sky above (so it isn't buried deep in the ground).
+function frameMenuCamera()
+{
+    if (!player || !landingPad) return;
+    const ship = player.pos, pad = landingPad.pos;
+    const surfY = min(ship.y - 1.5, pad.y);                 // ground level beneath them
+    const center = vec2((ship.x + pad.x) / 2, surfY);
+    const box = vec2(max(abs(ship.x - pad.x) + 8, CAMERA_MENU_MINW), 1);
+    camTarget = center.copy();
+    camSize = box.copy();
+    cameraFit(center, box, {top: CAMERA_MENU_SKY, bottom: CAMERA_MENU_GROUND});
+}
+
+function gameUpdatePost()
+{
+    // Title attract: frame the resting lander every frame (adapts to canvas size).
+    // gameState is 1 here, so this must run before the win/crash freeze below.
+    if (!isPlaying())
+    {
+        frameMenuCamera();
+        return;
+    }
+
+    if (gameState)
+        return; // freeze camera on win/crash (real game)
+
+    if (landingPad && player && !player.destroyed)
+    {
+        // Frame a box around the ship + pad, centered between them, never smaller
+        // than CAMERA_FIT_MIN so touchdown isn't over-zoomed. cameraFit derives
+        // cameraPos + cameraScale, keeping the view consistent across canvas sizes.
+        const ship = player.pos, pad = landingPad.pos;
+        const target = ship.lerp(pad, .5);
+        const box = vec2(
+            max(abs(ship.x - pad.x), CAMERA_FIT_MIN.x),
+            max(abs(ship.y - pad.y), CAMERA_FIT_MIN.y));
+        camTarget = camTarget.lerp(target, .12);
+        camSize   = camSize.lerp(box, .08);
+        cameraFit(camTarget, camSize, CAMERA_FIT_MARGIN);
+    }
+    else
+    {
+        camTarget = camTarget.lerp(player ? player.pos : camTarget, .12);
+        camSize   = camSize.lerp(CAMERA_FIT_MIN, .05);
+        cameraFit(camTarget, camSize, CAMERA_FIT_MARGIN);
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Background rendering (screen-space sky/stars/Earth, world-space mountains)
+
+function renderSky()
+{
+    const W = mainCanvasSize.x, H = mainCanvasSize.y;
+    // one big atmosphere gradient: deep space up top, faint glow toward the horizon
+    drawRectGradient(vec2(W/2, H/2), vec2(W, H),
+        BLACK, hsl(.75,1,.1), 0, true, true);
+}
+
+function renderStars()
+{
+    starfield.draw();
+}
+
+function renderEarth()
+{
+    const W = mainCanvasSize.x, H = mainCanvasSize.y;
+    // very far parallax, sits high in the sky
+    const ex = mod(W*.78 - cameraPos.x*6, W*1.6) - W*.3;
+    const ey = H*.20 + cameraPos.y*4;
+    const p = vec2(ex, ey);
+    // shrink the whole Earth to half size in the cabinet demo
+    const s = inCabinet ? .5 : 1;
+    drawTile(p, vec2(360*s), icons.glow, rgb(.35,.6,1,.22), 0, false, undefined, true, true); // atmosphere
+    drawTile(p, vec2(150*s), icons.circle, rgb(.16,.4,.78), 0, false, undefined, true, true); // ocean
+    drawTile(p.add(vec2(-30,-25).scale(s)), vec2(55*s), icons.circle, rgb(.3,.6,.42,.9), 0, false, undefined, true, true); // land
+    drawTile(p.add(vec2(40,30).scale(s)),   vec2(42*s), icons.circle, rgb(.32,.58,.4,.9), 0, false, undefined, true, true);
+    drawTile(p.add(vec2(10,-50).scale(s)),  vec2(30*s), icons.circle, rgb(.9,.95,1,.5), 0, false, undefined, true, true);  // cloud/ice
+    drawCrescent(p, 152*s, .15, hsl(0,0,0,.7), 1, false, 0, BLACK, glEnable, true);;
+}
+
+// filled silhouette across the visible range, drawn as a WebGL triangle strip
+// (top/bottom vertex pairs) so concave terrain fills correctly and stays cheap
+function renderTerrainLayer(evalFn, color, samples, rim)
+{
+    const camSize = getCameraSize();
+    const left  = cameraPos.x - camSize.x/2 - 2;
+    const right = cameraPos.x + camSize.x/2 + 2;
+    const bottom = cameraPos.y - camSize.y/2 - 3;
+
+    const strip = [], tops = [];
+    for (let i = 0; i <= samples; ++i)
+    {
+        const x = lerp(left, right, i/samples);
+        const top = vec2(x, evalFn(x));
+        tops.push(top);
+        strip.push(top, vec2(x, bottom));
+    }
+    glDrawPoints(strip, color.rgbaInt()); // filled band
+
+    if (rim)
+        drawLineList(tops, .16, rim);     // lit surface edge
+}
+
+function renderPad()
+{
+    const c = landingPad.pos;
+    // glow + slab
+    drawTile(c.add(vec2(0,.1)), vec2(padWidth*1.5, 1.4), icons.circle, rgb(.2,1,.4,.12));
+    drawRect(c, vec2(padWidth, PAD_THICK), rgb(.18,.9,.38));
+    drawRect(c.add(vec2(0,.06)), vec2(padWidth, PAD_THICK*.4), rgb(.55,1,.7,.7));
+
+    // pulsing beacons at each end
+    const pulse = .6 + .4*oscillate(2.5, 1, time);
+    for (const sx of [-1, 1])
+    {
+        const b = vec2(padX + sx*padWidth/2, padY + PAD_THICK);
+        drawTile(b.add(vec2(0,.9)), vec2(2.4*pulse), icons.glow, rgb(1,.4,.2,.4*pulse));
+        drawLine(b, b.add(vec2(0,1.8)), .22, rgb(.6,.2,.1));
+        drawTile(b.add(vec2(0,1.9)), vec2(.55), icons.circle, rgb(1, .55, .25, pulse));
+    }
+}
+
+function gameRender()
+{
+    renderSky();
+    renderStars();
+    renderEarth();
+
+    // distant parallax silhouettes (darkest, behind) -> main terrain (lit rim)
+    renderTerrainLayer(x => evalOctaves(distFar, x), rgb(.07,.08,.14), 50);
+    renderTerrainLayer(x => evalOctaves(distMid, x), rgb(.12,.13,.20), 70);
+    renderTerrainLayer(getTerrainY, rgb(.20,.20,.26), 120, rgb(.45,.47,.55));
+
+    renderPad();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// One HUD gauge: label + filled bar (+ optional safe-limit tick), screen space
+function hudBar(x, y, w, label, frac, color, tickFrac)
+{
+    const labelW = 44, h = 13;
+    const bx = x + labelW, bw = w - labelW;
+    drawTextScreen(label, vec2(x, y), 15, rgb(1,1,1,.85), 3, rgb(0,0,0,.7), 'left');
+    drawRect(vec2(bx + bw/2, y), vec2(bw+4, h+4), rgb(.06,.07,.11,.95), 0, false, true);
+    const f = clamp(frac, 0, 1);
+    drawRect(vec2(bx + bw*f/2, y), vec2(bw*f, h), color, 0, false, true);
+    if (tickFrac != null)
+        drawRect(vec2(bx + bw*clamp(tickFrac,0,1), y), vec2(2, h+8), rgb(1,1,1,.9), 0, false, true);
+}
+
+function gameRenderPost()
+{
+    if (!isPlaying() || inCabinet) return;   // no instrument panel on the idle title or the demo
+
+    const alive = player && !player.destroyed;
+    const fuel = alive ? player.fuel : 0;
+    const maxFuel = player ? player.maxFuel : 80;
+    const vel = alive ? player.velocity.length() : 0;
+    const ang = alive ? abs(player.angle) : 0;
+    const alt = alive ? max(0, player.pos.y - getTerrainY(player.pos.x)) : 0;
+
+    // --- instrument panel, top-LEFT (top-right stays clear for the toolbar) ---
+    const px = 16, py = 14, pw = 252, ph = 150;
+    drawRect(vec2(px+pw/2, py+ph/2), vec2(pw+4, ph+4), rgb(.4,.55,.9,.18), 0, false, true); // border
+    drawRect(vec2(px+pw/2, py+ph/2), vec2(pw, ph), rgb(.04,.05,.09,.6), 0, false, true);    // bg
+
+    drawTextScreen(`LEVEL ${level}`, vec2(px+16, py+26), 26, rgb(1,1,1,.96), 4, rgb(0,0,0,.7), 'left');
+    drawTextScreen(`SCORE ${totalScore}`, vec2(px+16, py+54), 18, rgb(.72,.86,1,.96), 3, rgb(0,0,0,.7), 'left');
+    drawTextScreen(`ALT ${alt.toFixed(1)}`, vec2(px+pw-16, py+26), 18, rgb(.82,.9,1,.92), 3, rgb(0,0,0,.7), 'right');
+
+    // gauges: speed/tilt turn green inside the safe window, red/orange outside
+    const fFuel = fuel/maxFuel;
+    const safeC = rgb(.3,.9,.45), badC = rgb(1,.4,.25);
+    hudBar(px+16, py+84,  pw-32, 'FUEL', fFuel, fFuel < .25 ? rgb(1,.45,.2) : safeC, null);
+    hudBar(px+16, py+110, pw-32, 'SPD',  vel/(SAFE_SPEED*2.2), vel < SAFE_SPEED ? safeC : badC, 1/2.2);
+    hudBar(px+16, py+136, pw-32, 'TILT', ang/(SAFE_ANGLE*2.2), ang < SAFE_ANGLE ? safeC : badC, 1/2.2);
+
+    // end-of-round messaging is handled by the menus.js dialogs (showLevelCleared /
+    // showGameOver) so it works on touch; the brief delay before they appear lets
+    // the landing settle / the explosion play.
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Startup LittleJS Engine
+engineInit(gameInit, gameUpdate, gameUpdatePost, gameRender, gameRenderPost);
+
+</script>
