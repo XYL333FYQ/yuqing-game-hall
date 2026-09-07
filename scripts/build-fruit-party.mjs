@@ -1,4 +1,4 @@
-import { cp, mkdir, rm } from "node:fs/promises";
+import { cp, mkdir, readdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "vite";
@@ -16,6 +16,7 @@ await build({
   root: sourceRoot,
   configFile: false,
   base: "./",
+  publicDir: path.join(sourceRoot, "public"),
   build: {
     outDir: stagingRoot,
     emptyOutDir: true,
@@ -26,6 +27,14 @@ await build({
 
 await mkdir(publicRoot, { recursive: true });
 await cp(path.join(stagingRoot, "index.html"), path.join(publicRoot, "index.html"));
+await cp(path.join(stagingRoot, "fruit-party.config.js"), path.join(publicRoot, "fruit-party.config.js"));
+const publicAssets = path.join(publicRoot, "assets");
+await mkdir(publicAssets, { recursive: true });
+for (const entry of await readdir(publicAssets)) {
+  if (/^index-.*\.(?:css|js|js\.map)$/.test(entry) || /^smiley-sans-oblique-.*\.woff2$/.test(entry)) {
+    await rm(path.join(publicAssets, entry), { force: true });
+  }
+}
 await cp(path.join(stagingRoot, "assets"), path.join(publicRoot, "assets"), { recursive: true });
 // 保留游戏已有的材质、字体、音频等资源；构建只更新 bundle。
 const sourceAssets = path.join(sourceRoot, "assets");

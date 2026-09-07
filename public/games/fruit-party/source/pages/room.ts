@@ -1,5 +1,6 @@
-import { canPlayGames } from "../ui/platform";
-import { bindCopyUrl, desktopGate, siteFooter, siteHeader } from "../ui/platform";
+import { absoluteFruitPartyUrl, fruitPartyHref, navigateToFruitParty } from "../router";
+import { canPlayGames } from "../ui/shell";
+import { bindCopyUrl, desktopGate, siteFooter, siteHeader } from "../ui/shell";
 import { MultiplayerClient } from "../network/MultiplayerClient";
 import { roomRequest } from "../network/roomRequest";
 import { isRoomCredentials, roomCredentialKey, type RoomCredentials, type RoomSnapshot, type ServerMessage } from "../server/protocol";
@@ -19,7 +20,7 @@ export function renderRoom(root: HTMLElement, rawCode: string): () => void {
   document.body.dataset.page = "game";
   if (!canPlayGames()) {
     document.body.dataset.page = "site";
-    root.innerHTML = `<div class="site-shell">${siteHeader("games")}<main class="narrow-page"><a class="back-link" href="/games/fruit-party" data-nav>← 返回游戏介绍</a>${desktopGate("联机比赛请在电脑上进行")}</main>${siteFooter()}</div>`;
+    root.innerHTML = `<div class="site-shell">${siteHeader("games")}<main class="narrow-page"><a class="back-link" href="${fruitPartyHref("home")}" data-game-nav>← 返回游戏介绍</a>${desktopGate("联机比赛请在电脑上进行")}</main>${siteFooter()}</div>`;
     return bindCopyUrl(root);
   }
 
@@ -29,7 +30,7 @@ export function renderRoom(root: HTMLElement, rawCode: string): () => void {
   root.innerHTML = `
     <main class="room-shell">
       <header class="room-toolbar">
-        <a class="toolbar-brand" href="/games/fruit-party/online" data-nav>← <span>联机大厅</span></a>
+        <a class="toolbar-brand" href="${fruitPartyHref("online")}" data-game-nav>← <span>联机大厅</span></a>
         <div class="room-identity"><span>房间</span><button type="button" data-action="copy-code" title="复制房间码">${code}</button></div>
         <div class="toolbar-actions room-toolbar-actions">
           <button type="button" data-action="mute" aria-pressed="false">声音</button>
@@ -60,7 +61,7 @@ export function renderRoom(root: HTMLElement, rawCode: string): () => void {
           <div><small data-match-opponent-name>对手</small><strong data-match-opponent-score>0</strong><span data-match-opponent-lives></span></div>
         </div>
         <div class="match-result" hidden>
-          <div><p class="kicker" data-result-kicker>比赛结束</p><h2 data-result-title>本局结束</h2><p data-result-detail></p><button class="button primary" type="button" data-action="rematch">再来一场</button><a class="text-link" href="/games/fruit-party/online" data-nav>返回联机大厅</a></div>
+          <div><p class="kicker" data-result-kicker>比赛结束</p><h2 data-result-title>本局结束</h2><p data-result-detail></p><button class="button primary" type="button" data-action="rematch">再来一场</button><a class="text-link" href="${fruitPartyHref("online")}" data-game-nav>返回联机大厅</a></div>
         </div>
         <button class="forfeit-button" type="button" data-action="forfeit">认输并离开</button>
       </section>
@@ -251,7 +252,7 @@ export function renderRoom(root: HTMLElement, rawCode: string): () => void {
     }
     if (button.dataset.action === "copy-code") {
       try {
-        await navigator.clipboard.writeText(`${window.location.origin}/room/${code}`);
+        await navigator.clipboard.writeText(absoluteFruitPartyUrl("room", code));
         button.textContent = "已复制";
       } catch {
         button.textContent = "复制失败";
@@ -265,8 +266,7 @@ export function renderRoom(root: HTMLElement, rawCode: string): () => void {
 
   const navigateToLobby = (): void => {
     if (forfeitNavigateTimer !== undefined) window.clearTimeout(forfeitNavigateTimer);
-    window.history.pushState({}, "", "/games/fruit-party/online");
-    window.dispatchEvent(new PopStateEvent("popstate"));
+    navigateToFruitParty("online");
   };
 
   return () => {
@@ -289,7 +289,7 @@ function renderRoomJoin(root: HTMLElement, code: string): () => void {
   const nickname = readNickname();
   root.innerHTML = `
     <div class="site-shell">${siteHeader("games")}<main class="narrow-page">
-      <a class="back-link" href="/games/fruit-party/online" data-nav>← 返回联机大厅</a>
+      <a class="back-link" href="${fruitPartyHref("online")}" data-game-nav>← 返回联机大厅</a>
       <section class="direct-join"><p class="kicker">房间码 ${code}</p><h1>加入朋友的房间</h1><p>输入昵称后即可进入，比赛会在双方都准备好后开始。</p><label class="field"><span>你的昵称</span><input maxlength="12" value="${escapeHtml(nickname)}" placeholder="2–12 个字符"></label><button class="button primary full" type="button">加入房间</button><p class="form-error" role="alert"></p></section>
     </main>${siteFooter()}</div>`;
   const button = root.querySelector<HTMLButtonElement>("button")!;

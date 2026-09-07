@@ -1,5 +1,6 @@
-import { canPlayGames } from "../ui/platform";
-import { bindCopyUrl, desktopGate, siteHeader } from "../ui/platform";
+import { fruitPartyHref } from "../router";
+import { canPlayGames } from "../ui/shell";
+import { bindCopyUrl, desktopGate, siteHeader } from "../ui/shell";
 import { FruitNinjaEngine } from "../FruitNinjaEngine";
 import { GameAudio } from "../GameAudio";
 import { PointerBladeController } from "../PointerBladeController";
@@ -8,7 +9,7 @@ export function renderFruitPlay(root: HTMLElement): () => void {
   document.title = "单人无尽 · 果切派对";
   if (!canPlayGames()) {
     document.body.dataset.page = "site";
-    root.innerHTML = `<div class="site-shell">${siteHeader("games")}<main class="narrow-page"><a class="back-link" href="/games/fruit-party" data-nav>← 返回游戏介绍</a>${desktopGate()}</main></div>`;
+    root.innerHTML = `<div class="site-shell">${siteHeader("games")}<main class="narrow-page"><a class="back-link" href="${fruitPartyHref("home")}" data-game-nav>← 返回游戏介绍</a>${desktopGate()}</main></div>`;
     return bindCopyUrl(root);
   }
 
@@ -16,7 +17,7 @@ export function renderFruitPlay(root: HTMLElement): () => void {
   root.innerHTML = `
     <main class="play-shell">
       <div class="play-toolbar">
-        <a class="toolbar-brand" href="/games/fruit-party" data-nav><b>←</b><span><strong>果切派对</strong><small>经典无尽</small></span></a>
+        <a class="toolbar-brand" href="${fruitPartyHref("home")}" data-game-nav><b>←</b><span><strong>果切派对</strong><small>经典无尽</small></span></a>
         <div class="toolbar-actions">
           <button type="button" data-action="mute" aria-pressed="false">声音</button>
           <button type="button" data-action="pause">暂停</button>
@@ -41,7 +42,7 @@ export function renderFruitPlay(root: HTMLElement): () => void {
           </div>
         </div>
         <div class="game-result" hidden>
-          <div><img class="result-art" data-result-art src="./assets/fruits/orange.svg" alt=""><p class="kicker">本局成绩</p><h2 data-result-score>0 分</h2><p data-result-copy>再来一局，超过自己。</p><button class="button primary" type="button" data-action="restart">再来一局</button><nav class="result-links" aria-label="结算页操作"><a class="text-link" href="/games/fruit-party" data-nav>返回游戏介绍</a><a class="text-link" href="/games/fruit-party/arcade" data-nav>进入街机挑战 <span>→</span></a></nav></div>
+          <div><img class="result-art" data-result-art src="./assets/fruits/orange.svg" alt=""><p class="kicker">本局成绩</p><h2 data-result-score>0 分</h2><p data-result-copy>再来一局，超过自己。</p><button class="button primary" type="button" data-action="restart">再来一局</button><nav class="result-links" aria-label="结算页操作"><a class="text-link" href="${fruitPartyHref("home")}" data-game-nav>返回游戏介绍</a><a class="text-link" href="${fruitPartyHref("arcade")}" data-game-nav>进入街机挑战 <span>→</span></a></nav></div>
         </div>
         <div class="mouse-hint">按住鼠标左键拖动 · P 暂停</div>
       </section>

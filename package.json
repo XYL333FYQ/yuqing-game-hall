@@ -7,6 +7,7 @@
   "scripts": {
     "games:catalog": "node scripts/generate-game-catalog.mjs",
     "build:fruit-party": "node scripts/build-fruit-party.mjs",
+    "build:fruit-party:server": "wrangler deploy --dry-run --config public/games/fruit-party/wrangler.jsonc --outdir ../../../output/fruit-party-worker-check",
     "games:build": "node scripts/build-games.mjs",
     "prepare-assets": "npm run games:catalog && npm run games:build && node scripts/copy-mediapipe-assets.mjs && node scripts/copy-legal-assets.mjs && node scripts/check-game-assets.mjs",
     "check:games": "node scripts/check-game-assets.mjs",
@@ -17,10 +18,12 @@
     "build": "npm run check && vite build && node scripts/check-deploy-limits.mjs && wrangler deploy --dry-run --outdir output/wrangler-check && node scripts/check-worker-bundle.mjs output/wrangler-check",
     "check": "npm run games:catalog && tsc --noEmit && tsc -p tsconfig.worker.json --noEmit",
     "check:games:types": "tsc -p tsconfig.games.json --noEmit",
+    "check:fruit-party:server": "tsc -p tsconfig.fruit-worker.json --noEmit",
     "pretest": "npm run games:catalog",
     "test": "npm run check:games:types && vitest run",
     "preview": "vite preview --host 0.0.0.0",
     "dev:cloudflare": "npm run build && wrangler dev",
+    "dev:fruit-party:server": "wrangler dev --config public/games/fruit-party/wrangler.jsonc --port 8790",
     "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {

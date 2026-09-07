@@ -1,5 +1,6 @@
-import { canPlayGames } from "../ui/platform";
-import { bindCopyUrl, desktopGate, siteHeader } from "../ui/platform";
+import { fruitPartyHref } from "../router";
+import { canPlayGames } from "../ui/shell";
+import { bindCopyUrl, desktopGate, siteHeader } from "../ui/shell";
 import { FruitNinjaEngine } from "../FruitNinjaEngine";
 import { GameAudio } from "../GameAudio";
 import { PointerBladeController } from "../PointerBladeController";
@@ -14,7 +15,7 @@ export function renderFruitArcade(root: HTMLElement): () => void {
   document.title = "90 秒街机 · 果切派对";
   if (!canPlayGames()) {
     document.body.dataset.page = "site";
-    root.innerHTML = `<div class="site-shell">${siteHeader("games")}<main class="narrow-page"><a class="back-link" href="/games/fruit-party" data-nav>← 返回游戏介绍</a>${desktopGate()}</main></div>`;
+    root.innerHTML = `<div class="site-shell">${siteHeader("games")}<main class="narrow-page"><a class="back-link" href="${fruitPartyHref("home")}" data-game-nav>← 返回游戏介绍</a>${desktopGate()}</main></div>`;
     return bindCopyUrl(root);
   }
 
@@ -25,8 +26,8 @@ export function renderFruitArcade(root: HTMLElement): () => void {
   root.innerHTML = `
     <main class="play-shell arcade-shell">
       <div class="play-toolbar">
-        <a class="toolbar-brand" href="/games/fruit-party" data-nav><b>←</b><span><strong>果切派对</strong><small>90 秒街机</small></span></a>
-        <div class="toolbar-mode-switch" aria-label="游戏模式"><span>街机挑战</span><a href="/games/fruit-party/play" data-nav>经典无尽</a></div>
+        <a class="toolbar-brand" href="${fruitPartyHref("home")}" data-game-nav><b>←</b><span><strong>果切派对</strong><small>90 秒街机</small></span></a>
+        <div class="toolbar-mode-switch" aria-label="游戏模式"><span>街机挑战</span><a href="${fruitPartyHref("play")}" data-game-nav>经典无尽</a></div>
         <div class="toolbar-actions">
           <button type="button" data-action="mute" aria-pressed="false">声音</button>
           <button type="button" data-action="pause">暂停</button>
@@ -67,8 +68,8 @@ export function renderFruitArcade(root: HTMLElement): () => void {
             <p class="daily-result" data-result-daily>今日挑战尚未完成</p>
             <button class="button primary" type="button" data-action="restart">再挑战一次</button>
             <nav class="result-links" aria-label="结算页操作">
-              <a class="text-link" href="/games/fruit-party" data-nav>返回游戏介绍</a>
-              <a class="text-link" href="/games/fruit-party/play" data-nav>切换到经典无尽 <span>→</span></a>
+              <a class="text-link" href="${fruitPartyHref("home")}" data-game-nav>返回游戏介绍</a>
+              <a class="text-link" href="${fruitPartyHref("play")}" data-game-nav>切换到经典无尽 <span>→</span></a>
             </nav>
           </div>
         </div>

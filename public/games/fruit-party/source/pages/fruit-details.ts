@@ -1,16 +1,17 @@
-import { canPlayGames } from "../ui/platform";
-import { bindCopyUrl, desktopGate, siteFooter, siteHeader } from "../ui/platform";
+import { fruitPartyHref } from "../router";
+import { canPlayGames } from "../ui/shell";
+import { bindCopyUrl, desktopGate, siteFooter, siteHeader } from "../ui/shell";
 import { fruitArtwork } from "../artwork";
 
 export function renderFruitDetails(root: HTMLElement): () => void {
-  document.title = "果切派对 · 雨晴游戏厅";
+  document.title = "果切派对";
   document.body.dataset.page = "site";
   const playable = canPlayGames();
   root.innerHTML = `
     <div class="site-shell">
       ${siteHeader("games")}
       <main class="game-detail">
-        <a class="back-link" href="/" data-nav>← 返回游戏厅</a>
+        <a class="back-link" href="${fruitPartyHref("play")}" data-game-nav>← 返回经典无尽</a>
         <section class="detail-hero">
           <div class="detail-copy">
             <p class="detail-index">游戏 01 · 已开放</p>
@@ -19,9 +20,9 @@ export function renderFruitDetails(root: HTMLElement): () => void {
             <p class="detail-lead">水果起飞，刀光落下。单人挑战自己的极限，或者用同一套水果序列和朋友公平对决。</p>
             <div class="detail-actions">
               ${playable ? `
-                <a class="button primary" href="/games/fruit-party/arcade" data-nav>90 秒街机</a>
-                <a class="button secondary" href="/games/fruit-party/play" data-nav>经典无尽</a>
-                <a class="button secondary compact" href="/games/fruit-party/online" data-nav>好友联机</a>` : `
+                <a class="button primary" href="${fruitPartyHref("arcade")}" data-game-nav>90 秒街机</a>
+                <a class="button secondary" href="${fruitPartyHref("play")}" data-game-nav>经典无尽</a>
+                <a class="button secondary compact" href="${fruitPartyHref("online")}" data-game-nav>好友联机</a>` : `
                 <button class="button primary" type="button" disabled>请在电脑上游玩</button>`}
             </div>
             <dl class="quick-facts"><div><dt>怎么切</dt><dd>按住左键拖动</dd></div><div><dt>几个人</dt><dd>单人 / 双人</dd></div><div><dt>要准备什么</dt><dd>一台电脑</dd></div></dl>

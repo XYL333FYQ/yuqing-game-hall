@@ -1,6 +1,7 @@
 import type { GameSliceEvent } from "../types";
 import type { ClientMessage, RoomCredentials, ServerMessage } from "../server/protocol";
 import type { SliceClaim } from "../server/match";
+import { multiplayerWebSocketUrl } from "./serviceConfig";
 
 export class MultiplayerClient {
   private socket?: WebSocket;
@@ -21,13 +22,12 @@ export class MultiplayerClient {
   connect(): void {
     this.closed = false;
     this.onConnection(this.reconnectStartedAt ? "reconnecting" : "connecting");
-    const scheme = window.location.protocol === "https:" ? "wss:" : "ws:";
     const query = new URLSearchParams({
       player: this.credentials.playerId,
       token: this.credentials.token,
     });
     this.socket = new WebSocket(
-      `${scheme}//${window.location.host}/api/rooms/${this.credentials.code}/socket?${query}`,
+      multiplayerWebSocketUrl(`/api/rooms/${this.credentials.code}/socket?${query}`),
     );
     this.socket.addEventListener("open", () => {
       this.reconnectStartedAt = 0;

@@ -20,7 +20,8 @@ import { isValidRoomCode, ROOM_CODE_CHARACTERS } from "./protocol";
 
 interface Env {
   GAME_ROOMS: DurableObjectNamespace<GameRoom>;
-  ASSETS: Fetcher;
+  /** 逗号分隔的静态站点来源；同源请求始终允许。 */
+  ALLOWED_ORIGINS?: string;
 }
 
 interface PlayerState extends RoomPlayerView {
@@ -62,41 +63,50 @@ const CLIENT_MESSAGE_TYPES = new Set(["ready", "sliceBatch", "sync", "rematch", 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+    const apiRequest = url.pathname.startsWith("/api/");
+    const allowedOrigin = apiRequest ? resolveAllowedOrigin(request, env) : undefined;
+    if (apiRequest && allowedOrigin === null) {
+      return json({ error: "这个网站来源未获准连接果切多人服务。" }, 403);
+    }
+    if (apiRequest && request.method === "OPTIONS") {
+      return withCors(new Response(null, { status: 204 }), allowedOrigin);
+    }
     try {
-    if (url.pathname === "/api/health") {
-      return json({ ok: true, service: "yuqing-game-hall" });
-    }
-    if (request.method === "POST" && url.pathname === "/api/rooms") {
-      const input = await readJson(request);
-      const nickname = normalizeNickname(input.nickname);
-      const mode = normalizeMode(input.mode);
-      for (let attempt = 0; attempt < 8; attempt += 1) {
-        const code = randomCode();
-        const stub = env.GAME_ROOMS.getByName(code);
-        const response = await stub.fetch("https://room.internal/create", {
-          method: "POST",
-          body: JSON.stringify({ code, nickname, mode }),
-        });
-        if (response.status === 409) continue;
-        return response;
+      if (url.pathname === "/api/health") {
+        return withCors(json({ ok: true, service: "fruit-party-multiplayer" }), allowedOrigin);
       }
-      return json({ error: "暂时无法生成房间码，请重试。" }, 503);
-    }
+      if (request.method === "POST" && url.pathname === "/api/rooms") {
+        const input = await readJson(request);
+        const nickname = normalizeNickname(input.nickname);
+        const mode = normalizeMode(input.mode);
+        for (let attempt = 0; attempt < 8; attempt += 1) {
+          const code = randomCode();
+          const stub = env.GAME_ROOMS.getByName(code);
+          const response = await stub.fetch("https://room.internal/create", {
+            method: "POST",
+            body: JSON.stringify({ code, nickname, mode }),
+          });
+          if (response.status === 409) continue;
+          return withCors(response, allowedOrigin);
+        }
+        return withCors(json({ error: "暂时无法生成房间码，请重试。" }, 503), allowedOrigin);
+      }
 
-    const match = url.pathname.match(/^\/api\/rooms\/([^/]+)(\/join|\/socket)?$/i);
-    if (match && isValidRoomCode(match[1])) {
-      const code = match[1].toUpperCase();
-      const suffix = match[2] ?? "";
-      const stub = env.GAME_ROOMS.getByName(code);
-      const target = new URL(`https://room.internal${suffix || "/snapshot"}`);
-      target.search = url.search;
-      return stub.fetch(new Request(target, request));
-    }
+      const match = url.pathname.match(/^\/api\/rooms\/([^/]+)(\/join|\/socket)?$/i);
+      if (match && isValidRoomCode(match[1])) {
+        const code = match[1].toUpperCase();
+        const suffix = match[2] ?? "";
+        const stub = env.GAME_ROOMS.getByName(code);
+        const target = new URL(`https://room.internal${suffix || "/snapshot"}`);
+        target.search = url.search;
+        const response = await stub.fetch(new Request(target, request));
+        return response.status === 101 ? response : withCors(response, allowedOrigin);
+      }
 
-    if (url.pathname.startsWith("/api/")) return json({ error: "接口不存在。" }, 404);
-    return env.ASSETS.fetch(request);
+      if (apiRequest) return withCors(json({ error: "接口不存在。" }, 404), allowedOrigin);
+      return json({ error: "这里只运行果切多人后端；请从果切静态站点打开游戏。" }, 404);
     } catch (error) {
-      return json({ error: error instanceof Error ? error.message : "请求处理失败。" }, 400);
+      return withCors(json({ error: error instanceof Error ? error.message : "请求处理失败。" }, 400), allowedOrigin);
     }
   },
 } satisfies ExportedHandler<Env>;
@@ -597,6 +607,39 @@ function json(data: unknown, status = 200): Response {
       "cache-control": "no-store",
       "x-content-type-options": "nosniff",
     },
+  });
+}
+
+function resolveAllowedOrigin(request: Request, env: Env): string | undefined | null {
+  const origin = request.headers.get("Origin");
+  if (!origin) return undefined;
+  if (origin === new URL(request.url).origin) return origin;
+  const configured = (env.ALLOWED_ORIGINS ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  if (configured.includes("*")) return origin;
+  for (const value of configured) {
+    try {
+      if (new URL(value).origin === origin) return origin;
+    } catch {
+      // Ignore malformed entries instead of accidentally widening access.
+    }
+  }
+  return null;
+}
+
+function withCors(response: Response, origin: string | undefined | null): Response {
+  if (!origin) return response;
+  const headers = new Headers(response.headers);
+  headers.set("access-control-allow-origin", origin);
+  headers.set("access-control-allow-methods", "GET, POST, OPTIONS");
+  headers.set("access-control-allow-headers", "content-type");
+  headers.append("vary", "Origin");
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
   });
 }
 

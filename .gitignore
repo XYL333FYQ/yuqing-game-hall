@@ -6,6 +6,7 @@ output/playwright/
 output/wrangler/
 output/wrangler-dry-run/
 output/wrangler-check/
+output/fruit-party-worker-check/
 .wrangler/
 .dev.vars
 *.log
