@@ -25,7 +25,7 @@ export function renderFruitOnline(root: HTMLElement): () => void {
       <main class="online-page">
         <a class="back-link" href="/games/fruit-party" data-nav>← 返回果切派对</a>
         <header class="online-heading">
-          <div class="online-heading-art" aria-hidden="true"><img src="/games/fruit-party/assets/fruits/orange.svg" alt=""><b>对</b><img src="/games/fruit-party/assets/fruits/strawberry.svg" alt=""></div>
+          <div class="online-heading-art" aria-hidden="true"><img src="./assets/fruits/orange.svg" alt=""><b>对</b><img src="./assets/fruits/strawberry.svg" alt=""></div>
           <p class="kicker">好友对战</p><h1>和朋友开一局</h1><p>不需要账号。建房后把六位房间码发给朋友，双方准备好就会同步开始。</p>
         </header>
         <div class="online-layout">

@@ -12,13 +12,13 @@ import {
 import { fruitRadiusForInstance, fruitRadiusForViewport, fruitTypeByName } from "../data/fruits";
 
 const FRUIT_SPRITES: Partial<Record<FruitType["name"], string>> = {
-  watermelon: "/games/fruit-party/assets/fruits/watermelon.svg",
-  orange: "/games/fruit-party/assets/fruits/orange.svg",
-  apple: "/games/fruit-party/assets/fruits/apple.svg",
-  lemon: "/games/fruit-party/assets/fruits/lemon.svg",
-  kiwi: "/games/fruit-party/assets/fruits/kiwi.svg",
-  strawberry: "/games/fruit-party/assets/fruits/strawberry.svg",
-  bomb: "/games/fruit-party/assets/fruits/bomb.svg",
+  watermelon: "./assets/fruits/watermelon.svg",
+  orange: "./assets/fruits/orange.svg",
+  apple: "./assets/fruits/apple.svg",
+  lemon: "./assets/fruits/lemon.svg",
+  kiwi: "./assets/fruits/kiwi.svg",
+  strawberry: "./assets/fruits/strawberry.svg",
+  bomb: "./assets/fruits/bomb.svg",
 };
 
 const HALF_CACHE_SCALE = 3;

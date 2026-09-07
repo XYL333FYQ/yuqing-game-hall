@@ -43,9 +43,9 @@ export function renderRoom(root: HTMLElement, rawCode: string): () => void {
           <h1>等待双方准备</h1>
           <p class="lobby-mode">比赛规则：<strong data-room-mode>—</strong></p>
           <div class="versus-row">
-            <article class="player-seat me"><span class="player-avatar"><img src="/games/fruit-party/assets/fruits/orange.svg" alt=""><i>我</i></span><strong data-me-name>${escapeHtml(credentials.nickname)}</strong><small data-me-state>连接中</small></article>
+            <article class="player-seat me"><span class="player-avatar"><img src="./assets/fruits/orange.svg" alt=""><i>我</i></span><strong data-me-name>${escapeHtml(credentials.nickname)}</strong><small data-me-state>连接中</small></article>
             <b>对战</b>
-            <article class="player-seat opponent"><span class="player-avatar"><img src="/games/fruit-party/assets/fruits/strawberry.svg" alt=""><i>友</i></span><strong data-opponent-name>等待朋友加入</strong><small data-opponent-state>尚未加入</small></article>
+            <article class="player-seat opponent"><span class="player-avatar"><img src="./assets/fruits/strawberry.svg" alt=""><i>友</i></span><strong data-opponent-name>等待朋友加入</strong><small data-opponent-state>尚未加入</small></article>
           </div>
           <button class="button primary ready-button" type="button" data-action="ready" disabled>准备</button>
           <p class="share-hint">把房间码 <b>${code}</b> 发给朋友，或直接分享当前链接。</p>

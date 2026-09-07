@@ -15,11 +15,11 @@ interface MusicChannel {
 }
 
 const TRACK_URLS: Record<MusicTrack, string> = {
-  title: "/games/fruit-party/assets/music/title.ogg",
-  "level-1": "/games/fruit-party/assets/music/level-1.ogg",
-  "level-2": "/games/fruit-party/assets/music/level-2.ogg",
-  "level-3": "/games/fruit-party/assets/music/level-3.ogg",
-  ending: "/games/fruit-party/assets/music/ending.ogg",
+  title: "./assets/music/title.ogg",
+  "level-1": "./assets/music/level-1.ogg",
+  "level-2": "./assets/music/level-2.ogg",
+  "level-3": "./assets/music/level-3.ogg",
+  ending: "./assets/music/ending.ogg",
 };
 
 const FADE_MS = 720;

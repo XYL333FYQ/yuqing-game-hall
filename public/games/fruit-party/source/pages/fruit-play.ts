@@ -29,9 +29,9 @@ export function renderFruitPlay(root: HTMLElement): () => void {
           <div class="game-start-card">
             <span class="modal-label">经典无尽 · 越撑越快</span>
             <div class="game-start-visual" aria-hidden="true">
-              <img src="/games/fruit-party/assets/fruits/orange.svg" alt="">
+              <img src="./assets/fruits/orange.svg" alt="">
               <span></span>
-              <img src="/games/fruit-party/assets/fruits/bomb.svg" alt="">
+              <img src="./assets/fruits/bomb.svg" alt="">
             </div>
             <p class="kicker">单人无尽</p>
             <h1>按住左键，<br>一刀切开。</h1>
@@ -41,7 +41,7 @@ export function renderFruitPlay(root: HTMLElement): () => void {
           </div>
         </div>
         <div class="game-result" hidden>
-          <div><img class="result-art" data-result-art src="/games/fruit-party/assets/fruits/orange.svg" alt=""><p class="kicker">本局成绩</p><h2 data-result-score>0 分</h2><p data-result-copy>再来一局，超过自己。</p><button class="button primary" type="button" data-action="restart">再来一局</button><nav class="result-links" aria-label="结算页操作"><a class="text-link" href="/games/fruit-party" data-nav>返回游戏介绍</a><a class="text-link" href="/games/fruit-party/arcade" data-nav>进入街机挑战 <span>→</span></a></nav></div>
+          <div><img class="result-art" data-result-art src="./assets/fruits/orange.svg" alt=""><p class="kicker">本局成绩</p><h2 data-result-score>0 分</h2><p data-result-copy>再来一局，超过自己。</p><button class="button primary" type="button" data-action="restart">再来一局</button><nav class="result-links" aria-label="结算页操作"><a class="text-link" href="/games/fruit-party" data-nav>返回游戏介绍</a><a class="text-link" href="/games/fruit-party/arcade" data-nav>进入街机挑战 <span>→</span></a></nav></div>
         </div>
         <div class="mouse-hint">按住鼠标左键拖动 · P 暂停</div>
       </section>
@@ -62,7 +62,7 @@ export function renderFruitPlay(root: HTMLElement): () => void {
     onGameOver: (state) => {
       score.textContent = `${state.score} 分`;
       const hitBomb = state.gameOverReason === "bomb";
-      resultArt.src = hitBomb ? "/games/fruit-party/assets/fruits/bomb.svg" : "/games/fruit-party/assets/fruits/orange.svg";
+      resultArt.src = hitBomb ? "./assets/fruits/bomb.svg" : "./assets/fruits/orange.svg";
       resultCopy.textContent = hitBomb ? "炸弹不会预警；看清目标再出刀，别在果群里贪刀。" : "再来一局，超过自己。";
       result.hidden = false;
     },
