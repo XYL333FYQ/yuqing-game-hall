@@ -16,7 +16,6 @@ export interface LibraryGame {
   originalTitle?: string;
   mark: string;
   genre: string;
-  tagline: string;
   summary: string;
   status: LibraryGameStatus;
   statusLabel: string;
@@ -55,7 +54,6 @@ function toLibraryGame(game: GameManifest): LibraryGame {
     originalTitle: presentation.originalTitle,
     mark: presentation.mark,
     genre: presentation.category,
-    tagline: presentation.tagline,
     summary: presentation.description,
     status: presentation.availability.state,
     statusLabel: presentation.availability.label,

@@ -26,7 +26,7 @@ export function renderLibraryGame(root: HTMLElement, slug: string): () => void {
             <div class="library-actions">${actionMarkup(game)}</div>
           </div>
           <div class="library-detail-cover" aria-hidden="true">
-            <img src="${artwork(game, "hero")}" alt="">
+            <img src="${artwork(game)}" alt="">
             <span class="cover-grid"></span><span class="cover-orbit orbit-one"></span><span class="cover-orbit orbit-two"></span>
             <strong>${game.mark}</strong><small>${game.originalTitle ?? game.title}</small>
           </div>
@@ -56,9 +56,8 @@ export function renderLibraryGame(root: HTMLElement, slug: string): () => void {
   return () => undefined;
 }
 
-function artwork(game: LibraryGame, variant: "hero" | "cover"): string {
-  if (variant === "hero") return game.hero ?? game.cover ?? game.icon ?? FALLBACK_ART;
-  return game.cover ?? game.hero ?? game.icon ?? FALLBACK_ART;
+function artwork(game: LibraryGame): string {
+  return game.hero ?? game.cover ?? game.icon ?? FALLBACK_ART;
 }
 
 function actionMarkup(game: LibraryGame): string {
