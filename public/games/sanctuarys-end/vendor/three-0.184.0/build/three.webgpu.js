@@ -69500,7 +69500,8 @@ class WebGLBackend extends Backend {
 			antialias: renderer.currentSamples > 0,
 			alpha: true, // always true for performance reasons
 			depth: renderer.depth,
-			stencil: renderer.stencil
+			stencil: renderer.stencil,
+			powerPreference: parameters.powerPreference
 		};
 
 		const glContext = ( parameters.context !== undefined ) ? parameters.context : renderer.domElement.getContext( 'webgl2', contextAttributes );

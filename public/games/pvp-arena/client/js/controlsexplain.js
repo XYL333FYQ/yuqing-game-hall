@@ -14,43 +14,29 @@ function ControlsExplain(master) {
 		if (GAMECONTROLS.KEYBOARD)
 			controlSchemes.push({
 				label:"键盘",
-				stickers:[
-					{x1:0,y1:169,width:129,height:60,x2:-65,y2:8}
-				]
+				help:["移动 / 转向：WASD","开火：G　动作 / 瞄准：H　横移：F"]
 			});
 
 		if (GAMECONTROLS.KEYMOUSE)
 			controlSchemes.push({
 				label:"键盘 + 鼠标",
-				stickers:[
-					{x1:54,y1:169,width:15,height:5,x2:-27,y2:27},
-					{x1:0,y1:277,width:74,height:75,x2:-37,y2:1},
-					{x1:41,y1:107,width:19,height:5,x2:45,y2:40},
-				]
+				help:["移动：WASD　瞄准：鼠标","开火：鼠标左键　动作：鼠标中键"]
 			});
 
 		if (GAMECONTROLS.TOUCH) {
 			controlSchemes.push({
 				label:"触摸屏",
-				stickers:[
-					{x1:0,y1:354,width:81,height:57,x2:-40,y2:10}
-				]
+				help:["左侧区域移动，右侧区域转向","点击屏幕按钮开火或互动"]
 			});
 			controlSchemes.push({
 				label:"触摸屏",
-				stickers:[
-					{x1:0,y1:412,width:81,height:57,x2:-40,y2:10}
-				]
+				help:["左侧区域转向，右侧区域移动","点击屏幕按钮开火或互动"]
 			});
 		}
 
 		controlSchemes.push({
 			label:"多个手柄",
-			stickers:[
-				{x1:54,y1:169,width:15,height:5,x2:-7,y2:5},
-				{x1:0,y1:231,width:60,height:45,x2:-30,y2:17},
-				{x1:41,y1:107,width:19,height:5,x2:-9,y2:65},
-			]
+			help:["使用摇杆移动和转向","使用扳机开火，按键执行互动"]
 		});
 
 		menu=new KeyMenu({
@@ -93,21 +79,14 @@ function ControlsExplain(master) {
 		CANVAS.fillRect(ctx,MENUCOLOR,1,0,0,SCREEN_WIDTH, SCREEN_HEIGHT);
 		CANVAS.printCenter(ctx,FONT,FONTPALETTE.BLUE,HELPX,y,"菜单始终可以使用以下按键操作");
 		y+=SPACING;
-		CANVAS.blit(
-			ctx,HUD.node,0,0,0,1,1,0,
-			0,107,103,60,
-			QMATH.floor((SCREEN_WIDTH-117)/2),y,103,60
-		);
-		y+=SPACING+55;
+		CANVAS.printCenter(ctx,FONT,FONTPALETTE.WHITE,HELPX,y,"方向键选择　回车确认　数字 1 返回");
+		y+=SPACING*3;
 		CANVAS.printCenter(ctx,FONT,FONTPALETTE.WHITE,HELPX,y,"也可以使用或自定义："+controlSchemes[currentScheme].label);
-		y+=SPACING;
+		y+=SPACING*2;
 
-		controlSchemes[currentScheme].stickers.forEach(sticker=>{
-			CANVAS.blit(
-				ctx,HUD.node,0,0,0,1,1,0,
-				sticker.x1,sticker.y1,sticker.width,sticker.height,
-				HELPX+sticker.x2,y+sticker.y2,sticker.width,sticker.height
-			);
+		controlSchemes[currentScheme].help.forEach(line=>{
+			CANVAS.printCenter(ctx,FONT,FONTPALETTE.WHITE,HELPX,y,line);
+			y+=SPACING*2;
 		});
 
 		menu.render(ctx);

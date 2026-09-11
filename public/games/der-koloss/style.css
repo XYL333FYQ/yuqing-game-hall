@@ -1041,7 +1041,7 @@ input:disabled, select:disabled { opacity: 0.5; cursor: not-allowed; }
 #lobby-code:hover { color: #ffd6a0; }
 #lobby-code:hover::after { opacity: 1; }
 #lobby-code.copied { color: var(--ready); }
-#lobby-code.copied::after { content: 'COPIED'; color: var(--ready); opacity: 1; }
+#lobby-code.copied::after { content: '已复制'; color: var(--ready); opacity: 1; }
 .link-row { display: block; flex: 1 1 340px; min-width: 280px; }
 .link-row .lbl { display: block; margin-bottom: 4px; }
 .link-field { display: flex; gap: var(--s-2); }
@@ -1113,7 +1113,7 @@ input:disabled, select:disabled { opacity: 0.5; cursor: not-allowed; }
   text-shadow: 0 1px 3px #000;
 }
 .lobby-row.is-host .lobby-avatar::after {
-  content: 'HOST';
+  content: '房主';
   position: absolute; left: -1px; right: -1px; bottom: -9px;
   font-family: var(--f-mono); font-size: 7px; letter-spacing: 0.5px; line-height: 10px;
   text-align: center;
@@ -1547,7 +1547,7 @@ body.kbd-nav .cheat input:focus-visible + .box { outline: 2px solid var(--sodium
 .char-card.is-current { border-color: rgba(255, 180, 84, 0.45); background: linear-gradient(180deg, rgba(255, 180, 84, 0.09), var(--surface-1)); }
 .char-card.is-current::after { transform: scaleX(1); }
 .char-card.is-current::before {
-  content: 'CURRENT';
+  content: '当前选择';
   position: absolute; top: 0; right: 0;
   padding: 3px 7px;
   font-family: var(--f-mono); font-size: 8px; letter-spacing: 1.5px;

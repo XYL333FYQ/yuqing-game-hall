@@ -687,6 +687,136 @@
     "No zombies — explore freely": "没有丧尸，可自由探索",
   });
 
+  Object.assign(translations["der-koloss"], {
+    "CURRENT": "当前选择",
+    "Battle cry": "战斗呼喊",
+    "New wave": "新一波",
+    "Kill": "击杀",
+    "Power on": "开启电源",
+    "U.S. MARINE RAIDER": "美国海军陆战突击队员",
+    "RED ARMY SERGEANT": "苏联红军中士",
+    "IMPERIAL ARMY CAPTAIN": "日本陆军上尉",
+    "GROUP 935 SCIENTIST": "935 小组科学家",
+    "A grizzled Marine Raider who carved his name through Peleliu and Okinawa. Loud, fearless, and allergic to retreat — the only thing he loves more than his country is watching the enemy fall apart under his trigger finger.": "一名身经百战的海军陆战突击队员，曾在贝里琉和冲绳浴血奋战。他嗓门大、无所畏惧，从不后退；除了祖国，他最喜欢的就是看敌人在枪口下溃散。",
+    "Fearless to a fault": "勇猛得近乎鲁莽",
+    "Gallows humor": "惯用黑色幽默",
+    "Never leaves a man behind": "绝不抛下战友",
+    "Ooh-rah!": "呼哈！",
+    "I'll take 'em all on myself if I have to.": "必要的话，我一个人就能收拾它们。",
+    "Killin’ is my business — and business is good.": "杀敌就是我的工作——今天生意不错。",
+    "A boisterous sergeant of the Red Army who survived the worst of the Eastern Front with a grin and a bottle. He fights like a bear, laughs like thunder, and trusts exactly two things: his comrades and his vodka.": "一名豪迈的红军中士，带着笑容和酒瓶熬过了东线最惨烈的战斗。他像熊一样作战，笑声如雷，只信任两样东西：战友和伏特加。",
+    "Boisterous brawler": "豪迈的近战猛士",
+    "Endless stamina": "体力仿佛无穷无尽",
+    "Sentimental under the muscle": "强悍外表下重情重义",
+    "For Mother Russia!": "为了俄罗斯母亲！",
+    "I have fought bears with less fear than this.": "我打过的熊都没这些东西吓人。",
+    "Vodka first. Then war.": "先喝伏特加，再去打仗。",
+    "A disciplined captain of the Imperial Japanese Army, bound by duty and unshakable honor. He speaks little, wastes nothing, and meets death — his own or the enemy’s — with perfect composure.": "一名纪律严明的陆军上尉，以职责和不可动摇的荣誉为信条。他沉默寡言、从不浪费，以绝对镇定面对自己或敌人的死亡。",
+    "Unbreakable discipline": "纪律坚不可摧",
+    "Precise and calm": "精准而冷静",
+    "Honor above life": "荣誉高于生命",
+    "With honor, we fight.": "为荣誉而战。",
+    "Discipline will see us through.": "严明的纪律会带我们渡过难关。",
+    "A warrior’s duty never ends.": "战士的职责永无止境。",
+    "The brilliant, unhinged mind behind Group 935’s teleportation program. Richtofen giggles at carnage, worships his own genius, and treats the apocalypse like a field test. Something in his head ticked loose long ago — and it loves the view.": "935 小组传送计划背后那位才华横溢却精神失常的头脑。里希特霍芬会为杀戮窃笑，崇拜自己的天才，并把末日当成一场现场实验。他脑中那根弦早已断裂——而他很享受眼前的一切。",
+    "Unstable genius": "疯狂而不稳定的天才",
+    "Delights in destruction": "沉迷于毁灭",
+    "Knows more than he says": "知道的远比说出的多",
+    "The fun begins!": "好戏开始了！",
+    "GENIUS! Wunderbar!": "天才！太妙了！",
+    "Oh, the carnage we will make!": "啊，我们会制造多么美妙的杀戮！",
+    "Solo & hosted lobbies — in co-op your codes apply to everyone.": "单人和房主可调整；合作模式中你的设置会对所有玩家生效。",
+    "WORLD AT WAR · PISTOLS": "二战时代 · 手枪",
+    "WORLD AT WAR · SMGs": "二战时代 · 冲锋枪",
+    "WORLD AT WAR · SHOTGUNS": "二战时代 · 霰弹枪",
+    "WORLD AT WAR · RIFLES": "二战时代 · 步枪",
+    "WORLD AT WAR · SNIPERS": "二战时代 · 狙击枪",
+    "WORLD AT WAR · LMGs": "二战时代 · 轻机枪",
+    "WORLD AT WAR · LAUNCHERS": "二战时代 · 发射器",
+    "WORLD AT WAR · WONDER WEAPONS": "二战时代 · 奇迹武器",
+    "BLACK OPS ERA · SMGs": "黑色行动时代 · 冲锋枪",
+    "BLACK OPS ERA · RIFLES": "黑色行动时代 · 步枪",
+    "PISTOL": "手枪",
+    "SMG": "冲锋枪",
+    "SHOTGUN": "霰弹枪",
+    "RIFLE": "步枪",
+    "SNIPER": "狙击枪",
+    "LMG": "轻机枪",
+    "LAUNCHER": "发射器",
+    "WONDER": "奇迹武器",
+    "Factory minimap": "工厂小地图",
+    "WAFFENFABRIK": "兵工厂",
+    "Alright, maggots! Time to crack some skulls!": "好了，新兵们！该去敲碎几颗脑袋了！",
+    "Here they come again! Bring it, freak-bags!": "它们又来了！放马过来吧，怪胎！",
+    "More of them? Good. I was getting bored.": "还有更多？很好，我正觉得无聊。",
+    "Reloading! Cover me!": "正在换弹！掩护我！",
+    "Swapping mags — watch my six!": "正在换弹匣——帮我看住背后！",
+    "Back to hell, maggot!": "滚回地狱去吧，杂碎！",
+    "Eat lead, zombie scum!": "尝尝子弹吧，丧尸渣滓！",
+    "Ooh-rah! Another one drops!": "呼哈！又倒下一个！",
+    "I'm down! Somebody get me up!": "我倒下了！快扶我起来！",
+    "On your feet, soldier. We ain't done fighting.": "站起来，士兵。战斗还没结束。",
+    "Power's on! Now we're cooking!": "电源开了！这下好戏开始了！",
+    "Teleporter linked! That thing actually works?": "传送器连接好了！这玩意居然真能用？",
+    "Now THIS is a real weapon!": "这才叫真正的武器！",
+    "Hellhounds! I hate those mutts!": "地狱犬！我讨厌这些恶狗！",
+    "For Mother Russia! And for vodka!": "为了俄罗斯母亲！也为了伏特加！",
+    "They come again! Like my ex-wives, they never stop!": "它们又来了！就像我的前妻们一样没完没了！",
+    "More zombies! Good — I needed target practice.": "更多丧尸！很好——正好练练枪法。",
+    "Reloading! Do not let them touch me!": "正在换弹！别让它们碰到我！",
+    "One moment — I reload!": "等一下——我在换弹！",
+    "Die, you filthy creature!": "去死吧，肮脏的怪物！",
+    "Back to the grave with you!": "滚回坟墓里去！",
+    "HA! Take that, undead pig!": "哈！吃我一枪，不死的蠢猪！",
+    "I am down! Help me, comrades!": "我倒下了！同志们，救我！",
+    "Get up, comrade. The vodka is not finished.": "起来，同志。伏特加还没喝完呢。",
+    "Power! Now we see what we are killing!": "来电了！现在能看清我们在杀什么了！",
+    "Teleporter works! I love science!": "传送器能用！我爱科学！",
+    "A beautiful weapon for a beautiful man.": "漂亮的武器配漂亮的男人。",
+    "Dogs! I HATE dogs!": "狗！我最讨厌狗！",
+    "They approach. Stand firm.": "它们正在接近。站稳阵脚。",
+    "Another wave. Discipline will see us through.": "又一波。纪律会带我们渡过难关。",
+    "Reloading. Hold the line.": "正在换弹。守住阵线。",
+    "Your suffering ends now.": "你的痛苦到此结束。",
+    "Return to the earth.": "归于尘土吧。",
+    "A clean death for you.": "赐你一个干净利落的死亡。",
+    "I am down! Do not let it be in vain!": "我倒下了！别让这一切白费！",
+    "Rise, warrior. Your duty is not done.": "起来，战士。你的职责尚未完成。",
+    "The generator hums. Fortune favors us.": "发电机在轰鸣。好运眷顾着我们。",
+    "The device is linked. Remarkable.": "装置已经连接。令人惊叹。",
+    "A weapon worthy of a warrior.": "这把武器配得上真正的战士。",
+    "Beasts of flame. Stay focused.": "烈焰野兽。集中精神。",
+    "Ah, the fun begins! Let the experiment commence!": "啊，好戏开始了！让实验开始吧！",
+    "More test subjects! Wunderbar!": "更多实验对象！太妙了！",
+    "They keep coming! Science thanks them!": "它们源源不断！科学感谢它们！",
+    "One moment... I must reload!": "稍等……我必须换弹！",
+    "Fascinating! The motor functions cease!": "太迷人了！运动机能停止了！",
+    "DIE! Oh, how I love that part.": "去死！哦，我最喜欢这一幕了。",
+    "Back to the grave, specimen!": "回坟墓去吧，实验体！",
+    "No! Not me! HELP ME, fools!": "不！不能是我！救我，你们这些蠢货！",
+    "Get up! The doctor needs you alive!": "起来！博士需要你活着！",
+    "The power! It WORKS! Of course it works!": "电源！成功了！当然会成功！",
+    "The teleporter is linked! GENIUS!": "传送器连接好了！天才之作！",
+    "Perfection! A masterpiece of destruction!": "完美！毁灭的杰作！",
+    "The hounds! My old... creations. Kill them quickly!": "猎犬！我以前的……造物。快杀掉它们！",
+    "Ooh-rah! Now we're talking!": "呼哈！这才像话！",
+    "Ha! This is gonna be SWEET!": "哈！这下可有好戏了！",
+    "Time to paint the walls red!": "该把墙壁染红了！",
+    "HAHA! Alien tech, baby! My favorite!": "哈哈！外星科技宝贝！我的最爱！",
+    "HA! Now THIS is a man's weapon!": "哈！这才是男人该用的武器！",
+    "Beautiful! Like first sip of vodka!": "太美了！就像第一口伏特加！",
+    "Zombies will cry for their mothers!": "丧尸会哭着找妈妈的！",
+    "Space gun! Nikolai loves the future!": "太空枪！尼古拉喜欢未来！",
+    "A fine instrument of war.": "一件出色的战争兵器。",
+    "This blade has been blessed.": "这把利刃受过祝福。",
+    "Perfection, forged in fire.": "烈火锻造出的完美。",
+    "Such power... I will use it with honor.": "如此力量……我会以荣誉驾驭它。",
+    "AHAHA! This is gonna be sweet!": "啊哈哈！这下会很精彩！",
+    "Oh, the carnage we will make together!": "哦，我们将共同制造多么美妙的杀戮！",
+    "My beautiful creation, COMPLETE!": "我美丽的造物，完成了！",
+    "MY PRECIOUS! You came back to me!": "我的宝贝！你回到我身边了！",
+  });
+
   Object.assign(translations["sanctuarys-end"], {
     "Set bonuses reward the patient collector — three pieces, then six.": "套装奖励属于耐心的收藏家——集齐三件与六件时会分别激活。",
     "Put a skill into the ": "把技能放入 ",
@@ -1206,6 +1336,111 @@
     "Already chose a rune in this slot": "该分支已经选择了一个符文",
   });
 
+  Object.assign(translations["sanctuarys-end"], {
+    "Loot": "战利品过滤",
+    "Done": "完成",
+    "Low": "低",
+    "High": "高",
+    "Auto": "自动",
+    "Custom": "自定义",
+    "Hard": "困难",
+    "Hell": "地狱",
+    "Inferno": "炼狱",
+    "Pick up these rarities": "拾取以下稀有度",
+    "Pick up these slots": "拾取以下装备部位",
+    "Minimum item level": "最低物品等级",
+    "items below this are salvaged": "低于此等级的物品将自动分解",
+    "Skill Slot 1": "技能栏 1",
+    "Skill Slot 2": "技能栏 2",
+    "Skill Slot 3": "技能栏 3",
+    "Skill Slot 4": "技能栏 4",
+    "Inventory": "背包",
+    "Return to Town": "返回城镇",
+    "Interact": "互动",
+    "Health Potion": "生命药水",
+    "Mana Potion": "法力药水",
+    "Waypoint Map": "传送地图",
+    "Toggle Sound": "切换声音",
+    "Help": "帮助",
+    "Debug Overlay": "调试信息层",
+    "Move / Basic Attack": "移动 / 普通攻击",
+    "Cast (Right slot)": "施放技能（右侧技能栏）",
+    "Close / Cancel": "关闭 / 取消",
+    "Paste exported save JSON here…": "在此粘贴导出的存档 JSON…",
+    "Importing ": "导入会",
+    "replaces ALL": "替换全部",
+    " local saves & settings with the imported data, then reloads the game. Export first if you want a backup.": "本地角色、存档与设置，并使用导入的数据重新加载游戏。如需备份，请先导出。",
+    "Travel": "传送",
+    "Wilderness · Lv 1": "荒野 · 等级 1",
+    "Frostfen — undiscovered": "霜冻沼泽——尚未发现",
+    "Ashlands — undiscovered": "灰烬之地——尚未发现",
+    "Highreach — undiscovered": "高岭镇——尚未发现",
+    "Emberhold — undiscovered": "余烬堡——尚未发现",
+    "Press onward through the wilds to reach it": "继续穿越荒野即可抵达",
+    "Find its portal out in the wilds": "在荒野中寻找通往这里的传送门",
+    "Aldermere (here)": "奥德米尔（当前位置）",
+    "Safe hub · merchant & stash": "安全据点 · 商人与储物箱",
+    "Hub · premium wares": "高级据点 · 优质商品",
+    "Endgame hub · exotic wares": "终局据点 · 珍稀商品",
+    "The Descent — Depth 1": "深渊入口——第 1 层",
+    "Dungeon entrance": "地牢入口",
+    "Jump to Depth": "跳转至指定深度",
+    "Descend": "下潜",
+    "Your deepest checkpoint": "你到达过的最深检查点",
+    "Belphegor awaits beyond the Sigil": "贝尔芬格正在印记之后等待",
+    "Import will REPLACE all local characters and settings, then reload the game. Continue?": "导入会替换全部本地角色、存档与设置，然后重新加载游戏。要继续吗？",
+    "Delete this hero permanently?": "要永久删除这个英雄吗？",
+    "Keybinds reset to defaults": "按键绑定已恢复默认设置",
+    "An elite pack appears!": "一群精英敌人出现了！",
+    "A Treasure Goblin scurries by!": "一只宝藏哥布林飞奔而过！",
+    "Minions summoned!": "随从已被召唤！",
+    "The brood answers!": "怪物群响应了召唤！",
+    "The Cow King is slain! The herd is avenged… moo.": "奶牛王已被击败！牛群大仇得报……哞。",
+    "The way down opens!": "通往更深处的道路开启了！",
+    "Something bovine stirs near Aldermere…": "奥德米尔附近似乎有某种牛形生物在骚动……",
+    "The hoard spills open!": "宝藏倾泻而出！",
+    "Level Up!": "升级了！",
+    "Hunt complete!": "狩猎完成！",
+    "The chest creaks open…": "宝箱吱呀一声打开了……",
+    "Empowered!": "力量强化！",
+    "Fleet!": "迅捷强化！",
+    "Stoneskin!": "石肤强化！",
+    "Shrine of Power — +25% damage (30s)": "力量神龛——伤害提高 25%（30 秒）",
+    "Shrine of Haste — +30% speed (30s)": "迅捷神龛——速度提高 30%（30 秒）",
+    "Blessed Shrine — restored & cleansed": "祝福神龛——恢复生命并净化异常状态",
+    "Shrine of Stone — 30% less damage taken (30s)": "石肤神龛——受到的伤害降低 30%（30 秒）",
+    "Shrine of Greed — gold rains, double gold (30s)": "贪婪神龛——金币雨，金币收益翻倍（30 秒）",
+    "Cursed Shrine — they come!": "诅咒神龛——敌人来了！",
+    "Bounty complete!": "悬赏完成！",
+    "The herd stirs… Moo.": "牛群开始骚动……哞。",
+    "The Devil of the Inferno bars the way…": "炼狱恶魔挡住了去路……",
+    "A guardian blocks the way down…": "守护者挡住了通往下层的路……",
+    "A Champion stalks this floor…": "一名冠军敌人正在这一层游荡……",
+    "Already fully rested": "当前状态已经完全恢复",
+    "Rested — HP, mana & potions restored": "休整完成——生命、法力与药水均已恢复",
+    "The goblin escaped!": "哥布林逃跑了！",
+    "Bag full": "背包已满",
+    "Stash full": "储物箱已满",
+    "Already mastered": "已经达到最高等级",
+    "Three gems pocketed": "已将三颗宝石收入囊中",
+    "Gem Cache": "宝石宝箱",
+    "three quality gems": "三颗优质宝石",
+    "the way": "前方道路",
+    "Full": "已满",
+    "+Restored": "+已恢复",
+    "🔥 The Sigil of the Inferno is yours — Depth 666 answers the Waypoints.": "🔥 你已获得炼狱印记——现在可通过传送点前往第 666 层。",
+    "Your two-handed weapon needs both hands": "双手武器需要占用双手",
+    "Bag full — stow your offhand first": "背包已满——请先收起副手装备",
+    "Offhand stowed": "副手装备已收起",
+    "Chilled foes shatter — cold builds strike harder against frozen enemies.": "冰缓敌人更容易被击碎——寒冰流派对冻结目标的打击更强。",
+    "Socket gems at the Jeweler to shape your build.": "在珠宝匠处为装备镶嵌宝石，塑造你的流派。",
+    "Shrines grant fleeting power. Seek them before the fight finds you.": "神龛会赐予短暂力量；在战斗找上门前先找到它们。",
+    "The deeper you descend, the richer the spoils… and the graver the danger.": "下潜得越深，战利品越丰厚……危险也越致命。",
+    "Legendary-touched rares can rival uniques. Don't vendor them unread.": "带有传奇词条的稀有装备可媲美传奇装备，出售前务必查看。",
+    "Techniques spend a third axis of power — train them between runs.": "战斗技巧是另一条成长路线——在每次冒险间隙训练它们。",
+    "Some say a bovine stirs near Aldermere…": "有人说奥德米尔附近有某种牛形生物在骚动……",
+  });
+
   Object.assign(translations["pvp-arena"], {
     "Screen controls": "操作设备",
     "Rendering mode": "渲染模式",
@@ -1408,6 +1643,11 @@
     "All Players hold fire to quit.": "所有玩家按住开火键即可退出。",
     "Del": "删除",
     "Space": "空格",
+    "MENU": "菜单",
+    "BACK": "返回",
+    "SELECT": "选择",
+    "CONFIRM": "确认",
+    "PLAY": "游戏",
   });
 
   // Text shown inside the individual LittleJS cabinets. Keeping this in the
@@ -1664,6 +1904,15 @@
   const translationCache = new Map();
   const skipTags = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "CODE", "PRE", "TEXTAREA"]);
 
+  function translateKnownFragments(value) {
+    let localized = value;
+    for (const [source, replacement] of partialEntries) {
+      if (source.length < 3 || !localized.includes(source)) continue;
+      localized = localized.split(source).join(replacement);
+    }
+    return localized;
+  }
+
   function translateValue(value) {
     if (!value) return value;
     const match = value.match(/^(\s*)(.*?)(\s*)$/s);
@@ -1711,7 +1960,12 @@
         .replace(/^(.+) invited you — press JOIN to drop in!$/i, "$1 邀请你加入——点击“加入”进入房间！")
         .replace(/^Failed to start:\s*(.+)$/i, "启动失败：$1")
         .replace(/^Teleporter recharging…\s*(\d+)s$/i, "传送器充能中… $1 秒")
-        .replace(/^Trap recharging…\s*(\d+)s$/i, "电击陷阱充能中… $1 秒");
+        .replace(/^Trap recharging…\s*(\d+)s$/i, "电击陷阱充能中… $1 秒")
+        .replace(/^Health\s+(\d+)%$/i, "生命值 $1%")
+        .replace(/^📻\s*(.+?):\s*(.+)$/i, (_, speaker, line) => {
+          const localizedLine = normalizedDictionary.get(normalizeTranslationKey(line));
+          return localizedLine ? `📻 ${speaker}：${localizedLine}` : core;
+        });
       if (value !== core) translated = value;
     }
     if (!translated && game === "sanctuarys-end") {
@@ -1721,13 +1975,36 @@
         .replace(/^Level\s+(\d+)$/i, "等级 $1")
         .replace(/^Depth\s+(\d+)$/i, "地牢深度 $1")
         .replace(/^(.+)\s+•\s+Level\s+(\d+)\s+•\s+depth\s+(\d+)$/i, "$1 · 等级 $2 · 最深层数 $3")
-        .replace(/^Difficulty:\s*(Normal|Hard|Nightmare|Torment)$/i, (_, level) => `难度：${difficultyNames[level.toLocaleLowerCase()]}`)
-        .replace(/^Difficulty set to (Normal|Hard|Nightmare|Torment) — descend deeper to unlock more$/i, (_, level) => `难度已设为${difficultyNames[level.toLocaleLowerCase()]}——深入地牢可继续解锁`)
+        .replace(/^Difficulty:\s*(Normal|Hard|Hell|Inferno|Nightmare|Torment)$/i, (_, level) => `难度：${difficultyNames[level.toLocaleLowerCase()] ?? normalizedDictionary.get(normalizeTranslationKey(level)) ?? level}`)
+        .replace(/^Difficulty set to (Normal|Hard|Hell|Inferno|Nightmare|Torment) — descend deeper to unlock more$/i, (_, level) => `难度已设为${difficultyNames[level.toLocaleLowerCase()] ?? normalizedDictionary.get(normalizeTranslationKey(level)) ?? level}——深入地牢可继续解锁`)
+        .replace(/^Reach Depth (\d+) to unlock$/i, "到达深渊第 $1 层后解锁")
+        .replace(/^Wilderness · Lv (\d+)$/i, "荒野 · 等级 $1")
+        .replace(/^Travel to any depth you've reached \(1–(\d+)\)$/i, "传送至已经到达的任意深度（1–$1）")
+        .replace(/^The Descent — Depth (\d+)$/i, "深渊入口——第 $1 层")
+        .replace(/^The Inferno — Depth (\d+)$/i, "炼狱——第 $1 层")
+        .replace(/^(.+) — undiscovered$/i, (_, name) => `${normalizedDictionary.get(normalizeTranslationKey(name)) ?? name}——尚未发现`)
+        .replace(/^(.+) \(here\)$/i, (_, name) => `${normalizedDictionary.get(normalizeTranslationKey(name)) ?? name}（当前位置）`)
+        .replace(/^Discovered (.+)!$/i, (_, name) => `发现了${normalizedDictionary.get(normalizeTranslationKey(name)) ?? name}！`)
+        .replace(/^Press deeper through the wilds to find (.+)$/i, (_, name) => `继续深入荒野以寻找${normalizedDictionary.get(normalizeTranslationKey(name)) ?? name}`)
+        .replace(/^Search the wilderness for (.+)$/i, (_, name) => `在荒野中寻找${normalizedDictionary.get(normalizeTranslationKey(name)) ?? name}`)
+        .replace(/^Level Up!\s+Lv\s+(\d+)$/i, "升级了！等级 $1")
+        .replace(/^(.+) enrages!$/i, (_, name) => `${normalizedDictionary.get(normalizeTranslationKey(name)) ?? name}进入狂暴状态！`)
+        .replace(/^(.+) — Level (\d+) • (?:Slain by (.+) • )?(.+) • Slain (\d+) • Deepest Depth (\d+)$/i, (_, name, level, killer, where, slain, deepest) => {
+          const localizePart = (part) => normalizedDictionary.get(normalizeTranslationKey(part))
+            ?? part.replace(/^Depth (\d+)$/i, "地牢第 $1 层")
+            ?? part;
+          const cause = killer ? ` · 被${localizePart(killer)}击败` : "";
+          return `${name}——等级 ${level}${cause} · ${localizePart(where)} · 击败 ${slain} · 最深到达第 ${deepest} 层`;
+        })
         .replace(/^Press <b>E<\/b> to (.+)$/i, "按 <b>E</b> $1")
         .replace(/^Bought:\s*(.+)$/i, "已购买：$1")
         .replace(/^Sold:\s*(.+)$/i, "已出售：$1")
         .replace(/^Gambled:\s*(.+)$/i, "抽取到：$1")
         .replace(/^Salvaged:\s*(.+)$/i, "已分解：$1")
+        .replace(/^Sold all:\s*\+(\d+)g$/i, "已全部出售：+$1 金币")
+        .replace(/^🔒\s*(.+) is locked$/i, (_, item) => `🔒 ${normalizedDictionary.get(normalizeTranslationKey(item)) ?? item} 已锁定`)
+        .replace(/^Sell (\d+) backpack items for (\d+)g\?\s*This includes rare, set and unique gear \(locked items are kept\)\.$/i, "要以 $2 金币出售背包中的 $1 件物品吗？\n其中包括稀有、套装与传奇装备（已锁定物品会保留）。")
+        .replace(/^Salvage (.+) \((.+)\) into (\d+) Dust\? This destroys the item\.$/i, (_, item, rarity, dust) => `要将${normalizedDictionary.get(normalizeTranslationKey(item)) ?? item}（${normalizedDictionary.get(normalizeTranslationKey(rarity)) ?? rarity}）分解为 ${dust} 魔尘吗？该物品将被销毁。`)
         .replace(/^(.+) · stats rerolled$/i, "$1 · 属性已重洗")
         .replace(/^🔒\s*(.+) locked$/i, "🔒 已锁定 $1")
         .replace(/^(.+) unlocked$/i, "已解锁 $1")
@@ -1738,6 +2015,21 @@
         .replace(/^(\d+)\s+skill points?$/i, "$1 技能点")
         .replace(/^(\d+)\s+ability points? · unlock an ability or spend in a rune tree$/i, "$1 技能点 · 可解锁技能或投入符文树")
         .replace(/^Requires level\s+(\d+)$/i, "需要达到 $1 级")
+        .replace(/^Needs\s+(\d+)\s+ability points?$/i, "需要 $1 个技能点")
+        .replace(/^Refunded\s+(\d+)\s+ability points?$/i, "已返还 $1 个技能点")
+        .replace(/^(.+) acquired$/i, (_, item) => `获得了${translateKnownFragments(item)}`)
+        .replace(/^Sold junk:\s*\+(\d+)g$/i, "已出售杂物：+$1 金币")
+        .replace(/^Salvaged junk:\s*\+(\d+)✦$/i, "已分解杂物：+$1 魔尘")
+        .replace(/^Something hunts you through (.+)…$/i, (_, area) => `有东西正在${normalizedDictionary.get(normalizeTranslationKey(area)) ?? area}中追猎你……`)
+        .replace(/^Reach Depth (\d+) in the Descent to breach (.+)…$/i, (_, targetDepth, area) => `抵达深渊第 ${targetDepth} 层，才能打开通往${normalizedDictionary.get(normalizeTranslationKey(area)) ?? area}的道路……`)
+        .replace(/^The Stalker of (.+)$/i, (_, area) => `${normalizedDictionary.get(normalizeTranslationKey(area)) ?? area}的追猎者`)
+        .replace(/^(.+) · enchanted:\s*\+(.+)$/i, (_, item, bonus) => `${translateKnownFragments(item)} · 已附魔：+${translateKnownFragments(bonus)}`)
+        .replace(/^(.+) · socketed (.+)$/i, (_, item, gem) => `${translateKnownFragments(item)} · 已镶嵌${translateKnownFragments(gem)}`)
+        .replace(/^Removed (.+)$/i, (_, gem) => `已取下${normalizedDictionary.get(normalizeTranslationKey(gem)) ?? gem}`)
+        .replace(/^Combined → (.+)$/i, (_, gem) => `合成完成 → ${normalizedDictionary.get(normalizeTranslationKey(gem)) ?? gem}`)
+        .replace(/^Reforged:\s*(.+)$/i, (_, item) => `已重铸：${translateKnownFragments(item)}`)
+        .replace(/^(.+) → socket added$/i, (_, item) => `${translateKnownFragments(item)} → 已添加插槽`)
+        .replace(/^(.+) → (Common|Magic|Rare|Set|Unique)!$/i, (_, item, rarity) => `${translateKnownFragments(item)} → ${normalizedDictionary.get(normalizeTranslationKey(rarity)) ?? rarity}！`)
         .replace(/^(\d+)\s+points? to spend · drag to pan · scroll to zoom$/i, "$1 点可分配 · 拖动平移 · 滚轮缩放")
         .replace(/^Empty Slot\s+(\d+)$/i, "空存档位 $1")
         .replace(/^\+ New$/i, "+ 新建角色")
@@ -1843,7 +2135,6 @@
   window.yuqingTranslateText = translateValue;
 
   function translateElement(element) {
-    if (skipTags.has(element.tagName)) return;
     for (const attribute of ["placeholder", "aria-label", "title", "alt", "data-hint"]) {
       const value = element.getAttribute(attribute);
       if (!value) continue;
@@ -1920,6 +2211,16 @@
   function boot() {
     document.documentElement.lang = "zh-CN";
     translateTree(document);
+    if (game === "sanctuarys-end") {
+      const nativeAlert = window.alert.bind(window);
+      const nativeConfirm = window.confirm.bind(window);
+      const nativePrompt = window.prompt.bind(window);
+      window.alert = (message) => nativeAlert(translateValue(String(message)));
+      window.confirm = (message) => nativeConfirm(translateValue(String(message)));
+      window.prompt = (message, defaultValue) => defaultValue === undefined
+        ? nativePrompt(translateValue(String(message)))
+        : nativePrompt(translateValue(String(message)), defaultValue);
+    }
     installDirectHomeButton();
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {

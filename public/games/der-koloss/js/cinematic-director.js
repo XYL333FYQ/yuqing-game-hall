@@ -567,7 +567,7 @@ const shot = SHOTS[requestedShot] || SHOTS.factoryWake;
 const canvas = document.querySelector('#cinematic-canvas');
 const status = document.querySelector('#director-status');
 const overlay = document.querySelector('#director-overlay');
-const renderer = new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,preserveDrawingBuffer:capture});
+const renderer = new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,preserveDrawingBuffer:capture,powerPreference:'high-performance'});
 renderer.setPixelRatio(capture ? 1 : Math.min(devicePixelRatio,2));
 renderer.setSize(captureWidth,captureHeight,false);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
