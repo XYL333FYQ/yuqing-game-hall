@@ -1,34 +1,43 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "littlejs-arcade",
   "order": 5,
-  "name": "迷你街机合集",
-  "originalName": "LittleJS Arcade",
-  "mark": "街机",
-  "category": "轻量街机合集",
-  "description": "赛车、生存、防空、台球和坦克等一批短小直接的浏览器小游戏。",
-  "hosting": "static",
-  "hostingLabel": "静态版已接入",
+  "discovery": { "audiences": ["single", "duo"], "popularRank": 6 },
   "theme": { "accent": "#f2b942", "dark": "#2a210e" },
-  "tags": ["单人", "本地双人", "合集"],
-  "play": {
-    "modes": "随子游戏变化",
-    "players": "1–2 人，随子游戏变化",
-    "controls": "键盘 / 鼠标 / 手柄",
-    "inputs": ["keyboard", "mouse", "gamepad"],
-    "devices": ["desktop"],
-    "vision": false
+  "presentation": {
+    "title": "迷你街机合集",
+    "originalTitle": "LittleJS Arcade",
+    "mark": "街机",
+    "category": "轻量街机合集",
+    "tagline": "赛车、生存、台球和坦克，一次打开一整排小游戏。",
+    "description": "从赛车、生存、防空到台球和坦克，挑一款短小直接的小游戏，随时开始一局轻松的街机时间。",
+    "tags": ["单人", "本地双人", "合集"],
+    "play": {
+      "modes": "随子游戏变化",
+      "players": "1–2 人，随子游戏变化",
+      "controls": "键盘 / 鼠标 / 手柄",
+      "inputs": ["keyboard", "mouse", "gamepad"],
+      "devices": ["desktop"],
+      "vision": false
+    },
+    "highlights": ["赛车、生存、防空、台球和坦克等多种玩法", "每款游戏都能快速开始", "适合一个人消磨时间，也适合本地轮流挑战"],
+    "art": { "cover": "/games/littlejs-arcade/images/social_image.png", "hero": "/games/littlejs-arcade/images/social_image.png" },
+    "availability": { "state": "playable", "label": "可直接游玩" },
+    "actionLabel": "开始游戏"
   },
-  "technology": "LittleJS · 原生 JavaScript",
-  "license": "主体 MIT；独立素材单独署名",
-  "sourceUrl": "https://github.com/KilledByAPixel/LittleJSArcade",
-  "localization": "合集目录以及 63 款本地子游戏的开始、暂停、设置、结算、教程、操作说明和常用 HUD 已统一汉化；WASD、Shift 等实际按键名与角色专名保留原文。",
-  "fit": "适合快速挑出一两个玩法加工成雨晴游戏厅自己的短局游戏。",
-  "highlights": ["启动快、代码集中、容易拆解", "覆盖多种操作和局长", "非常适合先验证玩法再重做美术"],
-  "cautions": ["合集内各游戏质量不完全一致", "Twemoji 等素材需要保留许可", "后续更新上游代码时必须保留本地汉化桥接层"],
-  "launch": {
-    "kind": "iframe",
-    "entry": "/games/littlejs-arcade/index.html",
-    "upstreamUrl": "https://killedbyapixel.github.io/LittleJSArcade/"
+  "platform": {
+    "hosting": "static",
+    "technology": "LittleJS · 原生 JavaScript",
+    "license": "主体 MIT；独立素材单独署名",
+    "sourceUrl": "https://github.com/KilledByAPixel/LittleJSArcade",
+    "localization": "合集目录以及 63 款本地子游戏的开始、暂停、设置、结算、教程、操作说明和常用 HUD 已统一汉化；WASD、Shift 等实际按键名与角色专名保留原文。",
+    "fit": "适合快速挑出一两个玩法加工成雨晴游戏厅自己的短局游戏。",
+    "highlights": ["启动快、代码集中、容易拆解", "覆盖多种操作和局长", "非常适合先验证玩法再重做美术"],
+    "cautions": ["合集内各游戏质量不完全一致", "Twemoji 等素材需要保留许可", "后续更新上游代码时必须保留本地汉化桥接层"],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/littlejs-arcade/index.html",
+      "upstreamUrl": "https://killedbyapixel.github.io/LittleJSArcade/"
+    }
   }
 }

@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { BOMB_TYPE, fruitRadiusForInstance, fruitTypeByName } from "../public/games/fruit-party/source/data/fruits";
-import { applyMissPenalty } from "../public/games/fruit-party/source/FruitNinjaEngine";
-import { ArcadeSystem, arcadePhaseForTime, createArcadeState, getArcadeGrade, recordArcadeMiss, recordArcadeSlice, selectArcadeEvents } from "../public/games/fruit-party/source/systems/ArcadeSystem";
-import { SliceSystem } from "../public/games/fruit-party/source/systems/SliceSystem";
-import type { BladeState, Fruit, FruitNinjaState } from "../public/games/fruit-party/source/types";
+import { BOMB_TYPE, fruitRadiusForInstance, fruitTypeByName } from "../games/fruit-party/src/data/fruits";
+import { applyMissPenalty } from "../games/fruit-party/src/FruitNinjaEngine";
+import { ArcadeSystem, arcadePhaseForTime, createArcadeState, getArcadeGrade, recordArcadeMiss, recordArcadeSlice, selectArcadeEvents } from "../games/fruit-party/src/systems/ArcadeSystem";
+import { SliceSystem } from "../games/fruit-party/src/systems/SliceSystem";
+import type { BladeState, Fruit, FruitNinjaState } from "../games/fruit-party/src/types";
 
 function makeFruit(id: number, x = 200, type = fruitTypeByName("orange")): Fruit {
   return {

@@ -1,0 +1,16 @@
+{
+  "name": "@yuqing/sanctuary-relay",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Sanctuary's End presence and chat WebSocket relay",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "check": "node --check server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "8.21.0"
+  }
+}

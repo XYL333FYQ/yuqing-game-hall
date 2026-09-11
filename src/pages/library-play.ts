@@ -1,6 +1,6 @@
 import { canPlayGames } from "../platform/device";
 import { bindCopyUrl, desktopGate } from "../platform/shell";
-import { findLibraryGame } from "../data/gameLibrary";
+import { findLibraryGame, iframeAllowPolicy } from "../data/gameLibrary";
 
 export function renderLibraryPlay(root: HTMLElement, slug: string): () => void {
   const game = findLibraryGame(slug);
@@ -10,25 +10,26 @@ export function renderLibraryPlay(root: HTMLElement, slug: string): () => void {
   document.body.dataset.page = "library-game";
 
   if (!canPlayGames()) {
-    root.innerHTML = `<main class="library-player-gate"><a class="back-link" href="/games/${game.slug}" data-nav>← 返回游戏介绍</a>${desktopGate()}</main>`;
+    root.innerHTML = `<main class="library-player-gate"><a class="back-link" href="/library/${game.slug}" data-nav>← 返回游戏介绍</a>${desktopGate("请在电脑上游玩", "当前设备适合浏览游戏介绍，请使用电脑打开游戏。")}</main>`;
     return bindCopyUrl(root);
   }
 
   if (!game.localPath) {
-    root.innerHTML = `<main class="library-player-gate"><a class="back-link" href="/games/${game.slug}" data-nav>← 返回游戏介绍</a><section class="desktop-gate"><span class="desktop-gate-icon">↗</span><div><strong>这款游戏需要独立的联机服务器</strong><p>它不是一个上传 HTML 就能运行的静态小游戏，请从介绍页连接在线服务或按服务器部署说明自建。</p></div>${game.onlineUrl ? `<a class="button primary" href="${game.onlineUrl}" target="_blank" rel="noreferrer">连接在线服务</a>` : ""}</section></main>`;
+    root.innerHTML = `<main class="library-player-gate"><a class="back-link" href="/library/${game.slug}" data-nav>← 返回游戏介绍</a><section class="desktop-gate"><span class="desktop-gate-icon">↗</span><div><strong>${game.statusLabel}</strong><p>当前可以先查看游戏介绍与玩法信息。</p></div>${game.onlineUrl ? `<a class="button primary" href="${game.onlineUrl}" target="_blank" rel="noreferrer">${game.launchLabel ?? "前往体验"}</a>` : ""}</section></main>`;
     return () => undefined;
   }
+  const startPath = game.startPath ?? game.localPath;
 
   root.innerHTML = `
     <div class="library-player">
       <header class="library-player-toolbar">
-        <a href="/games/${game.slug}" data-nav><b>←</b><span><strong>${game.title}</strong><small>${game.originalTitle} · 开源移植版</small></span></a>
-        <p><i></i> 随雨晴游戏厅部署</p>
+        <a href="/library/${game.slug}" data-nav><b>←</b><span><strong>${game.title}</strong><small>${game.mode}</small></span></a>
+        <p><i></i> 雨晴游戏厅 · 即刻开玩</p>
         <div class="library-player-tools"><button type="button" data-retry>重新载入</button><button type="button" data-fullscreen>全屏游玩</button></div>
       </header>
       <div class="library-frame-wrap">
-        <iframe src="${game.localPath}" title="${game.title}" allow="autoplay; fullscreen; gamepad"></iframe>
-        <div class="library-frame-loading" role="status"><i></i><strong data-loading-title>正在打开 ${game.title}</strong><span data-loading-copy>首次载入大型 3D 资源可能需要几秒钟。</span><div class="library-frame-actions" hidden><button type="button" data-overlay-retry>重新载入</button><a href="${game.localPath}" target="_blank" rel="noreferrer">在独立页面打开</a></div></div>
+        <iframe src="${startPath}" title="${game.title}" allow="${iframeAllowPolicy(game)}"></iframe>
+        <div class="library-frame-loading" role="status"><i></i><strong data-loading-title>正在打开 ${game.title}</strong><span data-loading-copy>游戏马上就好，准备进入游玩画面。</span><div class="library-frame-actions" hidden><button type="button" data-overlay-retry>重新载入</button><a href="${startPath}" target="_blank" rel="noreferrer">独立页面打开</a></div></div>
       </div>
     </div>`;
 
@@ -51,8 +52,8 @@ export function renderLibraryPlay(root: HTMLElement, slug: string): () => void {
     loading?.removeAttribute("hidden");
     loadingActions?.setAttribute("hidden", "");
     if (loadingTitle) loadingTitle.textContent = `正在重新打开 ${game.title}`;
-    if (loadingCopy) loadingCopy.textContent = "正在重新装载本地游戏资源…";
-    frame.src = game.localPath ?? "about:blank";
+    if (loadingCopy) loadingCopy.textContent = "正在重新载入游戏…";
+    frame.src = startPath ?? "about:blank";
   };
   const onReadyMessage = (event: MessageEvent): void => {
     if (event.origin !== window.location.origin || event.source !== frame?.contentWindow) return;

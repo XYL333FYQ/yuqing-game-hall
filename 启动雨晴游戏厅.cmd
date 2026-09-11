@@ -53,7 +53,7 @@ if not exist "node_modules\" (
 
 if /i not "%NO_OPEN%"=="1" start "" /b node "%~dp0scripts\open-when-ready.mjs" "%GAME_URL%" 120000
 
-call corepack pnpm run prepare-assets
+call corepack pnpm run prepare:platform
 if errorlevel 1 (
   echo [ERROR] Local asset preparation failed.
   pause

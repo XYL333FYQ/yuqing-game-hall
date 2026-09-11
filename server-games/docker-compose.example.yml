@@ -1,16 +1,36 @@
 services:
-  scribble:
-    image: biosmarcel/scribble.rs:latest
+  fruit-party:
+    build:
+      context: ..
+      dockerfile: server-games/fruit-party/Dockerfile
     restart: unless-stopped
     environment:
-      PORT: "8080"
-      NETWORK_ADDRESS: "0.0.0.0"
-      CORS_ALLOWED_ORIGINS: "https://games.example.com"
+      HOST: 0.0.0.0
+      PORT: "8790"
+      NODE_ENV: production
+      ALLOWED_ORIGINS: https://games.example.com
     ports:
-      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:8790:8790"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8790/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
-  tosios:
-    image: halftheopposite/tosios
+  sanctuary-relay:
+    build:
+      context: ..
+      dockerfile: server-games/sanctuarys-end/Dockerfile
     restart: unless-stopped
+    environment:
+      HOST: 0.0.0.0
+      PORT: "8787"
+      NODE_ENV: production
+      ALLOWED_ORIGINS: https://games.example.com
     ports:
-      - "127.0.0.1:3001:3001"
+      - "127.0.0.1:8787:8787"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8787/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

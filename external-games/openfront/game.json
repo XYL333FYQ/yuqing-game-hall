@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 2,
+  "id": "openfront",
+  "order": 10,
+  "discovery": { "audiences": ["multi"], "popularRank": 10 },
+  "theme": { "accent": "#6d8ee8", "dark": "#121a2c" },
+  "presentation": {
+    "title": "世界前线",
+    "originalTitle": "OpenFrontIO",
+    "mark": "策略",
+    "category": "大规模多人领土策略",
+    "tagline": "在世界地图上扩张领地，和大量玩家争夺胜利。",
+    "description": "从一小片领地开始扩张，调配兵力、判断局势，与大量玩家在世界地图上争夺最终控制权。",
+    "tags": ["多人", "策略", "大地图"],
+    "play": {
+      "modes": "大规模在线对局",
+      "players": "大房间多人对局",
+      "controls": "鼠标与键盘",
+      "inputs": ["keyboard", "mouse", "touch"],
+      "devices": ["desktop", "mobile"],
+      "vision": false
+    },
+    "highlights": ["大地图领土扩张与兵力调配", "和大量玩家同场博弈", "每局局势都会随着选择不断变化"],
+    "art": {},
+    "availability": { "state": "external", "label": "在线体验" },
+    "actionLabel": "前往体验"
+  },
+  "platform": {
+    "hosting": "server",
+    "technology": "TypeScript · 确定性模拟 · 专用服务端",
+    "license": "AGPL-3.0；生产 API 并非全部开放",
+    "sourceUrl": "https://github.com/openfrontio/OpenFrontIO",
+    "localization": "上游官网已提供中文界面；游戏厅保留中文玩法说明，自建时需继续维护完整术语、新手教学和版本同步。",
+    "fit": "产品完成度很高，适合研究确定性模拟、回放和大房间，但体量远超当前小游戏范围。",
+    "highlights": ["高人数同局与确定性模拟", "地图、回放和完整产品流程", "社区活跃、真实线上压力可观察"],
+    "cautions": ["官网可能先显示 Cloudflare 安全验证，这不是游戏厅加载器卡死", "AGPL 会影响后续代码发布方式", "源码与资源接近大型独立项目，不适合塞入静态小游戏构建"],
+    "launch": { "kind": "external", "url": "https://openfront.io/" }
+  }
+}

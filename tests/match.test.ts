@@ -6,8 +6,8 @@ import {
   getRoundRules,
   scheduledFruitClearance,
   validateSliceClaim,
-} from "../public/games/fruit-party/source/server/match";
-import { firstRelevantScheduleIndex } from "../public/games/fruit-party/source/FruitNinjaEngine";
+} from "../games/fruit-party/src/shared/match";
+import { firstRelevantScheduleIndex } from "../games/fruit-party/src/FruitNinjaEngine";
 
 describe("deterministic multiplayer schedule", () => {
   it("produces the same fruit stream for the same seed", () => {

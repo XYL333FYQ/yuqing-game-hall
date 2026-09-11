@@ -1,0 +1,26 @@
+{
+  "name": "@yuqing/fruit-party-server",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "esbuild src/server.ts --bundle --platform=node --target=node22 --format=esm --packages=external --outfile=dist/server.mjs",
+    "check": "tsc --noEmit",
+    "dev": "pnpm build && node dist/server.mjs",
+    "start": "node dist/server.mjs",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "ws": "8.21.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "@types/ws": "^8.18.1",
+    "esbuild": "0.28.1",
+    "typescript": "^7.0.2",
+    "vitest": "4.1.11"
+  }
+}

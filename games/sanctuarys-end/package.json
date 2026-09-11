@@ -1,0 +1,17 @@
+{
+  "name": "sanctuarys-end-dev",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dev tooling (type-checking, lint/format, tests) for Sanctuary's End. The game itself ships as plain static files — nothing here is bundled, built, or served to players.",
+  "scripts": {
+    "typecheck": "tsc -p jsconfig.json --noEmit",
+    "lint": "biome lint ../../public/games/sanctuarys-end/js",
+    "format": "biome format --write ../../public/games/sanctuarys-end/js ../../public/games/sanctuarys-end/sanctuary.html",
+    "format:check": "biome format ../../public/games/sanctuarys-end/js ../../public/games/sanctuarys-end/sanctuary.html",
+    "check": "npm run typecheck && npm run lint"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "typescript": "5.6.3"
+  }
+}

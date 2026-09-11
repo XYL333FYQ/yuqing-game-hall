@@ -57,10 +57,10 @@ try {
 
 try {
   const manifests = await collectGameManifests();
-  const iframeEntries = manifests.filter(({ manifest }) => manifest.launch.kind === "iframe");
+  const iframeEntries = manifests.filter(({ manifest }) => manifest.platform.launch.kind === "iframe");
   for (const { manifest } of iframeEntries) {
-    if (manifest.launch.kind !== "iframe") continue;
-    const entry = manifest.launch.entry;
+    if (manifest.platform.launch.kind !== "iframe") continue;
+    const entry = manifest.platform.launch.entry;
     if (!entry.startsWith(`/games/${manifest.id}/`) || !entry.endsWith(".html") || entry.includes("..")) {
       failures.push(`Manifest 的 iframe 入口不够明确或不安全：${manifest.id} → ${entry}`);
       continue;

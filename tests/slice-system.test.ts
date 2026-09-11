@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { BOMB_TYPE, fruitTypeByName } from "../public/games/fruit-party/source/data/fruits";
-import { addMissFeedback, fastForwardScheduledState, firstRelevantScheduleIndex, scaleGameStateToViewport } from "../public/games/fruit-party/source/FruitNinjaEngine";
-import { SliceSystem } from "../public/games/fruit-party/source/systems/SliceSystem";
-import type { BladeState, Fruit, FruitNinjaState, GameEvent } from "../public/games/fruit-party/source/types";
-import { generateMatchSchedule } from "../public/games/fruit-party/source/server/match";
+import { BOMB_TYPE, fruitTypeByName } from "../games/fruit-party/src/data/fruits";
+import { addMissFeedback, fastForwardScheduledState, firstRelevantScheduleIndex, scaleGameStateToViewport } from "../games/fruit-party/src/FruitNinjaEngine";
+import { SliceSystem } from "../games/fruit-party/src/systems/SliceSystem";
+import type { BladeState, Fruit, FruitNinjaState, GameEvent } from "../games/fruit-party/src/types";
+import { generateMatchSchedule } from "../games/fruit-party/src/shared/match";
 
 const orange = fruitTypeByName("orange");
 

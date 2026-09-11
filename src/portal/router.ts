@@ -43,11 +43,12 @@ export function startPortal(app: HTMLDivElement): void {
 function resolvePortalRoute(path: string): PageLoader | undefined {
   if (path === "/") return async (root) => (await import("../pages/home")).renderHome(root);
   if (path === "/vision-lab") return async (root) => (await import("../pages/vision-lab")).renderVisionLab(root);
+  if (path === "/third-party-notices") return async (root) => (await import("../pages/third-party-notices")).renderThirdPartyNotices(root);
 
-  const playMatch = path.match(/^\/games\/([^/]+)\/play$/i);
+  const playMatch = path.match(/^\/play\/([^/]+)$/i);
   if (playMatch) return async (root) => (await import("../pages/library-play")).renderLibraryPlay(root, playMatch[1]);
 
-  const gameMatch = path.match(/^\/games\/([^/]+)$/i);
+  const gameMatch = path.match(/^\/library\/([^/]+)$/i);
   if (gameMatch) return async (root) => (await import("../pages/library-game")).renderLibraryGame(root, gameMatch[1]);
   return undefined;
 }
@@ -59,7 +60,7 @@ function renderNotFound(app: HTMLElement): void {
 }
 
 function restoreScroll(path: string, revision: number, currentRevision: () => number): void {
-  if (path.startsWith("/room/") || path.endsWith("/play") || path.endsWith("/arcade")) return;
+  if (path.startsWith("/play/")) return;
   const resetScroll = (): void => {
     if (revision !== currentRevision() || window.location.pathname !== path) return;
     const targetId = decodeURIComponent(window.location.hash.slice(1));

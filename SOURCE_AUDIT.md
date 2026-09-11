@@ -67,8 +67,8 @@ WASM 从已安装的 `@mediapipe/tasks-vision` 复制到 `public/wasm/`。生产
 
 ## 5. 联机实现边界
 
-- 使用 Cloudflare Worker、Workers Static Assets、Durable Objects 和原生 WebSocket，没有 WebRTC 视频。
-- Durable Object 生成种子和开始时间；客户端本地模拟，服务器验证切割声明并维护权威比分。
+- 果切静态运行包由 Cloudflare Pages 提供；房间 API 与原生 WebSocket 由 `server-games/fruit-party/` 的 Node 服务在 VPS 独立运行，VPS 不提供游戏页面或素材。
+- VPS 房间服务生成种子和开始时间；客户端本地模拟，服务器验证切割声明并维护权威比分。
 - 本地双浏览器已经通过建房、加入、准备、权威比分同步、短线重连、认输和双方重赛流程。
 - 当前属于私人休闲房间的基础防刷分，不宣称能抵抗修改客户端或专门攻击者。
 - 没有账号、全球排行榜或长期玩家档案；昵称和本地最高分保存在浏览器，房间状态按时清理。
@@ -78,14 +78,14 @@ WASM 从已安装的 `@mediapipe/tasks-vision` 复制到 `public/wasm/`。生产
 Hand Landmarker 与 Holistic 已使用合成视频源确认本地模型、WASM、Worker、GPU 路径和关闭清理能够实际运行；该测试只验证启动链路，没有被当作真人挥手性能数据。
 
 - Chrome/Edge 中不同刷新率鼠标的主观刀感。
-- 两台不同网络电脑访问正式 Cloudflare 部署时的往返延迟。
+- 两台不同网络电脑从正式 Cloudflare 页面连接 VPS WSS 服务时的往返延迟。
 - 体感实验室在用户真实双手、弱光、运动模糊和全身模式下的持续性能。
 
 构建、单元测试和自动浏览器检查不能替代以上真实设备验收。
 
 ## 7. 街机模式与果汁喷溅
 
-- 新增 90 秒本地街机时间线：无炸弹热身、三个由种子抽取且不重复的挑战、普通过渡和八刀巨型水果终局。该生成器与 `ScheduledFruit`、Durable Object 以及三种联机规则完全分离。
+- 新增 90 秒本地街机时间线：无炸弹热身、三个由种子抽取且不重复的挑战、普通过渡和八刀巨型水果终局。该生成器与 `ScheduledFruit`、VPS 房间服务以及三种联机规则完全分离。
 - 新喷溅模块参考 `NDevTK/Dynamic-Random` 的种子化轮廓、卫星滴、重力运动和对象池思路，以及 `oleksnd/ray.js` 的噪声湿斑和贝塞尔下淌思路；两者均为 MIT，完整许可已保存在 `licenses/`。
 - 没有引入两套上游绘图库，也没有逐行复制其完整实现。本项目按水果尺寸、刀速和刀向重新实现为 TypeScript 数据结构，并限制为 12 个墙渍和 180 个动态液滴。
 - 所有墙渍几何只在命中瞬间由种子生成一次；渲染循环不调用随机数。墙面层在屏幕震动变换之外，并使用归一化坐标，所以画面震动或尺寸变化不会让墙渍脱离背景。
@@ -118,7 +118,7 @@ Hand Landmarker 与 Holistic 已使用合成视频源确认本地模型、WASM�
 十个上游仓库保持原样归档在 `game-sources/upstream/`，不会从那里直接提供运行资源。实际进入源码和游戏流程后按运行结构分为三组：
 
 - 可静态部署：Der Koloss CE、Sanctuary's End、LittleJS Arcade、PVP 的单机/本地模式、HexGL。清理后的副本位于 `public/games/`，最大单文件均低于 Cloudflare 25 MiB。
-- 需常驻服务器：Suroi（Bun）、Scribble.rs（Go/WebSocket）、TOSIOS（Node/Colyseus）与 OpenFront（Node 权威服务）。静态站不能替代这些房间后端，自建说明位于 `server-games/`。
+- 需常驻服务器：Suroi（Bun）、Scribble.rs（Go/WebSocket）、TOSIOS（Node/Colyseus）与 OpenFront（Node 权威服务）。静态站不能替代这些房间后端；当前仅在 `external-games/` 保存简介并跳转上游，不把它们部署到本项目 VPS。
 - 不复用：Kaetram Open 的自定义许可证明确禁止 AI 相关使用，本项目只保留名称、判断和源码链接。
 
 静态移植使用共享 `yuqing-bridge.js` 翻译 DOM 文本并向游戏厅报告就绪，但不把翻译结果冒充上游原生完整中文版本。PVP 的 Canvas 位图字体只含 ASCII，因此在引擎打印函数中增加了只针对非 ASCII 文本的系统中文字体回退；英文 HUD 仍走原像素字形。

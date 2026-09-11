@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 2,
+  "id": "scribble",
+  "order": 6,
+  "featured": true,
+  "discovery": { "audiences": ["multi"], "popularRank": 5, "featuredRank": 4 },
+  "theme": { "accent": "#4ea7e8", "dark": "#102131" },
+  "presentation": {
+    "title": "你画我猜",
+    "originalTitle": "Scribble.rs",
+    "mark": "画猜",
+    "category": "多人派对猜词",
+    "tagline": "轮流画画和猜词，把一群人的笑声聚到一起。",
+    "description": "轮流画画和猜词，和朋友开一间房，在有限时间里画出提示、抢先猜中答案。",
+    "tags": ["多人", "派对", "创作"],
+    "play": {
+      "modes": "多人房间",
+      "players": "多人房间",
+      "controls": "鼠标绘画 · 键盘猜词",
+      "inputs": ["keyboard", "mouse", "touch"],
+      "devices": ["desktop", "mobile"],
+      "vision": false
+    },
+    "highlights": ["轮流作画、限时猜词和回合计分", "简单规则，朋友第一次玩也能马上加入", "每一轮都可能画出意料之外的答案"],
+    "art": {},
+    "availability": { "state": "external", "label": "在线体验" },
+    "actionLabel": "前往体验"
+  },
+  "platform": {
+    "hosting": "server",
+    "technology": "TypeScript 前端 · Go 服务端 · WebSocket",
+    "license": "BSD-3-Clause；部分美术另行授权",
+    "sourceUrl": "https://github.com/scribble-rs/scribble.rs",
+    "localization": "游戏厅中文说明已完成；现阶段连接上游房间服务。自建时会固定版本并替换完整中文词库、提示与房间界面。",
+    "fit": "房间规则成熟、上手门槛低，很适合成为游戏厅第一款轻社交联机游戏。",
+    "highlights": ["创建房间、回合轮换和计分完整", "中文词库可做成校园、网络梗和自定义主题", "低延迟要求比动作联机宽松"],
+    "cautions": ["官方实例会在无流量时休眠，首次打开可能需要等待它唤醒", "原 Logo、背景与部分图标不能直接整体搬用", "自建版需要补举报、房主控制和 WebSocket 反向代理"],
+    "launch": { "kind": "external", "url": "https://scribblers.bios-marcel.link/" }
+  }
+}

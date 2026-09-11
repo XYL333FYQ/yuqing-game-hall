@@ -1,34 +1,43 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "hexgl",
   "order": 9,
-  "name": "极速光轨",
-  "originalName": "HexGL",
-  "mark": "竞速",
-  "category": "未来悬浮竞速",
-  "description": "驾驶高速悬浮载具穿越霓虹赛道，重点体验速度感、镜头和计时追逐。",
-  "hosting": "static",
-  "hostingLabel": "静态版已接入",
+  "discovery": { "audiences": ["single"], "popularRank": 8 },
   "theme": { "accent": "#3dcbd1", "dark": "#0d2225" },
-  "tags": ["单人", "竞速", "3D"],
-  "play": {
-    "modes": "单人计时",
-    "players": "1 人",
-    "controls": "键盘驾驶",
-    "inputs": ["keyboard", "gamepad"],
-    "devices": ["desktop"],
-    "vision": false
+  "presentation": {
+    "title": "极速光轨",
+    "originalTitle": "HexGL",
+    "mark": "竞速",
+    "category": "未来悬浮竞速",
+    "tagline": "驾驶悬浮载具冲过霓虹赛道，刷新自己的纪录。",
+    "description": "驾驶高速悬浮载具穿越霓虹赛道，在连续弯道和急速镜头中保持路线，挑战更快的计时成绩。",
+    "tags": ["单人", "竞速", "3D"],
+    "play": {
+      "modes": "单人计时",
+      "players": "1 人",
+      "controls": "键盘驾驶",
+      "inputs": ["keyboard", "gamepad"],
+      "devices": ["desktop"],
+      "vision": false
+    },
+    "highlights": ["霓虹赛道与高速悬浮驾驶", "计时挑战和幽灵回放", "适合一遍遍熟悉路线、刷新纪录"],
+    "art": { "cover": "/games/hexgl/css/mobile.jpg", "hero": "/games/hexgl/css/mobile.jpg" },
+    "availability": { "state": "playable", "label": "可直接游玩" },
+    "actionLabel": "开始游戏"
   },
-  "technology": "旧版 Three.js · CoffeeScript",
-  "license": "MIT",
-  "sourceUrl": "https://github.com/BKcore/HexGL",
-  "localization": "启动、控制方式、画质、界面开关和继续提示已汉化；赛道内计时与结算术语继续沿用易辨认的原作缩写。",
-  "fit": "视觉速度感仍有参考价值，可拆出赛道、幽灵回放与操作反馈。",
-  "highlights": ["浏览器 3D 高速竞速", "计时与幽灵回放", "本地无需后端即可试玩"],
-  "cautions": ["技术栈年代较久", "原项目长期停止维护", "更适合参考后重制，不适合整仓长期维护"],
-  "launch": {
-    "kind": "iframe",
-    "entry": "/games/hexgl/index.html",
-    "upstreamUrl": "http://hexgl.bkcore.com/play/"
+  "platform": {
+    "hosting": "static",
+    "technology": "旧版 Three.js · CoffeeScript",
+    "license": "MIT",
+    "sourceUrl": "https://github.com/BKcore/HexGL",
+    "localization": "启动、控制方式、画质、界面开关和继续提示已汉化；赛道内计时与结算术语继续沿用易辨认的原作缩写。",
+    "fit": "视觉速度感仍有参考价值，可拆出赛道、幽灵回放与操作反馈。",
+    "highlights": ["浏览器 3D 高速竞速", "计时与幽灵回放", "本地无需后端即可试玩"],
+    "cautions": ["技术栈年代较久", "原项目长期停止维护", "更适合参考后重制，不适合整仓长期维护"],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/hexgl/index.html",
+      "upstreamUrl": "http://hexgl.bkcore.com/play/"
+    }
   }
 }

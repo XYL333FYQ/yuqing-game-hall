@@ -1,30 +1,39 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "kaetram",
   "order": 11,
-  "name": "凯特兰冒险",
-  "originalName": "Kaetram Open",
-  "mark": "MMO",
-  "category": "像素多人在线角色扮演",
-  "description": "任务、怪物、首领、地图分区与多人世界较完整，但当前许可不适合作为本项目底座。",
-  "hosting": "restricted",
-  "hostingLabel": "许可受限",
+  "discovery": { "audiences": ["multi"], "popularRank": 11 },
   "theme": { "accent": "#b58a5a", "dark": "#271d13" },
-  "tags": ["MMO", "打怪", "任务"],
-  "play": {
-    "modes": "多人持续世界",
-    "players": "大型多人在线",
-    "controls": "鼠标与键盘",
-    "inputs": ["keyboard", "mouse"],
-    "devices": ["desktop"],
-    "vision": false
+  "presentation": {
+    "title": "凯特兰冒险",
+    "originalTitle": "Kaetram Open",
+    "mark": "MMO",
+    "category": "像素多人在线角色扮演",
+    "tagline": "探索像素世界，接取任务并挑战怪物与首领。",
+    "description": "探索像素世界、接取任务、挑战怪物与首领，和其他玩家一起在持续变化的大陆上冒险。",
+    "tags": ["MMO", "打怪", "任务"],
+    "play": {
+      "modes": "多人持续世界",
+      "players": "大型多人在线",
+      "controls": "鼠标与键盘",
+      "inputs": ["keyboard", "mouse"],
+      "devices": ["desktop"],
+      "vision": false
+    },
+    "highlights": ["任务、怪物与首领挑战", "像素地图和多个探索区域", "持续世界中的多人冒险体验"],
+    "art": {},
+    "availability": { "state": "unavailable", "label": "暂不可用" },
+    "actionLabel": "暂不可用"
   },
-  "technology": "TypeScript · WebSocket · 多包工作区",
-  "license": "MPL-2.0 + 自定义 OPL",
-  "sourceUrl": "https://github.com/Kaetram/Kaetram-Open",
-  "localization": "不进入正式汉化排期，仅保留产品与架构观察。",
-  "fit": "内容系统值得观察，但自定义许可明确限制 AI 相关使用，因此不会复用代码。",
-  "highlights": ["怪物、任务、成就与地图分区", "浏览器 MMO 的完整工程拆分", "可观察持续世界的产品结构"],
-  "cautions": ["自定义许可明确限制 AI 相关用途", "必须保留特定署名与开放要求", "当前产品版本与开放源码已经分叉"],
-  "launch": { "kind": "none" }
+  "platform": {
+    "hosting": "restricted",
+    "technology": "TypeScript · WebSocket · 多包工作区",
+    "license": "MPL-2.0 + 自定义 OPL",
+    "sourceUrl": "https://github.com/Kaetram/Kaetram-Open",
+    "localization": "不进入正式汉化排期，仅保留产品与架构观察。",
+    "fit": "内容系统值得观察，但自定义许可明确限制 AI 相关使用，因此不会复用代码。",
+    "highlights": ["怪物、任务、成就与地图分区", "浏览器 MMO 的完整工程拆分", "可观察持续世界的产品结构"],
+    "cautions": ["自定义许可明确限制 AI 相关用途", "必须保留特定署名与开放要求", "当前产品版本与开放源码已经分叉"],
+    "launch": { "kind": "none" }
+  }
 }

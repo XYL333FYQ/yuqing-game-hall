@@ -1,16 +1,16 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { roomRequest } from "../public/games/fruit-party/source/network/roomRequest";
+import { roomRequest } from "../games/fruit-party/src/network/roomRequest";
 import {
   multiplayerWebSocketUrl,
   resolveMultiplayerServiceUrl,
-} from "../public/games/fruit-party/source/network/serviceConfig";
-import { isRoomCredentials, isValidRoomCode } from "../public/games/fruit-party/source/server/protocol";
+} from "../games/fruit-party/src/network/serviceConfig";
+import { isRoomCredentials, isValidRoomCode } from "../games/fruit-party/src/shared/protocol";
 
 afterEach(() => vi.unstubAllGlobals());
 
 describe("room API errors", () => {
   it("replaces a non-JSON backend response with a useful Chinese message", async () => {
-    stubGameWindow();
+    stubGameWindow("http://127.0.0.1:8790");
     vi.stubGlobal("fetch", vi.fn(async () => new Response("", { status: 404 })));
     await expect(roomRequest("/api/rooms", {})).rejects.toThrow("没有返回房间 API");
   });
@@ -38,8 +38,12 @@ describe("room API errors", () => {
 });
 
 describe("multiplayer service URLs", () => {
-  it("defaults to the game page origin", () => {
-    expect(resolveMultiplayerServiceUrl(undefined, "https://games.example/sub/index.html").href).toBe("https://games.example/");
+  it("defaults to the local VPS port during development", () => {
+    expect(resolveMultiplayerServiceUrl(undefined, "http://127.0.0.1:5173/games/fruit-party/index.html").href).toBe("http://127.0.0.1:8790/");
+  });
+
+  it("requires an explicit VPS address on a deployed static site", () => {
+    expect(() => resolveMultiplayerServiceUrl(undefined, "https://games.example/games/fruit-party/index.html")).toThrow("尚未配置");
   });
 
   it("keeps an explicit path prefix and derives the WebSocket protocol", () => {

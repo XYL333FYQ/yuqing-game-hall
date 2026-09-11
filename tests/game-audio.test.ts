@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { GameAudio } from "../public/games/fruit-party/source/GameAudio";
+import { GameAudio } from "../games/fruit-party/src/GameAudio";
 
 afterEach(() => vi.unstubAllGlobals());
 

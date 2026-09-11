@@ -9,10 +9,10 @@
 | `LittleJSArcade/` | LittleJS Arcade | `public/games/littlejs-arcade/` | 静态 iframe 运行包 |
 | `pvp/` | PVP Arena | `public/games/pvp-arena/` | 静态 iframe 运行包 |
 | `HexGL/` | HexGL | `public/games/hexgl/` | 静态 iframe 运行包 |
-| `suroi/` | Suroi | `server-games/suroi/` | 需要独立 Bun/WebSocket 服务 |
-| `scribble-rs/` | Scribble.rs | `server-games/scribble/` | 需要独立服务 |
-| `tosios/` | TOSIOS | `server-games/tosios/` | 需要独立服务 |
-| `OpenFrontIO/` | OpenFront | `server-games/openfront/` | 需要独立服务 |
+| `suroi/` | Suroi | `external-games/suroi/` | 跳转上游服务器；源码只作审查归档 |
+| `scribble-rs/` | Scribble.rs | `external-games/scribble/` | 跳转上游服务器；源码只作审查归档 |
+| `tosios/` | TOSIOS | `external-games/tosios/` | 跳转上游服务器；源码只作审查归档 |
+| `OpenFrontIO/` | OpenFront | `external-games/openfront/` | 跳转上游服务器；源码只作审查归档 |
 | `Kaetram-Open/` | Kaetram | `game-sources/rejected/kaetram/` | 许可证限制，不进入发布包 |
 
 更新第三方项目时，应先在上游目录中确认版本和许可证，再生成或整理发布目录中的独立运行包，并重新运行 `corepack pnpm check:games` 与 `corepack pnpm build`。不要让大厅直接从 `game-sources/upstream/` import 或读取运行文件。

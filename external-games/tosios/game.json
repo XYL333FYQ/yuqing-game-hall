@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 2,
+  "id": "tosios",
+  "order": 8,
+  "discovery": { "audiences": ["multi"], "popularRank": 9 },
+  "theme": { "accent": "#ef8754", "dark": "#2a170f" },
+  "presentation": {
+    "title": "双队乱斗",
+    "originalTitle": "TOSIOS",
+    "mark": "乱斗",
+    "category": "多人 2D 竞技射击",
+    "tagline": "在紧凑地图中组队交锋，抢下属于你的胜利。",
+    "description": "在紧凑地图中进行死亡竞赛或团队战，灵活走位、瞄准射击，与对手争夺每一分优势。",
+    "tags": ["多人", "团队", "射击"],
+    "play": {
+      "modes": "死亡竞赛 / 团队模式",
+      "players": "多人房间",
+      "controls": "键盘移动 · 鼠标瞄准",
+      "inputs": ["keyboard", "mouse"],
+      "devices": ["desktop"],
+      "vision": false
+    },
+    "highlights": ["死亡竞赛与团队模式自由切换", "紧凑地图带来连续交锋", "适合和朋友组队来一场短局对抗"],
+    "art": {},
+    "availability": { "state": "external", "label": "在线体验" },
+    "actionLabel": "前往体验"
+  },
+  "platform": {
+    "hosting": "server",
+    "technology": "PixiJS · Colyseus · TypeScript",
+    "license": "MIT",
+    "sourceUrl": "https://github.com/halftheopposite/tosios",
+    "localization": "游戏厅中文说明已完成；当前试玩使用上游在线服务。自建版本需同时汉化大厅、比分板、武器提示和服务端房间消息。",
+    "fit": "客户端与权威房间分层清楚，适合参考实时竞技的服务端结构。",
+    "highlights": ["PixiJS 客户端与服务端清晰分离", "死亡竞赛和团队玩法完整", "房间状态同步结构容易阅读"],
+    "cautions": ["不是生存打怪玩法", "Colyseus 服务端不能直接放入 Durable Object", "线上项目状态需在正式选择时再次确认"],
+    "launch": { "kind": "external", "url": "https://tosios.online/" }
+  }
+}

@@ -125,6 +125,6 @@
 
 ## 独立服务器游戏
 
-Suroi（GPL-3.0）、Scribble.rs（BSD-3-Clause，部分美术保留权利）、TOSIOS（MIT）和 OpenFront（AGPL-3.0；素材 CC BY-SA 4.0）当前不打包进静态站点。游戏厅只提供中文说明和上游在线入口；自建部署边界记录在 `server-games/README.md`。
+Suroi（GPL-3.0）、Scribble.rs（BSD-3-Clause，部分美术保留权利）、TOSIOS（MIT）和 OpenFront（AGPL-3.0；素材 CC BY-SA 4.0）当前不打包进静态站点。游戏厅只提供中文说明和上游在线入口，Manifest 位于 `external-games/`；本项目 VPS 不运行这些第三方整站。
 
 Kaetram Open 的自定义 OPL 明确限制 AI 相关用途，因此本项目不复制、不修改也不发布其运行代码，只保留产品观察与上游源码链接。

@@ -6,6 +6,7 @@
 <title>庇护所终章</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <script defer src="../_shared/yuqing-bridge.js" data-game="sanctuarys-end"></script>
+<script defer src="sanctuary.config.js"></script>
 <link href="vendor/fonts/cinzel/cinzel.css" rel="stylesheet">
 <!-- Phase 1 perf: modulepreload the renderer module graph so the browser starts fetching the ~2MB webgpu build
      (+ core/tsl + addons) during HTML parse, instead of discovering it only when the module <script> near the
@@ -497,9 +498,9 @@
 <div id="mpModal">
   <h3>👥 Multiplayer — Co-op</h3><span class="close" id="mpClose">✕</span>
   <p style="font-size:13px;color:#9a8a6a;line-height:1.6">Adventure alongside friends in the same world — you'll see each other move, fight, and can chat. Enemies and loot stay local to each player.</p>
-  <p style="font-size:12px;color:#8a7a5a;line-height:1.6;margin-top:8px"><b style="color:#c4a878">To host:</b> run the included <b>server.js</b> on one machine — <span style="color:#cbb89a">npm i ws</span> then <span style="color:#cbb89a">node server.js</span>. Everyone (host included) enters that machine's IP and port below. For internet play, forward the port (default 8787) on the host's router. Open the game from a file or http page (not https) so <span style="color:#cbb89a">ws://</span> is allowed.</p>
+  <p style="font-size:12px;color:#8a7a5a;line-height:1.6;margin-top:8px">公网联机使用管理员配置的安全中继地址；本地测试可填写运行中继服务的 IP 与端口。该功能只同步玩家位置和聊天，敌人、战斗与掉落仍在各自浏览器内计算。</p>
   <div class="setRow"><label>Display name</label><input class="mpin" id="mpName" maxlength="14" style="width:200px"></div>
-  <div class="setRow"><label>Host IP / address</label><input class="mpin" id="mpHost" placeholder="192.168.1.10" style="width:200px"></div>
+  <div class="setRow"><label>中继地址</label><input class="mpin" id="mpHost" placeholder="192.168.1.10 或 wss://…" style="width:200px"></div>
   <div class="setRow"><label>Port</label><input class="mpin" id="mpPort" value="8787" style="width:90px"></div>
   <div id="mpStatus" style="margin:10px 0;color:#9fd8ff;font-size:14px">Not connected</div>
   <button class="btn small" id="mpConnect" style="width:100%">Connect</button>

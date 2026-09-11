@@ -7,8 +7,8 @@ import {
   MAX_WALL_SPLATTERS,
   updateJuiceEffects,
   type JuiceImpact,
-} from "../public/games/fruit-party/source/effects/JuiceEffects";
-import type { FruitNinjaState } from "../public/games/fruit-party/source/types";
+} from "../games/fruit-party/src/effects/JuiceEffects";
+import type { FruitNinjaState } from "../games/fruit-party/src/types";
 
 const impact: JuiceImpact = {
   seed: 20260828,

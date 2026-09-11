@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { musicCueForState } from "../public/games/fruit-party/source/MusicDirector";
-import type { FruitNinjaState } from "../public/games/fruit-party/source/types";
+import { musicCueForState } from "../games/fruit-party/src/MusicDirector";
+import type { FruitNinjaState } from "../games/fruit-party/src/types";
 
 function state(overrides: Partial<FruitNinjaState> = {}): FruitNinjaState {
   return {

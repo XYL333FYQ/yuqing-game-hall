@@ -8,11 +8,11 @@ export function findGame(id: string): GameManifest | undefined {
 }
 
 export function iframeEntry(game: GameManifest): string | undefined {
-  return game.launch.kind === "iframe" ? game.launch.entry : undefined;
+  return game.platform.launch.kind === "iframe" ? game.platform.launch.entry : undefined;
 }
 
 export function primaryGameUrl(game: GameManifest): string | undefined {
-  if (game.launch.kind === "iframe") return game.launch.entry;
-  if (game.launch.kind === "external") return game.launch.url;
+  if (game.platform.launch.kind === "iframe") return game.platform.launch.entry;
+  if (game.platform.launch.kind === "external") return game.platform.launch.url;
   return undefined;
 }

@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fruitRadiusForInstance, fruitTypeByName } from "../public/games/fruit-party/source/data/fruits";
-import { FruitSystem } from "../public/games/fruit-party/source/systems/FruitSystem";
-import { initialBombDelayForSeed } from "../public/games/fruit-party/source/FruitNinjaEngine";
-import type { Fruit, FruitNinjaState } from "../public/games/fruit-party/source/types";
+import { fruitRadiusForInstance, fruitTypeByName } from "../games/fruit-party/src/data/fruits";
+import { FruitSystem } from "../games/fruit-party/src/systems/FruitSystem";
+import { initialBombDelayForSeed } from "../games/fruit-party/src/FruitNinjaEngine";
+import type { Fruit, FruitNinjaState } from "../games/fruit-party/src/types";
 
 function endlessState(): FruitNinjaState {
   return {

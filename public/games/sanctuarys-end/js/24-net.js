@@ -1,12 +1,21 @@
 const NET = {
   ws: null, id: 0, connected: false, name: '', remotes: new Map(), sendT: 0,
   connect(host, port, name) {
-    this.name = (name || 'Hero').slice(0, 14); if (!host) { this.status('Enter a host address'); return; }
+    this.name = (name || 'Hero').slice(0, 14);
+    const configured = String(window.SANCTUARY_CONFIG && window.SANCTUARY_CONFIG.relayUrl || '').trim();
+    const address = configured || host;
+    if (!address) { this.status('请输入中继地址'); return; }
     // Tear down any prior socket first, or a repeat Connect orphans it — its handlers keep firing and its
     // remote ghosts leak. Null the handlers before close() so the old socket's onclose can't clobber new state.
     if (this.ws) { try { this.ws.onopen = this.ws.onmessage = this.ws.onclose = this.ws.onerror = null; this.ws.close(); } catch (_) { } }
     this.clearRemotes(); this.connected = false;
-    try { this.ws = new WebSocket('ws://' + host + ':' + (port || 8787)); } catch (e) { this.status('Invalid address'); return; }
+    try {
+      const explicitProtocol = /^wss?:\/\//i.test(address);
+      const protocol = location.protocol === 'https:' ? 'wss://' : 'ws://';
+      const socketUrl = new URL(explicitProtocol ? address : protocol + address + ':' + (port || 8787));
+      if (socketUrl.protocol !== 'ws:' && socketUrl.protocol !== 'wss:') throw new Error('unsupported protocol');
+      this.ws = new WebSocket(socketUrl.href);
+    } catch (e) { this.status('中继地址格式不正确'); return; }
     this.status('Connecting…');
     this.ws.onopen = () => { this.connected = true; this.status('Connected — adventuring together'); this.refreshUI(); };
     this.ws.onclose = () => { this.connected = false; this.clearRemotes(); this.status('Disconnected'); this.refreshUI(); };

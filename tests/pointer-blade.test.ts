@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import type { FruitNinjaEngine } from "../public/games/fruit-party/source/FruitNinjaEngine";
-import { PointerBladeController } from "../public/games/fruit-party/source/PointerBladeController";
+import type { FruitNinjaEngine } from "../games/fruit-party/src/FruitNinjaEngine";
+import { PointerBladeController } from "../games/fruit-party/src/PointerBladeController";
 
 type PointerListener = (event: PointerEvent) => void;
 

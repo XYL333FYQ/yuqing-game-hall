@@ -1,0 +1,17 @@
+.git/
+.claude/
+.omc/
+.playwright-cli/
+.wrangler/
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+output/
+public/
+external-games/
+game-sources/
+*.zip
+*.log
+.env
+**/.env

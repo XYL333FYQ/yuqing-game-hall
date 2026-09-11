@@ -24,13 +24,13 @@ const oversized = files
   .filter(({ size }) => size > MAX_ASSET_BYTES);
 
 if (files.length > MAX_ASSET_COUNT) {
-  throw new Error(`静态文件数量 ${files.length} 超过 Cloudflare 免费版上限 ${MAX_ASSET_COUNT}。`);
+  throw new Error(`静态文件数量 ${files.length} 超过 Cloudflare Pages 免费版上限 ${MAX_ASSET_COUNT}。`);
 }
 if (oversized.length > 0) {
   const details = oversized
     .map(({ file, size }) => `${path.relative(distDirectory, file)}: ${(size / 1024 / 1024).toFixed(2)} MiB`)
     .join("\n");
-  throw new Error(`以下文件超过 Cloudflare 单文件 25 MiB 限制：\n${details}`);
+  throw new Error(`以下文件超过 Cloudflare Pages 单文件 25 MiB 限制：\n${details}`);
 }
 
 const largest = files
@@ -38,7 +38,7 @@ const largest = files
   .sort((a, b) => b.size - a.size)
   .slice(0, 5);
 
-console.log(`Cloudflare 静态资源检查通过：${files.length} 个文件。`);
+console.log(`Cloudflare Pages 静态资源检查通过：${files.length} 个文件。`);
 for (const { file, size } of largest) {
   console.log(`  ${(size / 1024 / 1024).toFixed(2)} MiB  ${path.relative(distDirectory, file)}`);
 }

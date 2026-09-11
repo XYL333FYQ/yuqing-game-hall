@@ -1,34 +1,46 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "sanctuarys-end",
   "order": 4,
-  "name": "庇护所终章",
-  "originalName": "Sanctuary’s End",
-  "mark": "冒险",
-  "category": "暗黑式动作角色扮演",
-  "description": "选择职业、组合技能与装备词条，深入地下城迎战成群怪物和首领。",
-  "hosting": "static",
-  "hostingLabel": "静态版已接入",
+  "featured": true,
+  "discovery": { "audiences": ["single"], "popularRank": 4, "featuredRank": 3 },
   "theme": { "accent": "#9d72e8", "dark": "#1c1428" },
-  "tags": ["单人", "打怪", "养成"],
-  "play": {
-    "modes": "单人冒险",
-    "players": "1 人",
-    "controls": "键盘移动 · 鼠标战斗与界面操作",
-    "inputs": ["keyboard", "mouse"],
-    "devices": ["desktop"],
-    "vision": false
+  "presentation": {
+    "title": "庇护所终章",
+    "originalTitle": "Sanctuary’s End",
+    "mark": "冒险",
+    "category": "暗黑式动作角色扮演",
+    "tagline": "深入地下城，在技能与装备之间找到自己的战斗方式。",
+    "description": "选择职业、组合技能与装备词条，深入地下城迎战成群怪物和首领，在一次次探索中让角色变得更强。",
+    "tags": ["单人", "打怪", "养成"],
+    "play": {
+      "modes": "单人冒险",
+      "players": "1 人",
+      "controls": "键盘移动 · 鼠标战斗与界面操作",
+      "inputs": ["keyboard", "mouse"],
+      "devices": ["desktop"],
+      "vision": false
+    },
+    "highlights": ["四种职业与各自的技能成长", "装备词条、商人和锻造带来持续选择", "地下城、精英怪与首领战层层推进"],
+    "art": { "cover": "/games/sanctuarys-end/image.png", "hero": "/games/sanctuarys-end/image.png" },
+    "availability": { "state": "playable", "label": "可直接游玩" },
+    "actionLabel": "开始游戏"
   },
-  "technology": "JavaScript · Three.js",
-  "license": "MIT",
-  "sourceUrl": "https://github.com/J3vb/Sanctuarys_End",
-  "localization": "角色、帮助、设置、装备属性与部位、技能、符文、怪物区域及主要商店面板已汉化；少量世界专名与剧情内容保留原作。",
-  "fit": "单机打怪内容最完整，职业、技能、掉落、锻造和 Boss 已形成可玩的长线循环。",
-  "highlights": ["四种职业与技能树", "装备词条、商人、锻造和本地存档", "地下城、精英怪与首领战"],
-  "cautions": ["现有联网模块只同步在线状态和聊天", "真正合作战斗需要重新设计权威同步", "美术和反馈还需要统一到游戏厅质量线"],
-  "launch": {
-    "kind": "iframe",
-    "entry": "/games/sanctuarys-end/sanctuary.html",
-    "upstreamUrl": "https://j3vb.github.io/Sanctuarys_End/sanctuary.html"
-  }
+  "platform": {
+    "hosting": "hybrid",
+    "technology": "JavaScript · Three.js · Node.js · WebSocket",
+    "license": "MIT",
+    "sourceUrl": "https://github.com/J3vb/Sanctuarys_End",
+    "localization": "角色、帮助、设置、装备属性与部位、技能、符文、怪物区域及主要商店面板已汉化；少量世界专名与剧情内容保留原作。",
+    "fit": "单机打怪内容最完整，职业、技能、掉落、锻造和 Boss 已形成可玩的长线循环。",
+    "highlights": ["四种职业与技能树", "装备词条、商人、锻造和本地存档", "地下城、精英怪与首领战"],
+    "cautions": ["现有联网模块只同步在线状态和聊天", "真正合作战斗需要重新设计权威同步", "美术和反馈还需要统一到游戏厅质量线"],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/sanctuarys-end/sanctuary.html",
+      "upstreamUrl": "https://j3vb.github.io/Sanctuarys_End/sanctuary.html"
+    }
+  },
+  "capabilities": ["multiplayer", "audio", "fullscreen", "storage"],
+  "permissions": ["fullscreen", "autoplay"]
 }

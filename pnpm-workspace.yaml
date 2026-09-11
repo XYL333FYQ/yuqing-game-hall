@@ -1,3 +1,7 @@
+packages:
+  - server-games/fruit-party
+  - server-games/sanctuarys-end
+
 allowBuilds:
   esbuild: true
   workerd: true

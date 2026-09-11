@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   fruitPartyHref,
   parseFruitPartyRoute,
-} from "../public/games/fruit-party/source/router";
+} from "../games/fruit-party/src/router";
 
 describe("fruit party self-contained routes", () => {
   it("keeps the existing direct launch default", () => {
