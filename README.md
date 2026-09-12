@@ -1,162 +1,165 @@
 # 雨晴游戏厅
 
-雨晴游戏厅由三个彼此独立的部分组成：静态游戏平台、可独立运行的游戏包，以及部署在 VPS 的联机服务。大厅只读取每款游戏的 `game.json`，负责介绍、分类和启动；它不直接导入任何游戏玩法代码。
+给小人机做的小游戏联机网站：一个可部署的网页游戏大厅，支持本地静态游戏、部分联机游戏，以及第三方游戏跳转。
 
-## 快速开始
+---
 
-双击根目录唯一的 `启动雨晴游戏厅.cmd`，脚本会安装缺失依赖、选择可用端口并打开浏览器。它只启动静态平台；果切单人模式可直接玩，好友联机还要另开终端启动 VPS 服务的本地版本：
+## 你可以用它做什么
 
-```powershell
-corepack pnpm server:fruit:dev
-```
+- 在一个统一首页里展示多款小游戏；
+- 直接在浏览器里玩本地静态游戏；
+- 为特定游戏接入独立 VPS 联机服务（WebSocket/房间/比分）；
+- 为暂时无法静态部署的第三方游戏提供资料页与外部跳转。
 
-命令行开发：
+主要页面：
+
+- `/`：游戏厅首页
+- `/library/<id>`：游戏介绍页
+- `/play/<id>`：平台播放器页面
+- `/games/<id>/<entry>.html`：游戏自己的静态入口（非平台路由）
+
+---
+
+## 快速开始（Windows 一键）
+
+在项目根目录双击：
+
+- `启动雨晴游戏厅.cmd`
+
+该脚本会尝试安装依赖、选择可用端口并打开浏览器。默认启动的是**静态平台**：
+
+- 单机/静态内容可直接体验；
+- 需要 VPS 后端的联机功能，需要你先完成“联机服务部署与配置”。
+
+---
+
+## 命令行开发
 
 ```powershell
 corepack pnpm install --frozen-lockfile
 corepack pnpm dev
 ```
 
-主要页面：
-
-- `/`：游戏厅首页。
-- `/library/<id>`：由 `game.json` 生成的游戏介绍页。
-- `/play/<id>`：平台播放器；本地游戏在这里通过 iframe 启动。
-- `/games/<id>/<entry>.html`：游戏自己的静态运行入口，不是平台路由。
-- `/vision-lab`：独立的视觉识别实验室。
-- `/third-party-notices`：第三方许可与来源说明。
-
-这里刻意不用 `/games/<id>` 作为平台介绍页。Cloudflare Pages 会把 `/games/hexgl` 识别成真实静态目录，容易与单页应用路由冲突；`/library`、`/play` 和 `/games` 分开后，刷新、iframe 和资源相对路径都有唯一含义。
-
-## 目录职责
-
-```text
-src/                         游戏厅前端源码
-  portal/                    平台路由
-  pages/                     首页、介绍页、播放器等
-  platform/                  Manifest 类型、目录读取、公共页面能力
-  generated/                 构建时生成的游戏目录，不手工编辑
-
-games/                       自己维护的游戏开发源码
-  fruit-party/src/           果切派对源码与共享比赛协议
-  sanctuarys-end/            庇护所的开发配置与维护文档
-  littlejs-arcade/types/     不进入运行包的类型声明
-  hexgl/source/              不进入运行包的 CoffeeScript 原件
-
-public/                      Cloudflare Pages 会公开发布的文件
-  games/<id>/                可直接运行的静态游戏包与 game.json
-  models/、wasm/             浏览器按需加载的模型和运行时
-  legal/                     构建时同步的许可文件
-
-server-games/                只部署到 VPS 的联机数据服务
-  fruit-party/               权威房间、比分与 WebSocket
-  sanctuarys-end/            在线位置与聊天中继
-
-external-games/              第三方服务器游戏的 JSON 简介与跳转地址
-
-game-sources/upstream/       上游源码归档，只用于审查和同步，不发布
-game-sources/rejected/       不允许发布或不采用的项目记录
-scripts/                     构建、目录生成和边界检查
-tests/                       平台与果切共享逻辑测试
-dist/                        可重新生成的 Cloudflare Pages 成品
-```
-
-最重要的规则是：
-
-- `public/` 里的每个文件都可能被访客下载，不能放服务端源码、密钥或私有配置。
-- `games/` 是开发源码；构建后才把可运行文件写入 `public/games/`。
-- `server-games/` 只放本项目维护的联机数据服务，不放静态游戏，也不放第三方跳转资料。
-- `external-games/` 只在构建时提供第三方游戏简介与外链，不会部署到 Cloudflare 或 VPS；所需资料会编入大厅前端。
-- `game-sources/upstream/` 是完整上游副本，不是可直接发布的游戏包。
-
-## 游戏如何接入
-
-每款游戏只有一份资料来源：`game.json`。构建前，`scripts/generate-game-catalog.mjs` 会扫描约定目录、校验字段，再生成 `src/generated/gameCatalog.ts`。不要手工维护第二份游戏列表。
-
-### 静态游戏
-
-把经过验证的完整运行包放在 `public/games/<id>/`，同目录添加 `game.json`：
-
-```json
-{
-  "platform": {
-    "hosting": "static",
-    "launch": {
-      "kind": "iframe",
-      "entry": "/games/example/index.html"
-    }
-  }
-}
-```
-
-平台会生成 `/library/example` 和 `/play/example`。iframe 直接加载 `/games/example/index.html`，游戏自己的 CSS、Canvas、音频、图片和脚本都留在游戏目录内。
-
-### 自带 VPS 后端的游戏
-
-浏览器运行包仍放 `public/games/<id>/`，后端放 `server-games/<id>/`，Manifest 使用 `hosting: "hybrid"`。前端必须通过公开的 `https://` / `wss://` 地址访问 VPS，不能假设 Cloudflare Pages 存在同源 `/api`。
-
-果切派对就是这个结构：
-
-```text
-/play/fruit-party
-  -> iframe /games/fruit-party/index.html
-  -> fruit-party.config.js 中的 HTTPS 服务地址
-  -> VPS /api/rooms 与 WebSocket 房间服务
-```
-
-本地开发时，果切配置留空会连接 `http://127.0.0.1:8790`；部署到真实域名时留空会直接显示配置错误，避免误请求静态站点。
-
-### 第三方服务器游戏
-
-不能独立静态运行的第三方项目只在 `external-games/<id>/game.json` 保存介绍、上游地址和跳转属性，`launch.kind` 使用 `external`。玩家点击后离开本站，进入对方的服务器；平台不会用 iframe 伪装一个并不存在的本地客户端，也不会把第三方整站放进你的 VPS。
-
-### WebSocket 与 WebRTC
-
-- WebSocket 适合房间、匹配、权威比分和信令。果切当前实际使用 Node + WebSocket。
-- WebRTC 适合浏览器之间的低延迟点对点数据或音视频，但仍需要信令服务；复杂网络下还需要 STUN/TURN。
-- Cloudflare Pages 只发布静态文件。VPS 负责 WebSocket/信令；TURN 通常还需要单独开放 UDP/TCP 端口。
-- 当前 Der Koloss 和 PVP Arena 保留各自的 WebRTC/PeerJS 实现；这不等于项目已经拥有统一的自建 TURN 服务。
-- 孤堡尸潮的 WebRTC 语音通过 Manifest 单独声明麦克风权限，其他 iframe 游戏不会因此获得麦克风能力。
-
-## 构建与验证
+可选：单独启动果切联机服务开发模式
 
 ```powershell
-# 单独更新果切浏览器运行包（开发时可选）
+corepack pnpm server:fruit:dev
+```
+
+---
+
+## 部署指南
+
+> 推荐拆分为两部分：
+> 1) Cloudflare Pages 部署静态大厅；
+> 2) VPS 部署联机服务（如果你需要联机）。
+
+### 1) 部署静态大厅（Cloudflare Pages）
+
+```powershell
+corepack pnpm deploy:cloudflare
+```
+
+此命令会构建并执行 `wrangler pages deploy dist --project-name yuqing-game-hall`。
+
+部署前请确认：
+
+1. 已登录 Wrangler；
+2. Cloudflare Pages 项目名正确；
+3. 绑定域名与 DNS 已在 Cloudflare 侧配置完成（命令不会自动改 DNS）。
+
+---
+
+### 2) 部署联机服务（VPS / Docker）
+
+以果切服务为例：
+
+```bash
+docker compose -f server-games/docker-compose.example.yml up -d fruit-party
+```
+
+部署前至少完成这几项：
+
+1. 把示例域名改成你的真实域名；
+2. 配置 HTTPS 证书路径；
+3. 设置 `ALLOWED_ORIGINS` 为你的前端站点域名；
+4. 按 `server-games/nginx.example.conf` 配置反向代理（含 WebSocket）。
+
+部署后，记得把前端配置文件（如 `public/games/fruit-party/fruit-party.config.js`）中的服务地址改为你的 `https://` / `wss://` 正式地址。
+
+---
+
+## 联机功能说明（重要）
+
+- Cloudflare Pages 只托管静态文件，不提供你的自定义 WebSocket 房间后端；
+- 联机游戏请使用独立 VPS 服务，并通过 `https://` / `wss://` 给前端访问；
+- 本地开发允许连接 `127.0.0.1`，但生产环境缺省配置会直接报错，避免误连静态站点。
+
+---
+
+## 构建与检查
+
+```powershell
+# 可选：先更新果切浏览器运行包
 corepack pnpm build:fruit-party
 
-# 类型、Manifest、静态入口和项目边界
+# 类型、Manifest、静态入口和边界检查
 corepack pnpm check
 
-# 平台/游戏逻辑与真实 WebSocket 服务测试
+# 平台/游戏逻辑与 WebSocket 服务测试
 corepack pnpm test:all
 
-# 重新构建自维护游戏并生成 Cloudflare Pages 目录
+# 构建平台并生成 dist/
 corepack pnpm build
 
 # 构建果切 VPS 服务
 corepack pnpm server:fruit:build
 ```
 
-`build` 会先更新自维护游戏的浏览器运行包，再生成静态 `dist/`。随后会移除已登记的旧开发文档和工具目录；边界检查会拒绝 TypeScript、CoffeeScript、source map、VPS 代码或上游源码进入成品，并继续检查 Cloudflare Pages 的文件数和单文件大小限制。许可与运行资源始终保留。它不会打包或部署 VPS 服务。
+---
 
-## 部署
+## 新增/接入游戏（简版）
 
-Cloudflare Pages：
+平台通过每款游戏的 `game.json` 生成目录。
 
-```powershell
-corepack pnpm deploy:cloudflare
-```
+- **静态游戏**：放到 `public/games/<id>/`，并提供可运行入口与 `game.json`；
+- **联机游戏（混合）**：浏览器运行包放 `public/games/<id>/`，后端服务放 `server-games/<id>/`；
+- **第三方服务器游戏**：在 `external-games/<id>/game.json` 填资料与跳转，不当作本站自托管服务。
 
-该命令构建后执行 `wrangler pages deploy dist --project-name yuqing-game-hall`。执行前确认 Wrangler 登录账号、Pages 项目名和域名正确；项目不会自动替你修改 DNS 或登录第三方账号。
+---
 
-果切 VPS 服务：
+## 目录说明（面向部署）
 
-```bash
-docker compose -f server-games/docker-compose.example.yml up -d fruit-party
-```
+- `src/`：游戏厅前端源码
+- `public/`：会被公开发布的静态文件（访客可直接下载）
+- `games/`：自维护游戏开发源码
+- `server-games/`：仅部署到 VPS 的联机后端服务
+- `external-games/`：第三方服务器游戏资料（构建时读入）
+- `dist/`：构建产物（用于 Cloudflare Pages）
 
-先把示例域名、证书路径和 `ALLOWED_ORIGINS` 改成真实值，再参考 `server-games/nginx.example.conf` 配置 HTTPS/WebSocket 反向代理。最后把 `public/games/fruit-party/fruit-party.config.js` 中的地址设为该服务域名，并重新构建静态站点。
+请注意：不要把密钥、私有配置、服务端源码放进 `public/`。
+
+---
+
+## 常见问题（FAQ）
+
+### 1. 为什么我部署到 Pages 后，联机还是失败？
+因为 Pages 是静态托管，不会替你运行游戏房间服务。请单独部署 VPS 联机后端，并正确配置 `wss://`。
+
+### 2. 本地能联机，线上不行？
+通常是这几类问题：
+
+- 前端仍指向本地地址；
+- 线上没配 HTTPS/WSS；
+- `ALLOWED_ORIGINS` 未包含你的前端域名；
+- 反向代理未转发 WebSocket Upgrade 头。
+
+### 3. 我可以把第三方在线游戏直接当作本站联机服务吗？
+不建议。第三方服务可用性与协议不受本项目控制，应通过 `external-games` 模式做资料与跳转说明。
+
+---
 
 ## 许可与来源
 
-第三方运行包、上游归档和公开许可文件承担不同职责，不能因为代码能运行就推断它可以商用或重新分发。详细记录见 `SOURCE_AUDIT.md`、`THIRD_PARTY_NOTICES.md` 和 `licenses/`；构建时会把它们同步到 `/legal/`。
+第三方运行包、上游归档与许可文件请分别遵循仓库中的审计与声明文档（如 `SOURCE_AUDIT.md`、`THIRD_PARTY_NOTICES.md` 等）。
+请勿因为“代码能跑”就默认拥有再分发或商用授权。
