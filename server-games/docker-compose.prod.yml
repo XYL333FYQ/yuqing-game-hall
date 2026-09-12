@@ -1,0 +1,34 @@
+services:
+  fruit-party:
+    image: "${FRUIT_PARTY_IMAGE:?Set FRUIT_PARTY_IMAGE}"
+    restart: unless-stopped
+    environment:
+      HOST: 0.0.0.0
+      PORT: "8790"
+      NODE_ENV: production
+      ALLOWED_ORIGINS: "${ALLOWED_ORIGINS:?Set ALLOWED_ORIGINS in server-games/.env}"
+    ports:
+      - "127.0.0.1:8790:8790"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8790/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  sanctuary-relay:
+    image: "${SANCTUARY_RELAY_IMAGE:?Set SANCTUARY_RELAY_IMAGE}"
+    restart: unless-stopped
+    environment:
+      HOST: 0.0.0.0
+      PORT: "8787"
+      NODE_ENV: production
+      ALLOWED_ORIGINS: "${ALLOWED_ORIGINS:?Set ALLOWED_ORIGINS in server-games/.env}"
+    ports:
+      - "127.0.0.1:8787:8787"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8787/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
