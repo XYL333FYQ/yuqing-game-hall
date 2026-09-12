@@ -1,7 +1,8 @@
 import type { CreateRoomResponse } from "../shared/protocol";
-import { multiplayerHttpUrl, multiplayerServiceLabel } from "./serviceConfig";
+import { multiplayerHttpUrl, multiplayerServiceLabel, waitForMultiplayerServiceConfig } from "./serviceConfig";
 
 export async function roomRequest(path: string, body: object): Promise<CreateRoomResponse> {
+  await waitForMultiplayerServiceConfig();
   const requestUrl = multiplayerHttpUrl(path);
   let response: Response;
   try {

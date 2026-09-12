@@ -25,9 +25,9 @@ NODE_ENV=production
 ALLOWED_ORIGINS=https://games.example.com
 ```
 
-前端 `public/games/fruit-party/fruit-party.config.js` 的
-`multiplayerServiceUrl` 要填写公开 HTTPS 地址，例如
-`https://rooms.example.com`。浏览器会自动把房间连接换成 `wss://`。
+Cloudflare Pages 项目的 `FRUIT_PARTY_SERVICE_URL` 运行时环境变量要填写公开
+HTTPS 地址，例如 `https://rooms.example.com`。浏览器会自动把房间连接换成
+`wss://`，无需为更换地址重新构建前端。
 
 ## Docker / VPS
 

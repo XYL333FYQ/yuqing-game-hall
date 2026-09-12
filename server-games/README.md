@@ -15,15 +15,16 @@ Cloudflare Pages                         VPS
 - `fruit-party/`：权威房间、比赛规则、比分和重连，Node + WebSocket。
 - `sanctuarys-end/`：只转发在线位置与聊天，不处理战斗和资源，Node + WebSocket。
 
-复制示例配置并修改域名：
+复制示例配置并填写 Cloudflare 游戏厅 Origin：
 
 ```bash
+cp .env.example .env
 cp docker-compose.example.yml docker-compose.yml
 docker compose up -d --build
 docker compose ps
 ```
 
-两个端口都只绑定到 VPS 的 `127.0.0.1`，公网通过 `nginx.example.conf` 的 HTTPS/WSS 反向代理访问。`ALLOWED_ORIGINS` 必须是 Cloudflare 游戏厅的完整来源，例如 `https://games.example.com`。
+以上命令在 `server-games/` 目录执行；Docker 构建上下文仍是仓库根目录，因为果切服务会打包 `games/fruit-party/src/shared/` 中的共享比赛协议。两个端口都只绑定到 VPS 的 `127.0.0.1`，公网通过 `nginx.example.conf` 的 HTTPS/WSS 反向代理访问。`.env` 中的 `ALLOWED_ORIGINS` 必须是 Cloudflare 游戏厅的完整来源，例如 `https://games.example.com`。
 
 ## WebRTC 边界
 

@@ -8,7 +8,7 @@ services:
       HOST: 0.0.0.0
       PORT: "8790"
       NODE_ENV: production
-      ALLOWED_ORIGINS: https://games.example.com
+      ALLOWED_ORIGINS: "${ALLOWED_ORIGINS:?Set ALLOWED_ORIGINS in server-games/.env}"
     ports:
       - "127.0.0.1:8790:8790"
     healthcheck:
@@ -26,7 +26,7 @@ services:
       HOST: 0.0.0.0
       PORT: "8787"
       NODE_ENV: production
-      ALLOWED_ORIGINS: https://games.example.com
+      ALLOWED_ORIGINS: "${ALLOWED_ORIGINS:?Set ALLOWED_ORIGINS in server-games/.env}"
     ports:
       - "127.0.0.1:8787:8787"
     healthcheck:

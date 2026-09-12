@@ -1,7 +1,8 @@
 const NET = {
   ws: null, id: 0, connected: false, name: '', remotes: new Map(), sendT: 0,
-  connect(host, port, name) {
+  async connect(host, port, name) {
     this.name = (name || 'Hero').slice(0, 14);
+    try { await window.SANCTUARY_CONFIG_READY; } catch (_) { }
     const configured = String(window.SANCTUARY_CONFIG && window.SANCTUARY_CONFIG.relayUrl || '').trim();
     const address = configured || host;
     if (!address) { this.status('请输入中继地址'); return; }

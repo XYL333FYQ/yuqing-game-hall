@@ -1,7 +1,7 @@
 import type { GameSliceEvent } from "../types";
 import type { ClientMessage, RoomCredentials, ServerMessage } from "../shared/protocol";
 import type { SliceClaim } from "../shared/match";
-import { multiplayerWebSocketUrl } from "./serviceConfig";
+import { multiplayerWebSocketUrl, waitForMultiplayerServiceConfig } from "./serviceConfig";
 
 export class MultiplayerClient {
   private socket?: WebSocket;
@@ -22,13 +22,28 @@ export class MultiplayerClient {
   connect(): void {
     this.closed = false;
     this.onConnection(this.reconnectStartedAt ? "reconnecting" : "connecting");
+    void this.connectWhenConfigured();
+  }
+
+  private async connectWhenConfigured(): Promise<void> {
+    await waitForMultiplayerServiceConfig();
+    if (this.closed) return;
     const query = new URLSearchParams({
       player: this.credentials.playerId,
       token: this.credentials.token,
     });
-    this.socket = new WebSocket(
-      multiplayerWebSocketUrl(`/api/rooms/${this.credentials.code}/socket?${query}`),
-    );
+    try {
+      this.socket = new WebSocket(
+        multiplayerWebSocketUrl(`/api/rooms/${this.credentials.code}/socket?${query}`),
+      );
+    } catch (error) {
+      this.onConnection("offline");
+      this.onMessage({
+        type: "error",
+        message: error instanceof Error ? error.message : "果切多人服务地址不可用。",
+      });
+      return;
+    }
     this.socket.addEventListener("open", () => {
       this.reconnectStartedAt = 0;
       this.onConnection("online");

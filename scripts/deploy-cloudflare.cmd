@@ -7,7 +7,7 @@ echo Review-only source repositories are excluded from the deployment package.
 echo Press Ctrl+C now if the account, project name, or domain has not been confirmed.
 pause
 
-call corepack pnpm deploy
+call corepack pnpm deploy:cloudflare
 if errorlevel 1 (
   echo [ERROR] Deployment failed. Confirm Cloudflare login and retry.
   pause

@@ -8,4 +8,4 @@
 corepack pnpm server:sanctuary:start
 ```
 
-生产环境必须设置 `ALLOWED_ORIGINS`。Nginx 对外提供 `wss://sanctuary.example.com/socket`，Node 服务只监听 `127.0.0.1:8787`。随后在静态运行包的 `sanctuary.config.js` 填写该地址。
+生产环境必须设置 `ALLOWED_ORIGINS`。Nginx 对外提供 `wss://sanctuary.example.com/socket`，Compose 只把 Node 服务端口映射到 VPS 的 `127.0.0.1:8787`。在 Cloudflare Pages 项目的 `SANCTUARY_RELAY_URL` 运行时环境变量中填写该公开 WSS 地址，无需重新构建前端。

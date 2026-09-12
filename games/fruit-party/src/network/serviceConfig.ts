@@ -10,6 +10,15 @@ export interface FruitPartyRuntimeConfig {
 declare global {
   interface Window {
     FRUIT_PARTY_CONFIG?: FruitPartyRuntimeConfig;
+    FRUIT_PARTY_CONFIG_READY?: Promise<FruitPartyRuntimeConfig>;
+  }
+}
+
+export async function waitForMultiplayerServiceConfig(): Promise<void> {
+  try {
+    await window.FRUIT_PARTY_CONFIG_READY;
+  } catch {
+    // 第三方独立部署若提供了会 reject 的配置 Promise，仍沿用现有 fallback/错误提示。
   }
 }
 
