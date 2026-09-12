@@ -1,9 +1,15 @@
 import { fruitPartyHref, navigateToFruitParty } from "../router";
-import { canPlayGames } from "../ui/shell";
-import { bindCopyUrl, desktopGate, gamePageFooter, gamePageHeader } from "../ui/shell";
 import { roomRequest } from "../network/roomRequest";
 import type { CompetitiveMode } from "../shared/match";
 import { isValidRoomCode, roomCredentialKey, type CreateRoomResponse } from "../shared/protocol";
+import { isEmbedded } from "../ui/embed";
+import {
+  bindCopyUrl,
+  canPlayGames,
+  desktopGate,
+  gamePageFooter,
+  gamePageHeader,
+} from "../ui/shell";
 
 const MODES: Array<{ id: CompetitiveMode; name: string; detail: string; badge: string }> = [
   { id: "score90", name: "90 秒积分赛", detail: "时间结束比总分，平分进入 20 秒加时。", badge: "推荐" },
@@ -12,17 +18,28 @@ const MODES: Array<{ id: CompetitiveMode; name: string; detail: string; badge: s
 ];
 
 export function renderFruitOnline(root: HTMLElement): () => void {
+  const embedded = isEmbedded();
+
   document.title = "好友联机 · 果切派对";
   document.body.dataset.page = "site";
+
   if (!canPlayGames()) {
-    root.innerHTML = `<div class="site-shell">${gamePageHeader("games")}<main class="narrow-page"><a class="back-link" href="${fruitPartyHref("home")}" data-game-nav>← 返回玩法选择</a>${desktopGate()}</main>${gamePageFooter()}</div>`;
+    root.innerHTML = `
+      <div class="site-shell${embedded ? " is-embedded" : ""}">
+        ${embedded ? "" : gamePageHeader("games")}
+        <main class="narrow-page">
+          <a class="back-link" href="${fruitPartyHref("home")}" data-game-nav>← 返回玩法选择</a>
+          ${desktopGate()}
+        </main>
+        ${embedded ? "" : gamePageFooter()}
+      </div>`;
     return bindCopyUrl(root);
   }
 
   const savedNickname = readNickname();
   root.innerHTML = `
-    <div class="site-shell">
-      ${gamePageHeader("games")}
+    <div class="site-shell${embedded ? " is-embedded" : ""}">
+      ${embedded ? "" : gamePageHeader("games")}
       <main class="online-page">
         <a class="back-link" href="${fruitPartyHref("home")}" data-game-nav>← 返回玩法选择</a>
         <header class="online-heading">
@@ -48,7 +65,7 @@ export function renderFruitOnline(root: HTMLElement): () => void {
         </div>
         <p class="form-error" role="alert"></p>
       </main>
-      ${gamePageFooter()}
+      ${embedded ? "" : gamePageFooter()}
     </div>`;
 
   let selectedMode: CompetitiveMode = "score90";
@@ -138,4 +155,3 @@ function validateNickname(nickname: string): void {
 function escapeAttribute(value: string): string {
   return value.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;");
 }
-

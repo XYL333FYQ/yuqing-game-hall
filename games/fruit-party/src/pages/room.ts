@@ -1,4 +1,5 @@
 import { absoluteFruitPartyUrl, fruitPartyHref, navigateToFruitParty } from "../router";
+import { isEmbedded } from "../ui/embed";
 import { canPlayGames } from "../ui/shell";
 import { bindCopyUrl, desktopGate, gamePageFooter, gamePageHeader } from "../ui/shell";
 import { MultiplayerClient } from "../network/MultiplayerClient";
@@ -15,20 +16,21 @@ const MODE_LABELS = {
 } as const;
 
 export function renderRoom(root: HTMLElement, rawCode: string): () => void {
+  const embedded = isEmbedded();
   const code = rawCode.toUpperCase();
   document.title = `房间 ${code} · 果切派对`;
   document.body.dataset.page = "game";
   if (!canPlayGames()) {
     document.body.dataset.page = "site";
-    root.innerHTML = `<div class="site-shell">${gamePageHeader("games")}<main class="narrow-page"><a class="back-link" href="${fruitPartyHref("home")}" data-game-nav>← 返回玩法选择</a>${desktopGate("联机比赛请在电脑上进行")}</main>${gamePageFooter()}</div>`;
+    root.innerHTML = `<div class="site-shell${embedded ? " is-embedded" : ""}">${embedded ? "" : gamePageHeader("games")}<main class="narrow-page"><a class="back-link" href="${fruitPartyHref("home")}" data-game-nav>← 返回玩法选择</a>${desktopGate("联机比赛请在电脑上进行")}</main>${embedded ? "" : gamePageFooter()}</div>`;
     return bindCopyUrl(root);
   }
 
   const credentials = loadCredentials(code);
-  if (!credentials) return renderRoomJoin(root, code);
+  if (!credentials) return renderRoomJoin(root, code, embedded);
 
   root.innerHTML = `
-    <main class="room-shell">
+    <main class="room-shell${embedded ? " is-embedded" : ""}">
       <header class="room-toolbar">
         <a class="toolbar-brand" href="${fruitPartyHref("online")}" data-game-nav>← <span>联机大厅</span></a>
         <div class="room-identity"><span>房间</span><button type="button" data-action="copy-code" title="复制房间码">${code}</button></div>
@@ -284,14 +286,14 @@ export function renderRoom(root: HTMLElement, rawCode: string): () => void {
   };
 }
 
-function renderRoomJoin(root: HTMLElement, code: string): () => void {
+function renderRoomJoin(root: HTMLElement, code: string, embedded: boolean): () => void {
   document.body.dataset.page = "site";
   const nickname = readNickname();
   root.innerHTML = `
-    <div class="site-shell">${gamePageHeader("games")}<main class="narrow-page">
+    <div class="site-shell${embedded ? " is-embedded" : ""}">${embedded ? "" : gamePageHeader("games")}<main class="narrow-page">
       <a class="back-link" href="${fruitPartyHref("online")}" data-game-nav>← 返回联机大厅</a>
       <section class="direct-join"><p class="kicker">房间码 ${code}</p><h1>加入朋友的房间</h1><p>输入昵称后即可进入，比赛会在双方都准备好后开始。</p><label class="field"><span>你的昵称</span><input maxlength="12" value="${escapeHtml(nickname)}" placeholder="2–12 个字符"></label><button class="button primary full" type="button">加入房间</button><p class="form-error" role="alert"></p></section>
-    </main>${gamePageFooter()}</div>`;
+    </main>${embedded ? "" : gamePageFooter()}</div>`;
   const button = root.querySelector<HTMLButtonElement>("button")!;
   const handler = async (): Promise<void> => {
     const value = root.querySelector<HTMLInputElement>("input")!.value.trim();

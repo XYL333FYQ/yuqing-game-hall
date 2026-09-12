@@ -17,6 +17,9 @@ function route(): void {
   else if (current.name === "online") cleanup = renderFruitOnline(root);
   else if (current.name === "room") cleanup = renderRoom(root, current.code);
   else cleanup = renderFruitPlay(root);
+
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
 }
 document.addEventListener("click", (event) => {
   const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>("a[data-game-nav]") : null;

@@ -927,3 +927,120 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline-color: rgba
   .fruit-mode-card { transition: none; }
   .fruit-mode-art .fruit img { animation: none; }
 }
+
+
+/* ===== Embedded mode fixes: Fruit Party inside the arcade iframe ===== */
+.site-shell.is-embedded .online-page {
+  margin-top: 14px;
+  margin-bottom: 28px;
+}
+
+.site-shell.is-embedded .online-page > .back-link {
+  margin-bottom: 14px;
+}
+
+.site-shell.is-embedded .online-heading {
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+.site-shell.is-embedded .online-heading-art {
+  height: 52px;
+  margin-bottom: 2px;
+}
+
+.site-shell.is-embedded .online-heading-art img {
+  width: 50px;
+  height: 50px;
+}
+
+.site-shell.is-embedded .online-heading h1 {
+  font-size: clamp(44px, 5vw, 58px);
+}
+
+.site-shell.is-embedded .online-heading > p:last-child {
+  margin: 10px 0 0;
+  line-height: 1.55;
+}
+
+.site-shell.is-embedded .room-panel {
+  padding: 24px 28px;
+}
+
+.site-shell.is-embedded .panel-title {
+  margin-bottom: 16px;
+}
+
+.site-shell.is-embedded .field {
+  margin-bottom: 12px;
+}
+
+.site-shell.is-embedded .mode-list {
+  gap: 7px;
+  margin-bottom: 14px;
+}
+
+.site-shell.is-embedded .match-mode {
+  min-height: 60px;
+  padding-block: 9px;
+}
+
+.site-shell.is-embedded .join-note {
+  margin-top: 14px;
+  padding-block: 12px;
+}
+
+/* The room keeps its controls, but they no longer look like a second site navbar. */
+.room-shell.is-embedded .room-toolbar {
+  flex: 0 0 48px;
+  min-height: 48px;
+  padding: 5px 14px;
+  border-bottom: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.room-shell.is-embedded .toolbar-brand,
+.room-shell.is-embedded .room-identity,
+.room-shell.is-embedded .room-toolbar-actions {
+  min-height: 34px;
+  padding: 4px 8px;
+  border: 1px solid rgba(245, 232, 203, .26);
+  border-radius: 3px;
+  background: rgba(20, 24, 20, .88);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, .16);
+}
+
+.room-shell.is-embedded .toolbar-brand {
+  width: max-content;
+}
+
+.room-shell.is-embedded .room-identity {
+  justify-self: center;
+}
+
+.room-shell.is-embedded .room-toolbar-actions {
+  justify-self: end;
+}
+
+/* An empty room error used to reserve ~35px and create the dark strip at the bottom. */
+.room-error:empty {
+  display: none;
+}
+
+.room-shell .room-error:not(:empty) {
+  position: absolute;
+  z-index: 50;
+  left: 50%;
+  bottom: 16px;
+  min-height: 0;
+  margin: 0;
+  padding: 8px 12px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(232, 95, 44, .5);
+  border-radius: 3px;
+  background: rgba(20, 24, 20, .94);
+  color: #ff9b76;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, .22);
+  white-space: nowrap;
+}
