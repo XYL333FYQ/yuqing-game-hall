@@ -76,6 +76,9 @@ function GameState(master) {
 		// Logic
 		if (nextGameState) {
 			CONTROLS.registerEventCallback();
+			// 只有真正进入 FPS 对局才请求 Pointer Lock；主菜单、设置、联机大厅、
+			// 结算等界面一律使用普通鼠标，浏览器拒绝锁定也不会让菜单失效。
+			CONTROLS.setPointerLockEnabled(nextGameState===GAMESTATE_PLAY);
 			switch (nextGameState) {
 				case GAMESTATE_LOCALMULTIPLAYER:{
 					currentManager=LOCALMULTIPLAYER;

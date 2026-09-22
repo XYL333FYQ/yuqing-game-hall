@@ -1920,7 +1920,18 @@
     const [, leading, core, trailing] = match;
     const cached = translationCache.get(core);
     if (cached !== undefined) return `${leading}${cached}${trailing}`;
-    let translated = dictionary.get(core) ?? normalizedDictionary.get(normalizeTranslationKey(core));
+    // 游戏专属语言表优先。Canvas 文字在绘制前会调用 window.yuqingTranslateText，
+    // 因此这里命中就同时覆盖了 DOM 与 Canvas；未命中再走公共词表。
+    let translated = "";
+    if (typeof window.yuqingTranslateOverride === "function") {
+      try {
+        const override = window.yuqingTranslateOverride(core);
+        if (typeof override === "string") translated = override;
+      } catch (error) {
+        console.warn("[yuqing-bridge] 游戏专属语言表抛出异常，改用公共词表。", error);
+      }
+    }
+    if (!translated) translated = dictionary.get(core) ?? normalizedDictionary.get(normalizeTranslationKey(core));
     if (!translated) {
       let partial = core;
       for (const [source, replacement] of partialEntries) {

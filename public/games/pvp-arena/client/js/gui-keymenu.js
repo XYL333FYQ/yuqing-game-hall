@@ -268,12 +268,22 @@ function KeyMenu(settings) {
 		else blinkTimer=BLINK_TIME;
 		if (GAMECONTROLS.KEYMOUSE) {
 			var sensitivity=(CONFIG.pointerSensitivity+1)*0.25
-			var dx=GAMECONTROLS.KEYMOUSE.aimPointer[0]*sensitivity;
-			var dy=GAMECONTROLS.KEYMOUSE.aimPointer[1]*sensitivity;
 			MENU_MOUSE.click=GAMECONTROLS.KEYMOUSE.fire==1;
-			MENU_MOUSE.x+=dx;
-			MENU_MOUSE.y+=dy;
-			MENU_MOUSE.moved=MENU_MOUSE.moved||(!!(dx||dy));
+			// 拿到 Pointer Lock 时鼠标只给出相对位移，菜单沿用原来的累加方式；
+			// 没有 Pointer Lock（菜单的默认状态）时直接用画布内的真实鼠标位置，
+			// 菜单因此不再依赖“浏览器是否成功锁定鼠标”。
+			var absolutePointer=CONTROLS.takeMenuPointer?CONTROLS.takeMenuPointer():null;
+			if (absolutePointer) {
+				MENU_MOUSE.x=absolutePointer.x;
+				MENU_MOUSE.y=absolutePointer.y;
+				MENU_MOUSE.moved=MENU_MOUSE.moved||absolutePointer.moved;
+			} else {
+				var dx=GAMECONTROLS.KEYMOUSE.aimPointer[0]*sensitivity;
+				var dy=GAMECONTROLS.KEYMOUSE.aimPointer[1]*sensitivity;
+				MENU_MOUSE.x+=dx;
+				MENU_MOUSE.y+=dy;
+				MENU_MOUSE.moved=MENU_MOUSE.moved||(!!(dx||dy));
+			}
 			if (MENU_MOUSE.x<0) MENU_MOUSE.x=0;
 			if (MENU_MOUSE.x>SCREEN_WIDTH) MENU_MOUSE.x=SCREEN_WIDTH;
 			if (MENU_MOUSE.y<0) MENU_MOUSE.y=0;

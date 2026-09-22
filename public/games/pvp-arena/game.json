@@ -30,10 +30,10 @@
     "technology": "原生 JavaScript · Socket.IO · PeerJS",
     "license": "MIT / GPL-3.0（上游双文件均保留）",
     "sourceUrl": "https://github.com/kesiev/pvp",
-    "localization": "主菜单、启动设置、模式规则、操作说明及常见 Canvas HUD 与对局提示已汉化；玩家昵称和地图专名保留原文。",
+    "localization": "主菜单、启动设置、模式规则、操作说明、HUD、结算、联机大厅与错误提示均已汉化（专属词表 client/js/i18n/zh-CN.js，优先于公共 bridge）；玩家昵称和地图专名保留原文。",
     "fit": "短局节奏直接，本地多人和 WebRTC 代码值得拆看，但成品视觉不符合当前游戏厅定位。",
     "highlights": ["一台电脑多人同屏", "局域网和 PeerJS 实验路径", "地图与武器机制足够简洁"],
-    "cautions": ["使用前必须逐文件澄清许可", "公网 WebRTC 缺少可靠 TURN", "复古美术只能做玩法参考"],
+    "cautions": ["使用前必须逐文件澄清许可", "远程对战依赖雨晴自建 PeerJS 信令与 TURN；未配置 WEBRTC_SERVICE_URL 时会明确提示而不会回退到公共服务", "复古美术只能做玩法参考"],
     "launch": {
       "kind": "iframe",
       "entry": "/games/pvp-arena/client/index.html",

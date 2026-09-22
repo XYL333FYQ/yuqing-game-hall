@@ -8,6 +8,13 @@
 	<script src='../socket.io-disabled.js'></script>
 	<script defer src="../../_shared/yuqing-bridge.js" data-game="pvp-arena"></script>
 
+	<!-- 雨晴自建 WebRTC 运行时配置（PeerJS 信令 + STUN + TURN）与只读网络诊断。
+	     诊断面板只在 URL 带 ?debug=network 时出现，普通玩家看不到。
+	     像素竞技场专属中文表必须在公共 bridge 之前注册，才能优先命中。 -->
+	<script type="text/javascript" src="../../_shared/yuqing-netdiag.js"></script>
+	<script type="text/javascript" src="../../_shared/yuqing-webrtc.js"></script>
+	<script type="text/javascript" src="js/i18n/zh-CN.js"></script>
+
 	<script type="text/javascript" src="js/kioskmode.js"></script>
 	<script type="text/javascript" src="js/playlight.js"></script>
 

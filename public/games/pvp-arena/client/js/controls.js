@@ -173,7 +173,7 @@ function Controls(master) {
 		isControlsUnactive=false,
 		PRESSEDMODE=0,
 		HWKEYBOARD=[],
-		HWMOUSE={mx:0,my:0,x:0,y:0,buttons:[]},MOUSEBUTTONS=[],
+		HWMOUSE={mx:HSCREEN_WIDTH,my:HSCREEN_HEIGHT,x:0,y:0,buttons:[],seen:false},MOUSEBUTTONS=[],
 		HWTOUCH={buttons:[],areas:[{cx:0,cy:0,out:[0,0]},{cx:0,cy:0,out:[0,0]}],buttonIds:{},areasIds:{}},
 		TOUCHBUTTONS=[],
 		TOUCHAREAS=[],
@@ -184,6 +184,7 @@ function Controls(master) {
 		touchAvailable=this.touchAvailable=master.screenControls=="touch",
 		mouseAvailable=this.mouseAvailable=master.screenControls=="mouse",
 		vibrationStrength=true,pointerScreen,eventCb,
+		pointerLockWanted=false,pointerLockActive=false,pointerLockHintNode,
 		touchButtons,touchAreasButtons,touchAreasAnalog,touch,a,b,tx,ty,touchArea,testTouchArea,touchIdButton,touchAnalogSensitivity,touchSwipeSensitivity,
 		touchSwipeSensitivityRatio=7,touchAnalogSensitivity=3,setTouchHudOpacity=0.3;
 
@@ -426,18 +427,99 @@ function Controls(master) {
 	}
 
 	// Mouse
+	//
+	// 菜单（主菜单 / 设置 / 联机大厅 / 结算）直接用普通鼠标，不依赖 Pointer Lock：
+	// 浏览器拒绝锁定、用户按 Esc 退出、或者 iframe 没有 pointer-lock 权限时，
+	// 菜单依然可以像普通网页一样点击。只有真正进入 FPS 对局才请求 Pointer Lock 用于瞄准。
 
 	function initializeMouse(screen) {
 		if (screen.requestPointerLock) {
-			DOM.addEventListener(screen,"click",(e)=>{ screen.requestPointerLock(); },false);
+			DOM.addEventListener(screen,"click",()=>{ if (pointerLockWanted) requestPointerLock(); },false);
 			DOM.addEventListener(document,"pointerlockchange",changePointerLock,false);
 			DOM.addEventListener(document,"mozpointerlockchange",changePointerLock,false);
 		}
+		// 无论是否拿到 Pointer Lock 都监听鼠标：菜单用绝对坐标，对局用相对位移。
+		DOM.addEventListener(window,"mousemove",mouseMove,false);
+		DOM.addEventListener(window,"mousedown",mouseDown,false);
+		DOM.addEventListener(window,"mouseup",mouseUp,false);
+		DOM.addEventListener(window,"contextmenu",mouseContextMenu,false);
+	}
+
+	// 画布是等比缩放的（translate + scale），用 getBoundingClientRect 换算回游戏坐标。
+	function canvasMousePosition(e) {
+		var rect=pointerScreen&&pointerScreen.getBoundingClientRect?pointerScreen.getBoundingClientRect():null;
+		if (!rect||!rect.width||!rect.height) return null;
+		return {
+			x:(e.clientX-rect.left)*(SCREEN_WIDTH/rect.width),
+			y:(e.clientY-rect.top)*(SCREEN_HEIGHT/rect.height)
+		};
 	}
 
 	function mouseMove(e) {
-		HWMOUSE.x+=e.movementX || e.mozMovementX || e.webkitMovementX || 0;
-		HWMOUSE.y+=e.movementY || e.mozMovementY || e.webkitMovementY || 0;
+		if (pointerLockActive) {
+			HWMOUSE.x+=e.movementX || e.mozMovementX || e.webkitMovementX || 0;
+			HWMOUSE.y+=e.movementY || e.mozMovementY || e.webkitMovementY || 0;
+			return;
+		}
+		// 没有指针锁定时鼠标不产生 movement 增量，改用画布内的绝对位置。
+		var position=canvasMousePosition(e);
+		if (position) {
+			HWMOUSE.mx=position.x;
+			HWMOUSE.my=position.y;
+			HWMOUSE.seen=true;
+		}
+	}
+
+	function requestPointerLock() {
+		if (!pointerLockWanted||!pointerScreen||!pointerScreen.requestPointerLock) return;
+		try { pointerScreen.requestPointerLock(); } catch (e) {}
+	}
+
+	// Pointer Lock 失败或用户按 Esc 退出时的“点击继续 / 重新捕获鼠标”提示。
+	function pointerLockHint() {
+		if (pointerLockHintNode) return pointerLockHintNode;
+		pointerLockHintNode=document.createElement("div");
+		pointerLockHintNode.id="pointer-lock-hint";
+		Object.assign(pointerLockHintNode.style,{
+			position:"fixed",
+			zIndex:"2147483000",
+			left:"50%",
+			bottom:"14%",
+			transform:"translateX(-50%)",
+			padding:"8px 16px",
+			border:"1px solid rgba(245,237,186,.35)",
+			borderRadius:"8px",
+			background:"rgba(31,14,28,.82)",
+			color:"#f5edba",
+			font:"600 13px/1.4 'Microsoft YaHei UI','PingFang SC',sans-serif",
+			cursor:"pointer",
+			whiteSpace:"nowrap",
+			userSelect:"none",
+		});
+		pointerLockHintNode.textContent="点击继续 · 重新捕获鼠标";
+		pointerLockHintNode.addEventListener("click",()=>requestPointerLock());
+		document.body.appendChild(pointerLockHintNode);
+		return pointerLockHintNode;
+	}
+
+	// 只在“需要鼠标且没有指针锁定”时接管光标外观：隐藏系统光标，
+	// 由游戏自己绘制的菜单指针负责显示位置，避免出现两个光标。
+	function updatePointerMode() {
+		if (!mouseAvailable) return;
+		var captured=pointerLockWanted&&!pointerLockActive;
+		if (pointerScreen) pointerScreen.style.cursor=pointerLockActive?"":"none";
+		var hint=pointerLockHint();
+		hint.style.display=captured?"block":"none";
+	}
+
+	function changePointerLock() {
+		pointerLockActive=document.pointerLockElement === pointerScreen || document.mozPointerLockElement === pointerScreen;
+		if (pointerLockActive) {
+			enableControls();
+			HWMOUSE.x=0;
+			HWMOUSE.y=0;
+		}
+		updatePointerMode();
 	}
 
 	function mouseDown(e) {
@@ -461,21 +543,6 @@ function Controls(master) {
 	function enableControls() {
 		isControlsActive = true;
 		isControlsUnactive = false;
-	}
-
-	function changePointerLock() {
-		if (document.pointerLockElement === pointerScreen || document.mozPointerLockElement === pointerScreen) {
-			enableControls();
-			DOM.addEventListener(window,"mousemove",mouseMove,false);
-			DOM.addEventListener(window,"mousedown",mouseDown,false);
-			DOM.addEventListener(window,"mouseup",mouseUp,false);
-			DOM.addEventListener(window,"contextmenu",mouseContextMenu,false);
-		} else {
-			DOM.removeEventListener(window,"mousemove",mouseMove,false);
-			DOM.removeEventListener(window,"mousedown",mouseDown,false);
-			DOM.removeEventListener(window,"mouseup",mouseUp,false);
-			DOM.removeEventListener(window,"contextmenu",mouseContextMenu,false);
-		}
 	}
 
 	// Touch screen
@@ -511,6 +578,25 @@ function Controls(master) {
 
 	this.enableControls=function() {
 		enableControls();
+	}
+
+	// 由 gamestate 在切换界面时调用：只有 FPS 对局需要 Pointer Lock，
+	// 菜单一律使用普通鼠标。
+	this.setPointerLockEnabled=function(enabled) {
+		pointerLockWanted=!!enabled;
+		if (!pointerLockWanted&&pointerLockActive&&document.exitPointerLock) document.exitPointerLock();
+		updatePointerMode();
+	}
+
+	this.isPointerLockWanted=function() { return pointerLockWanted; }
+	this.isPointerLockActive=function() { return pointerLockActive; }
+	this.requestPointerLock=requestPointerLock;
+
+	// 供菜单使用：返回画布内的真实鼠标位置与“本帧是否在动”。
+	// 指针锁定期间返回 null，由菜单继续沿用相对位移累加。
+	this.takeMenuPointer=function() {
+		if (pointerLockActive) return null;
+		return { x:HWMOUSE.mx, y:HWMOUSE.my, moved:true, seen:HWMOUSE.seen };
 	}
 
 	this.setTouchSwipeSensitivity=function(v) { touchSwipeSensitivityRatio=14*v; }
