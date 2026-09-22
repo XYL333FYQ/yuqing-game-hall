@@ -224,12 +224,25 @@ jobs:
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
+          # 必须与 “Pull and restart backends” 传入完全相同的三个镜像变量。
+          # docker-compose.prod.yml 里三个镜像用的是 ${VAR:?} 必填语法，
+          # compose 在「解析配置」阶段就会校验，缺一个就直接报错退出——
+          # 所以本步骤内每一次 docker compose 调用（含循环里的 ps 和最后的 ps）
+          # 都必须能读到它们。
+          FRUIT_IMAGE: ${{ steps.vars.outputs.fruit_image }}
+          SANCTUARY_IMAGE: ${{ steps.vars.outputs.sanctuary_image }}
+          WEBRTC_IMAGE: ${{ steps.vars.outputs.webrtc_image }}
         shell: bash
         run: |
           # “进程活着”不等于“服务可用”：这里额外要求 compose 自己的健康检查通过。
           # coturn 使用 host 网络，它的 healthcheck 会在容器里向 127.0.0.1:3478 发 STUN。
+          # 镜像变量用 export 而不是普通赋值：docker compose 是外部进程，
+          # 只有导出的变量才会进入它的环境；export 一次即可覆盖本步骤内全部 compose 调用。
           ssh "${VPS_USER}@${VPS_HOST}" \
             "cd /opt/yuqing-game-hall/server-games && \
+             export FRUIT_PARTY_IMAGE='${FRUIT_IMAGE}' && \
+             export SANCTUARY_RELAY_IMAGE='${SANCTUARY_IMAGE}' && \
+             export WEBRTC_GATEWAY_IMAGE='${WEBRTC_IMAGE}' && \
              for i in \$(seq 1 20); do \
                status=\$(docker compose --env-file .env -f docker-compose.prod.yml ps --format '{{.Service}}={{.Health}}' | sort); \
                if ! echo \"\$status\" | grep -qvE '=(healthy|running)\$'; then echo \"\$status\"; exit 0; fi; \
