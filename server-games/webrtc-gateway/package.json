@@ -1,0 +1,20 @@
+{
+  "name": "@yuqing/webrtc-gateway",
+  "private": true,
+  "version": "1.0.0",
+  "description": "PeerJS signaling and short-lived TURN credentials for Yuqing Game Hall",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "check": "node --check server.js && node --check tests/server.test.js && node --check tests/gateway.smoke.test.js",
+    "start": "node server.js",
+    "test": "node --test --test-force-exit tests/server.test.js",
+    "test:smoke": "node --test --test-force-exit tests/gateway.smoke.test.js"
+  },
+  "dependencies": {
+    "express": "5.2.1",
+    "peer": "1.0.2"
+  }
+}

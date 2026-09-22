@@ -32,3 +32,54 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+
+  webrtc-gateway:
+    image: "${WEBRTC_GATEWAY_IMAGE:?Set WEBRTC_GATEWAY_IMAGE}"
+    restart: unless-stopped
+    environment:
+      HOST: 0.0.0.0
+      PORT: "9000"
+      NODE_ENV: production
+      ALLOWED_ORIGINS: "${ALLOWED_ORIGINS:?Set ALLOWED_ORIGINS in server-games/.env}"
+      TURN_PUBLIC_HOST: "${TURN_PUBLIC_HOST:?Set TURN_PUBLIC_HOST in server-games/.env}"
+      TURN_PORT: "${TURN_PORT:-3478}"
+      TURN_SHARED_SECRET: "${TURN_SHARED_SECRET:?Set TURN_SHARED_SECRET in server-games/.env}"
+      TURN_CREDENTIAL_TTL_SECONDS: "${TURN_CREDENTIAL_TTL_SECONDS:-3600}"
+    ports:
+      - "127.0.0.1:9000:9000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:9000/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  coturn:
+    image: "${COTURN_IMAGE:-coturn/coturn:4.6.3}"
+    restart: unless-stopped
+    network_mode: host
+    command:
+      - --listening-port=${TURN_PORT:-3478}
+      - --external-ip=${TURN_EXTERNAL_IP:?Set TURN_EXTERNAL_IP in server-games/.env}
+      - --realm=${TURN_REALM:?Set TURN_REALM in server-games/.env}
+      - --use-auth-secret
+      - --static-auth-secret=${TURN_SHARED_SECRET:?Set TURN_SHARED_SECRET in server-games/.env}
+      - --min-port=${TURN_MIN_PORT:-49160}
+      - --max-port=${TURN_MAX_PORT:-49200}
+      - --fingerprint
+      - --stale-nonce=600
+      - --no-cli
+      - --no-tls
+      - --no-dtls
+      - --no-multicast-peers
+      - --user-quota=12
+      - --total-quota=256
+      - --log-file=stdout
+      - --pidfile=/tmp/turnserver.pid
+    healthcheck:
+      # coturn 镜像里 turnutils_stunclient 不一定存在，退回到 TCP 端口探测。
+      test: ["CMD-SHELL", "turnutils_stunclient -p ${TURN_PORT:-3478} 127.0.0.1 >/dev/null 2>&1 || nc -z 127.0.0.1 ${TURN_PORT:-3478}"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

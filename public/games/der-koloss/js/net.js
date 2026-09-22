@@ -58,6 +58,22 @@ const EVENT_MIN_MS = {
 // FG42 well inside the reliable-channel cap.
 const SHOT_RELAY_MIN_MS = 55;
 
+// 联机走雨晴自建的 WebRTC 基础设施：PeerJS 信令、STUN、TURN 全部来自
+// Cloudflare 运行时公开配置（/api/runtime-config -> WEBRTC_SERVICE_URL）。
+// 配置不可用时直接失败，绝不回退到公共 PeerJS / 公共 STUN，
+// 否则我们无法判断自建信令和 TURN 是否真的在工作。
+function webrtcPeerOptions() {
+  return window.YuqingWebRTC?.peerOptions?.({ debug: 0 }) || null;
+}
+
+function webrtcUnavailableMessage() {
+  return window.YuqingWebRTC?.message?.() || '联机服务未配置：缺少雨晴自建 WebRTC 服务地址。';
+}
+
+function reportDiag(key, status, detail) {
+  window.YuqingNetDiag?.report?.(key, status, detail);
+}
+
 function cleanName(value) {
   return String(value || 'Player')
     .replace(/[\u0000-\u001f\u007f]/g, '')
@@ -141,12 +157,16 @@ export class Net {
     return new Promise((resolve, reject) => {
       this._intentionalLeave = false;
       this._closedHandled = false;
+      const peerOptions = webrtcPeerOptions();
+      if (!peerOptions) { reject(new Error(webrtcUnavailableMessage())); return; }
+      reportDiag('signaling', 'pending');
       const tryCode = (attempt) => {
         const code = genCode(5);
-        const peer = new Peer(PREFIX + code, { debug: 0 });
-        const kill = setTimeout(() => { peer.destroy(); reject(new Error('Connection to matchmaking timed out. Check your internet.')); }, 10000);
+        const peer = new Peer(PREFIX + code, peerOptions);
+        const kill = setTimeout(() => { peer.destroy(); reportDiag('signaling', 'fail', '信令超时'); reject(new Error('Connection to matchmaking timed out. Check your internet.')); }, 10000);
         peer.on('open', () => {
           clearTimeout(kill);
+          reportDiag('signaling', 'ok');
           this.peer = peer;
           this.code = code;
           this.isHost = true;
@@ -154,7 +174,7 @@ export class Net {
           this.matchActive = false;
           this.lobbyPlayers = [{ id: peer.id, name: cleanName(playerName), ready: false, color: 0, host: true, persona: cleanPersona(this.myPersona) }];
           this._startPeerSweep();
-          peer.on('connection', (conn) => this._hostAccept(conn));
+          peer.on('connection', (conn) => { reportDiag('match', 'ok', '有人加入'); this._hostAccept(conn); });
           peer.on('error', (e) => { if (e.type !== 'peer-unavailable') console.warn('[net]', e.type); });
           this._setupVoiceAnswer();
           resolve(code);
@@ -162,7 +182,7 @@ export class Net {
         peer.on('error', (e) => {
           clearTimeout(kill);
           if (e.type === 'unavailable-id' && attempt < 3) { peer.destroy(); tryCode(attempt + 1); }
-          else reject(new Error('Could not create lobby: ' + e.type));
+          else { reportDiag('signaling', 'fail', e.type); reject(new Error('Could not create lobby: ' + e.type)); }
         });
       };
       tryCode(0);
@@ -231,6 +251,11 @@ export class Net {
     if (p[ch]?.open) { try { conn.close(); } catch (e) {} return; }
     p[ch] = conn;
     p[ch === 'r' ? 'openR' : 'openU'] = true;
+    if (ch === 'r') {
+      reportDiag('connected', 'ok', '主机已接受连接');
+      // 只读观察：诊断面板据此判断实际走的是 P2P 直连还是 VPS 中继。
+      window.YuqingNetDiag?.watch?.(conn);
+    }
     conn.on('data', (msg) => {
       if (peerConnectionIsCurrent(this.peers, conn.peer, p, ch, conn)) this._hostData(conn.peer, msg, ch);
     });
@@ -489,9 +514,13 @@ export class Net {
     return new Promise((resolve, reject) => {
       this._intentionalLeave = false;
       this._closedHandled = false;
-      const peer = new Peer({ debug: 0 });
-      const kill = setTimeout(() => { peer.destroy(); reject(new Error('Connection timed out. Check the code and try again.')); }, 12000);
+      const peerOptions = webrtcPeerOptions();
+      if (!peerOptions) { reject(new Error(webrtcUnavailableMessage())); return; }
+      reportDiag('signaling', 'pending');
+      const peer = new Peer(peerOptions);
+      const kill = setTimeout(() => { peer.destroy(); reportDiag('signaling', 'fail', '信令超时'); reject(new Error('Connection timed out. Check the code and try again.')); }, 12000);
       peer.on('open', () => {
+        reportDiag('signaling', 'ok');
         this.peer = peer;
         this.isHost = false;
         this.mode = 'client';
@@ -505,6 +534,10 @@ export class Net {
         r.on('open', () => {
           clearTimeout(kill);
           opened = true;
+          reportDiag('match', 'ok', '已找到主机');
+          reportDiag('connected', 'ok');
+          // 只读观察：诊断面板据此判断实际走的是 P2P 直连还是 VPS 中继。
+          window.YuqingNetDiag?.watch?.(r);
           r.send({ t: 'hello', name: cleanName(playerName), persona: cleanPersona(this.myPersona), clientId: this._clientId });
           this._startHeartbeat();
           resolve();

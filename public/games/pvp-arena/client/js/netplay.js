@@ -444,7 +444,7 @@ function Netplay(protocols,master) {
 				ctx,FONTSMALL,FONTPALETTE.BLACK,
 				HSCREEN_WIDTH,
 				8+FONT.tileHeight,
-				NETPLAYSTATE[netplay.state]==undefined?"...":NETPLAYSTATE[netplay.state]
+				netplay.getStatusText?netplay.getStatusText(NETPLAYSTATE[netplay.state]):(NETPLAYSTATE[netplay.state]==undefined?"...":NETPLAYSTATE[netplay.state])
 			);
 			TRANSITION.render(ctx);
 		}

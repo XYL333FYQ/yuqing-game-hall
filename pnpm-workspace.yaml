@@ -1,6 +1,7 @@
 packages:
   - server-games/fruit-party
   - server-games/sanctuarys-end
+  - server-games/webrtc-gateway
 
 allowBuilds:
   esbuild: true

@@ -37,6 +37,13 @@ function NetplayPeerJs(master) {
 		} else return false;
 	}
 
+	// 联机大厅顶部的状态文字：自建 WebRTC 服务还没就绪时，优先说明原因，
+	// 而不是让玩家对着“Disconnected”猜。就绪后交回原有 NETPLAYSTATE 文案。
+	this.getStatusText=function(fallback) {
+		var status=PEERJS_STATUS_TEXT();
+		return status||(fallback==undefined?"...":fallback);
+	}
+
 	this.addOptions=function(netModes,options) {
 		netModes.push({id:"netModeNetServer",label:PEERJS_NETLABEL+" Server",netplay:this,mode:NETMODE_SERVER,enable:["netPeerId","netNewPeerId","netCopyPeerUrl"]});
 		netModes.push({id:"netModeNetClient",label:PEERJS_NETLABEL+" Client",netplay:this,mode:NETMODE_CLIENT,enable:["netServerId"]});
@@ -295,6 +302,10 @@ function NetplayPeerJs(master) {
 		if (connectionCooldown) {
 			console.info("Waiting to connect...")
 			connectionCooldown--;
+		} else if (!PEERJS_CONFIG_READY()) {
+			// 还在读取 Cloudflare 运行时配置 / 拉取短期 TURN 凭据，
+			// 或配置不可用。保持当前状态，由每秒一次的调用重试。
+			PEERJS_DIAG("signaling","pending",PEERJS_STATUS_TEXT());
 		} else if (isSatellite) {
 			// Client
 			switch (this.state) {
@@ -303,14 +314,16 @@ function NetplayPeerJs(master) {
 					closePeer();
 					try {
 						console.info("Creating peer. Satellite:", isSatellite);
-						peer=new Peer(PEERJS_CONFIG);
+						peer=new Peer(PEERJS_OPTIONS());
 						peer.on("open", (id)=> {
 							localPeerId=id;
 							console.info("Peer id",id);
+							PEERJS_DIAG("signaling","ok");
 							this.setState(NETPLAYSTATE_ON);
 						});
 					} catch (e) {
 						console.info("Can't create peer",e);
+						PEERJS_DIAG("signaling","fail","无法创建 Peer");
 					}
 					this.setState(NETPLAYSTATE_PREPARING);
 					break;
@@ -340,6 +353,10 @@ function NetplayPeerJs(master) {
 						conn.on("open", (data)=>{
 							this.setState(NETPLAYSTATE_CONNECTED);
 							console.info("Connection opened.");						  	
+							PEERJS_DIAG("match","ok","已找到房主");
+							PEERJS_DIAG("connected","ok");
+							// 只读观察：诊断面板据此判断实际走的是 P2P 直连还是 VPS 中继。
+							if (window.YuqingNetDiag&&window.YuqingNetDiag.watch) window.YuqingNetDiag.watch(conn);
 						});
 						conn.on("data", (data)=>{
 						  	managePlayersPacket(data[0],data[1]);
@@ -406,9 +423,10 @@ function NetplayPeerJs(master) {
 					} else {
 						try {
 							console.info("Creating peer. Satellite:", isSatellite);
-							serverPeer=peer=new Peer(peerId,PEERJS_CONFIG);
+							serverPeer=peer=new Peer(peerId,PEERJS_OPTIONS());
 						} catch (e) {
 							console.info("Can't create peer",e);
+							PEERJS_DIAG("signaling","fail","无法创建 Peer");
 						}
 					}
 
@@ -416,12 +434,16 @@ function NetplayPeerJs(master) {
 						peer.on("open", (id)=> {
 							localPeerId=id;
 							console.info("Peer id",id);
+							PEERJS_DIAG("signaling","ok");
 							this.setState(NETPLAYSTATE_ON);
 						});
 						peer.off("connection");			
 						peer.on("connection", (conn)=>{		
 
 							console.info("Connected",conn.peer);
+							PEERJS_DIAG("match","ok","有人加入");
+							// 只读观察：诊断面板据此判断实际走的是 P2P 直连还是 VPS 中继。
+							if (window.YuqingNetDiag&&window.YuqingNetDiag.watch) window.YuqingNetDiag.watch(conn);
 
 							conn.on("open",()=>{
 								if (netplayServer) console.info("Connection opened with",conn.peer);

@@ -7,8 +7,9 @@
     "node": ">=22"
   },
   "scripts": {
-    "check": "node --check server.js",
-    "start": "node server.js"
+    "check": "node --check server.js && node --check tests/relay.test.mjs",
+    "start": "node server.js",
+    "test": "node --test --test-force-exit tests/relay.test.mjs"
   },
   "dependencies": {
     "ws": "8.21.0"

@@ -9,6 +9,9 @@ export function onRequestGet({ env }) {
     return Response.json({
       fruitPartyServiceUrl: publicServiceUrl(env.FRUIT_PARTY_SERVICE_URL, ["http:", "https:"]),
       sanctuaryRelayUrl: publicServiceUrl(env.SANCTUARY_RELAY_URL, ["ws:", "wss:"]),
+      // 雨晴自建 WebRTC 基础设施（PeerJS 信令 + STUN + TURN）的公开入口。
+      // 游戏只读取这个地址，不把 VPS 域名或 IP 写进源码。
+      webrtcServiceUrl: publicServiceUrl(env.WEBRTC_SERVICE_URL, ["http:", "https:"]),
     }, { headers: JSON_HEADERS });
   } catch (error) {
     console.error("Invalid public runtime configuration", error);
