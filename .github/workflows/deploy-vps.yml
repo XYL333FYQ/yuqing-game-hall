@@ -1,5 +1,14 @@
 name: Deploy VPS Backends
 
+# 部署配置的唯一来源是 GitHub：
+#   - 非敏感项 -> Settings → Secrets and variables → Actions → Variables
+#   - 敏感项   -> 同一页面的 Secrets
+# 每次运行都会重新生成 server-games 的生产 .env 并原子替换到 VPS，
+# 不需要（也不应该）长期手动维护 /opt/yuqing-game-hall/server-games/.env。
+#
+# 注意：修改 Variables / Secrets 不会触发 push 事件，改完配置后请到 Actions
+# 页面手动 Run workflow，或者推一个任意提交。
+
 on:
   push:
     branches: [main]
@@ -29,6 +38,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: "11.24.0"
+
       - name: Prepare image names
         id: vars
         shell: bash
@@ -36,6 +55,7 @@ jobs:
           repo_lc="${GITHUB_REPOSITORY,,}"
           echo "fruit_image=ghcr.io/${repo_lc}-fruit-party:latest" >> "$GITHUB_OUTPUT"
           echo "sanctuary_image=ghcr.io/${repo_lc}-sanctuary-relay:latest" >> "$GITHUB_OUTPUT"
+          echo "webrtc_image=ghcr.io/${repo_lc}-webrtc-gateway:latest" >> "$GITHUB_OUTPUT"
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -67,6 +87,48 @@ jobs:
           cache-from: type=gha,scope=sanctuary-relay
           cache-to: type=gha,mode=max,scope=sanctuary-relay
 
+      - name: Build and push WebRTC gateway
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: server-games/webrtc-gateway/Dockerfile
+          push: true
+          tags: ${{ steps.vars.outputs.webrtc_image }}
+          cache-from: type=gha,scope=webrtc-gateway
+          cache-to: type=gha,mode=max,scope=webrtc-gateway
+
+      # ------------------------------------------------------------------
+      # 生成生产 .env
+      # ------------------------------------------------------------------
+      # 校验与拼装都在 server-games/scripts/generate-env.mjs 里，由它自己的
+      # 单元测试覆盖（server-games/scripts/generate-env.test.mjs）。
+      # 输出写到 $RUNNER_TEMP（checkout 目录之外），不会被任何步骤打进产物或提交；
+      # 脚本只打印键名，绝不打印值；任何一项不合法就直接失败，不生成残缺配置。
+      - name: Generate server-games production .env
+        id: env
+        shell: bash
+        env:
+          # 非敏感：GitHub Variables
+          ALLOWED_ORIGINS: ${{ vars.ALLOWED_ORIGINS }}
+          TURN_PUBLIC_HOST: ${{ vars.TURN_PUBLIC_HOST }}
+          TURN_EXTERNAL_IP: ${{ vars.TURN_EXTERNAL_IP }}
+          TURN_REALM: ${{ vars.TURN_REALM }}
+          TURN_PORT: ${{ vars.TURN_PORT }}
+          TURN_MIN_PORT: ${{ vars.TURN_MIN_PORT }}
+          TURN_MAX_PORT: ${{ vars.TURN_MAX_PORT }}
+          TURN_CREDENTIAL_TTL_SECONDS: ${{ vars.TURN_CREDENTIAL_TTL_SECONDS }}
+          # 敏感：GitHub Secrets
+          TURN_SHARED_SECRET: ${{ secrets.TURN_SHARED_SECRET }}
+        run: |
+          set -euo pipefail
+          file="$RUNNER_TEMP/server-games.env"
+          node server-games/scripts/generate-env.mjs "$file"
+          chmod 600 "$file"
+          sha="$(sha256sum "$file" | cut -d' ' -f1)"
+          echo "file=$file" >> "$GITHUB_OUTPUT"
+          echo "sha256=$sha" >> "$GITHUB_OUTPUT"
+          echo ".env 校验和：$sha"
+
       - name: Configure SSH
         shell: bash
         env:
@@ -78,13 +140,41 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
-      - name: Upload production compose file
+      # ------------------------------------------------------------------
+      # 上传 compose 与 .env：先写临时文件，再在同一文件系统内 mv 原子替换，
+      # 避免 compose 读到写了一半的配置。
+      # ------------------------------------------------------------------
+      - name: Upload compose file and .env (atomic replace)
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
+          ENV_FILE: ${{ steps.env.outputs.file }}
+          ENV_SHA256: ${{ steps.env.outputs.sha256 }}
+        shell: bash
         run: |
-          scp server-games/docker-compose.prod.yml \
-            "${VPS_USER}@${VPS_HOST}:/opt/yuqing-game-hall/server-games/docker-compose.prod.yml"
+          set -euo pipefail
+          remote_dir="/opt/yuqing-game-hall/server-games"
+          target="${VPS_USER}@${VPS_HOST}"
+
+          ssh "$target" "mkdir -p '${remote_dir}'"
+          scp server-games/docker-compose.prod.yml "${target}:${remote_dir}/docker-compose.prod.yml.incoming"
+          scp "$ENV_FILE" "${target}:${remote_dir}/.env.incoming"
+
+          ssh "$target" "
+            set -e
+            cd '${remote_dir}'
+            chmod 600 .env.incoming
+            mv -f .env.incoming .env
+            mv -f docker-compose.prod.yml.incoming docker-compose.prod.yml
+          "
+
+          # 校验落盘结果与本地生成的一致（能同时验证传输完整性与原子替换是否生效）
+          remote_sha="$(ssh "$target" "sha256sum '${remote_dir}/.env' | cut -d' ' -f1")"
+          if [ "$remote_sha" != "$ENV_SHA256" ]; then
+            printf '::error title=.env 校验失败::本地 sha256=%s，VPS sha256=%s\n' "$ENV_SHA256" "$remote_sha"
+            exit 1
+          fi
+          echo "VPS 上的 .env 已更新并通过校验（sha256=${ENV_SHA256}）"
 
       - name: Login VPS to GHCR
         env:
@@ -104,15 +194,18 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           FRUIT_IMAGE: ${{ steps.vars.outputs.fruit_image }}
           SANCTUARY_IMAGE: ${{ steps.vars.outputs.sanctuary_image }}
+          WEBRTC_IMAGE: ${{ steps.vars.outputs.webrtc_image }}
         shell: bash
         run: |
           ssh "${VPS_USER}@${VPS_HOST}" \
             "cd /opt/yuqing-game-hall/server-games && \
              FRUIT_PARTY_IMAGE='${FRUIT_IMAGE}' \
              SANCTUARY_RELAY_IMAGE='${SANCTUARY_IMAGE}' \
+             WEBRTC_GATEWAY_IMAGE='${WEBRTC_IMAGE}' \
              docker compose --env-file .env -f docker-compose.prod.yml pull && \
              FRUIT_PARTY_IMAGE='${FRUIT_IMAGE}' \
              SANCTUARY_RELAY_IMAGE='${SANCTUARY_IMAGE}' \
+             WEBRTC_GATEWAY_IMAGE='${WEBRTC_IMAGE}' \
              docker compose --env-file .env -f docker-compose.prod.yml up -d --remove-orphans && \
              docker image prune -f"
 
@@ -124,4 +217,114 @@ jobs:
         run: |
           ssh "${VPS_USER}@${VPS_HOST}" \
             "curl --fail --retry 10 --retry-delay 3 --retry-connrefused http://127.0.0.1:8790/api/health && \
-             curl --fail --retry 10 --retry-delay 3 --retry-connrefused http://127.0.0.1:8787/health"
+             curl --fail --retry 10 --retry-delay 3 --retry-connrefused http://127.0.0.1:8787/health && \
+             curl --fail --retry 10 --retry-delay 3 --retry-connrefused http://127.0.0.1:9000/health"
+
+      - name: Verify container health states
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        shell: bash
+        run: |
+          # “进程活着”不等于“服务可用”：这里额外要求 compose 自己的健康检查通过。
+          # coturn 使用 host 网络，它的 healthcheck 会在容器里向 127.0.0.1:3478 发 STUN。
+          ssh "${VPS_USER}@${VPS_HOST}" \
+            "cd /opt/yuqing-game-hall/server-games && \
+             for i in \$(seq 1 20); do \
+               status=\$(docker compose --env-file .env -f docker-compose.prod.yml ps --format '{{.Service}}={{.Health}}' | sort); \
+               if ! echo \"\$status\" | grep -qvE '=(healthy|running)\$'; then echo \"\$status\"; exit 0; fi; \
+               sleep 6; \
+             done; \
+             echo '容器健康检查未通过：'; docker compose --env-file .env -f docker-compose.prod.yml ps; exit 1"
+
+      - name: Install backend test dependencies
+        run: |
+          # 只装协议 smoke test 需要的两个工作区，不拖上整个前端依赖树。
+          pnpm install --frozen-lockfile \
+            --filter @yuqing/sanctuary-relay \
+            --filter @yuqing/webrtc-gateway
+
+      - name: Test the .env generator
+        run: |
+          # 生成逻辑本身也要有测试：配置有问题时必须失败并说清是哪一项。
+          node --test server-games/scripts/generate-env.test.mjs
+
+      - name: Read the allowed browser Origin from the VPS
+        id: allowed
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        shell: bash
+        run: |
+          # 直接从 VPS 上刚落盘的 .env 读，顺便验证生成结果真的被服务用上了；
+          # 也就不必为了 smoke test 再新增一个 GitHub Secret。
+          origin=$(ssh "${VPS_USER}@${VPS_HOST}" \
+            "grep -E '^ALLOWED_ORIGINS=' /opt/yuqing-game-hall/server-games/.env | cut -d= -f2- | cut -d, -f1 | tr -d '\"'")
+          if [ -z "$origin" ]; then
+            echo "::error::VPS 的 server-games/.env 里没有 ALLOWED_ORIGINS，无法做协议验收。"
+            exit 1
+          fi
+          echo "origin=$origin" >> "$GITHUB_OUTPUT"
+
+      - name: Open SSH tunnels to the loopback-only backends
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        shell: bash
+        run: |
+          # 后端只绑定 VPS 的 127.0.0.1，CI 通过隧道访问，不需要对外暴露端口。
+          ssh -f -N -o ExitOnForwardFailure=yes \
+            -L 18787:127.0.0.1:8787 \
+            -L 19000:127.0.0.1:9000 \
+            "${VPS_USER}@${VPS_HOST}"
+          for port in 18787 19000; do
+            for i in $(seq 1 15); do
+              if (echo > "/dev/tcp/127.0.0.1/${port}") >/dev/null 2>&1; then break; fi
+              sleep 1
+            done
+          done
+
+      - name: Protocol smoke test — Sanctuary relay
+        env:
+          RELAY_URL: ws://127.0.0.1:18787/socket
+          RELAY_ORIGIN: ${{ steps.allowed.outputs.origin }}
+        run: |
+          # 两个真实 WebSocket 客户端：welcome / state / chat / leave 全链路。
+          pnpm --dir server-games/sanctuarys-end test
+
+      - name: Protocol smoke test — WebRTC gateway
+        env:
+          WEBRTC_GATEWAY_URL: http://127.0.0.1:19000
+          WEBRTC_GATEWAY_ORIGIN: ${{ steps.allowed.outputs.origin }}
+        run: |
+          # /health、/rtc-config（自建 STUN + 短期 TURN 凭据）、/peerjs/id 与 Origin 拒绝。
+          pnpm --dir server-games/webrtc-gateway test:smoke
+
+      - name: Check public STUN/TURN reachability
+        continue-on-error: true
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        shell: bash
+        run: |
+          # 从 runner 直接打 VPS 的 3478/udp，验证防火墙 + coturn + DNS 是否真的通了。
+          # 这一步依赖手动配置的 DNS 与防火墙规则，所以失败只警告、不阻断部署。
+          turn_ip=$(ssh "${VPS_USER}@${VPS_HOST}" \
+            "grep -E '^TURN_EXTERNAL_IP=' /opt/yuqing-game-hall/server-games/.env | cut -d= -f2-")
+          turn_port=$(ssh "${VPS_USER}@${VPS_HOST}" \
+            "grep -E '^TURN_PORT=' /opt/yuqing-game-hall/server-games/.env | cut -d= -f2-")
+          if [ -z "$turn_ip" ]; then
+            echo "::warning::VPS .env 里没有 TURN_EXTERNAL_IP，跳过公网 STUN/TURN 检查。"
+            exit 0
+          fi
+          if ! node server-games/scripts/check-turn.mjs "$turn_ip" "${turn_port:-3478}"; then
+            echo "::warning::自建 STUN/TURN 从公网不可达：请确认 DNS 指向 $turn_ip，并在 VPS 防火墙放行 UDP/TCP 3478 与中继端口段。"
+          fi
+
+      # 放在最后：它必须在上传步骤之后执行，否则会把还没上传的 .env 删掉。
+      - name: Discard generated .env
+        if: always()
+        shell: bash
+        run: |
+          # 无论成功失败都清掉 runner 上的临时 .env。
+          rm -f "$RUNNER_TEMP/server-games.env"

@@ -9,6 +9,8 @@ on:
       - "functions/**"
       - "games/**"
       - "scripts/**"
+      # 运行时变量同步脚本改动也要触发：否则改了同步逻辑却不会重新部署+同步
+      - "server-games/scripts/**"
       - "index.html"
       - "package.json"
       - "pnpm-lock.yaml"
@@ -54,6 +56,25 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      # ------------------------------------------------------------------
+      # 把公开的运行时地址从 GitHub Variables 同步到 Pages 项目。
+      # 必须在 deploy 之前：Pages 的运行时变量是在部署时快照进该次部署的，
+      # 部署之后再改，对已经上线的版本不生效。
+      # 只动这三个键，其它已有变量原样保留。
+      # ------------------------------------------------------------------
+      - name: Sync runtime configuration to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PAGES_PROJECT: yuqing-game-hall
+          FRUIT_PARTY_SERVICE_URL: ${{ vars.FRUIT_PARTY_SERVICE_URL }}
+          SANCTUARY_RELAY_URL: ${{ vars.SANCTUARY_RELAY_URL }}
+          WEBRTC_SERVICE_URL: ${{ vars.WEBRTC_SERVICE_URL }}
+        run: node server-games/scripts/sync-pages-config.mjs
+
+      - name: Test the runtime configuration sync
+        run: node --test server-games/scripts/sync-pages-config.test.mjs
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3

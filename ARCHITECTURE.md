@@ -31,9 +31,10 @@ VPS
 
 | 目录 | 内容 | 是否进入 Cloudflare Pages | 是否可直接运行 |
 | --- | --- | --- | --- |
-| `src/` | 大厅 TypeScript、页面、路由 | 编译后进入 | 是，作为大厅 |
+- `src/` | 大厅 TypeScript、页面、路由 | 编译后进入 | 是，作为大厅 |
 | `games/` | 自维护源码及不应公开的游戏开发资料 | 否 | 果切需先构建；其余供维护使用 |
 | `public/games/` | 完整静态游戏运行包 | 运行文件进入；已登记开发资料会剔除 | 是，通过 iframe |
+| `public/games/_shared/` | 跨游戏的公共运行脚本（汉化 bridge、WebRTC 运行时配置、只读网络诊断） | 是 | 由各游戏页面 `<script>` 引入 |
 | `server-games/` | 本项目维护的联机数据后端 | 否 | 在 VPS 单独运行 |
 | `external-games/` | 第三方游戏简介与外部地址 | 否，只把 JSON 内容编入大厅 | 否，点击后跳转 |
 | `game-sources/upstream/` | 上游完整源码归档 | 否 | 不视为发布包 |
@@ -142,7 +143,25 @@ server-games/fruit-party/src/server.ts
 
 因此推荐的长期结构是：VPS WebSocket 负责房间和 WebRTC 信令；浏览器建立 P2P 连接；直连失败时通过独立 TURN 中继。TURN 通常需要 UDP/TCP 端口和公网 IP，不能当作 Cloudflare Pages 静态资源，也不能只靠一个 WebSocket 反向代理完成。
 
-目前果切使用权威 WebSocket，没有为了“架构看起来完整”强行改成 WebRTC。Der Koloss、PVP Arena 保留各自上游的 WebRTC/PeerJS 路径，但统一自建信令/TURN 仍是未来部署工作，不应在文档中写成已完成。
+目前果切使用权威 WebSocket，没有为了“架构看起来完整”强行改成 WebRTC。Der Koloss、PVP Arena 保留各自上游的 WebRTC/PeerJS 协议与游戏逻辑，但信令、STUN、TURN 已经统一到雨晴自建的服务上：
+
+```text
+public/games/_shared/yuqing-webrtc.js
+  ├─ GET /api/runtime-config          （Cloudflare Function，读 WEBRTC_SERVICE_URL）
+  ├─ GET <WEBRTC_SERVICE_URL>/rtc-config  -> 自建 STUN + 短期 TURN 凭据
+  └─ WSS <WEBRTC_SERVICE_URL>/peerjs      -> server-games/webrtc-gateway（PeerJS 信令）
+                                              server-games/docker-compose.prod.yml 里的 coturn
+```
+
+约束与理由：
+
+- 前端只读 Cloudflare 运行时公开配置，源码里不出现 VPS 域名或 IP；
+- TURN 凭据由 gateway 用 `TURN_SHARED_SECRET` 现场签发（HMAC-SHA1 + 过期时间），浏览器永远拿不到长期密钥；
+- 配置缺失时明确失败，**不保留回退到公共 PeerJS / 公共 STUN 的逻辑**，否则无法判断自建服务是否真的在工作；
+- 优先 P2P 直连，直连不通时自动经自建 TURN 中继；
+- 生产 HTTPS/WSS 由 `server-games/nginx.example.conf` 反代到 `127.0.0.1:9000`；STUN/TURN 的 `3478` 与中继端口段直接到达 coturn，不经过 Nginx，也不经过 Cloudflare 代理。
+
+`public/games/_shared/yuqing-netdiag.js` 提供 `?debug=network` 的只读诊断面板（含仅调试可用的“强制使用 VPS 中继”），用来在真实网络上区分 P2P 与中继、确认 TURN 是否真的工作。它只读取 `RTCPeerConnection` 状态，不改变任何连接决策。
 
 ## 8. 第三方服务器游戏
 

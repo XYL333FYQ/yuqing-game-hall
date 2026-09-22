@@ -3,10 +3,12 @@ dist/
 .vite/
 .playwright-cli/
 output/
+references/
 .wrangler/
 .claude/
 .omc/
 .codex-remote-attachments/
+.workbuddy-ai/
 .dev.vars
 .env
 !.env.example
