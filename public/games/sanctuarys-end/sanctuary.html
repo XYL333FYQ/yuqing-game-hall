@@ -7,6 +7,8 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <script defer src="../_shared/yuqing-bridge.js" data-game="sanctuarys-end"></script>
 <script defer src="sanctuary.config.js"></script>
+<!-- 只读网络诊断：仅 URL 带 ?debug=network 时显示面板，普通玩家看不到。 -->
+<script defer src="../_shared/yuqing-netdiag.js"></script>
 <link href="vendor/fonts/cinzel/cinzel.css" rel="stylesheet">
 <!-- Phase 1 perf: modulepreload the renderer module graph so the browser starts fetching the ~2MB webgpu build
      (+ core/tsl + addons) during HTML parse, instead of discovering it only when the module <script> near the

@@ -3,6 +3,7 @@ import { isEmbedded } from "../ui/embed";
 import { canPlayGames } from "../ui/shell";
 import { bindCopyUrl, desktopGate, gamePageFooter, gamePageHeader } from "../ui/shell";
 import { MultiplayerClient } from "../network/MultiplayerClient";
+import { initFruitPartyDiagnostics, reportDiagnostic } from "../network/netDiagnostics";
 import { roomRequest } from "../network/roomRequest";
 import { isRoomCredentials, roomCredentialKey, type RoomCredentials, type RoomSnapshot, type ServerMessage } from "../shared/protocol";
 import { FruitNinjaEngine } from "../FruitNinjaEngine";
@@ -28,6 +29,9 @@ export function renderRoom(root: HTMLElement, rawCode: string): () => void {
 
   const credentials = loadCredentials(code);
   if (!credentials) return renderRoomJoin(root, code, embedded);
+
+  // 只读诊断：只有 ?debug=network 时才会真的建面板，其他情况是空操作。
+  initFruitPartyDiagnostics();
 
   root.innerHTML = `
     <main class="room-shell${embedded ? " is-embedded" : ""}">
@@ -134,6 +138,11 @@ export function renderRoom(root: HTMLElement, rawCode: string): () => void {
     setText("[data-me-state]", me.connected ? (me.ready ? "已准备" : "在线") : "正在重连");
     setText("[data-opponent-name]", opponent?.nickname ?? "等待朋友加入");
     setText("[data-opponent-state]", opponent ? (opponent.connected ? (opponent.ready ? "已准备" : "在线") : "掉线，等待重连") : "尚未加入");
+    reportDiagnostic(
+      "opponent",
+      opponent ? (opponent.connected ? "ok" : "fail") : "pending",
+      opponent ? opponent.nickname : "尚未加入",
+    );
     setText("[data-match-me-name]", me.nickname);
     setText("[data-match-opponent-name]", opponent?.nickname ?? "等待中");
     if (performance.now() >= optimisticScoreUntil || me.score === displayedMeScore || snapshot.phase !== "playing") {

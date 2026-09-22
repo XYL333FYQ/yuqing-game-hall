@@ -1,5 +1,22 @@
 const NET = {
   ws: null, id: 0, connected: false, name: '', remotes: new Map(), sendT: 0,
+  // 复用公共只读诊断框架（?debug=network）。WebSocket 游戏没有 ICE，
+  // 所以把默认的 P2P/TURN 行换成中继、队友状态与聊天，语义更准确。
+  diag: (() => {
+    const api = window.YuqingNetDiag;
+    if (api && api.enabled) {
+      api.define([
+        { key: 'relay', label: '中继服务器' },
+        { key: 'connected', label: '已连接' },
+        { key: 'peers', label: '队友状态' },
+        { key: 'chat', label: '聊天消息' }
+      ]);
+    }
+    return {
+      report(key, status, detail) { if (api) api.report(key, status, detail); },
+      note(text) { if (api) api.note(text); }
+    };
+  })(),
   async connect(host, port, name) {
     this.name = (name || 'Hero').slice(0, 14);
     try { await window.SANCTUARY_CONFIG_READY; } catch (_) { }
@@ -16,16 +33,27 @@ const NET = {
       const socketUrl = new URL(explicitProtocol ? address : protocol + address + ':' + (port || 8787));
       if (socketUrl.protocol !== 'ws:' && socketUrl.protocol !== 'wss:') throw new Error('unsupported protocol');
       this.ws = new WebSocket(socketUrl.href);
-    } catch (e) { this.status('中继地址格式不正确'); return; }
+    } catch (e) { this.status('中继地址格式不正确'); this.diag.report('relay', 'fail', '地址格式不正确'); return; }
     this.status('Connecting…');
-    this.ws.onopen = () => { this.connected = true; this.status('Connected — adventuring together'); this.refreshUI(); };
-    this.ws.onclose = () => { this.connected = false; this.clearRemotes(); this.status('Disconnected'); this.refreshUI(); };
-    this.ws.onerror = () => { this.status('Connection failed (is the server running & port open?)'); };
+    this.diag.report('relay', 'pending');
+    this.diag.note(configured ? '中继地址来自 Cloudflare 运行时配置' : '中继地址来自本地输入');
+    this.ws.onopen = () => {
+      this.connected = true; this.status('Connected — adventuring together'); this.refreshUI();
+      this.diag.report('relay', 'ok'); this.diag.report('connected', 'ok');
+    };
+    this.ws.onclose = () => {
+      this.connected = false; this.clearRemotes(); this.status('Disconnected'); this.refreshUI();
+      this.diag.report('connected', 'fail', '连接已断开'); this.diag.report('peers', 'fail');
+    };
+    this.ws.onerror = () => {
+      this.status('Connection failed (is the server running & port open?)');
+      this.diag.report('relay', 'fail', '无法连接中继');
+    };
     this.ws.onmessage = ev => { let m; try { m = JSON.parse(ev.data); } catch (_) { return; } this.onMsg(m); };
   },
-  disconnect() { if (this.ws) { try { this.ws.close(); } catch (_) { } } this.ws = null; this.connected = false; this.clearRemotes(); this.refreshUI(); this.status('Not connected'); },
+  disconnect() { if (this.ws) { try { this.ws.close(); } catch (_) { } } this.ws = null; this.connected = false; this.clearRemotes(); this.refreshUI(); this.status('Not connected'); this.diag.report('connected', 'fail', '已手动断开'); },
   send(o) { if (this.connected && this.ws && this.ws.readyState === 1) { try { this.ws.send(JSON.stringify(o)); } catch (_) { } } },
-  onMsg(m) { if (m.t === 'welcome') { this.id = m.id; } else if (m.t === 'state') { this.upsert(m); } else if (m.t === 'leave') { this.removeRemote(m.id); } else if (m.t === 'chat') { this.chat(m.name, m.msg); } },
+  onMsg(m) { if (m.t === 'welcome') { this.id = m.id; this.diag.report('connected', 'ok', '已分配 id ' + m.id); } else if (m.t === 'state') { this.upsert(m); this.diag.report('peers', 'ok', this.remotes.size + ' 位队友'); } else if (m.t === 'leave') { this.removeRemote(m.id); this.diag.report('peers', this.remotes.size ? 'ok' : 'pending', this.remotes.size + ' 位队友'); } else if (m.t === 'chat') { this.chat(m.name, m.msg); this.diag.report('chat', 'ok', String(m.name || '').slice(0, 12)); } },
   upsert(m) {
     let r = this.remotes.get(m.id); if (!r) { const mesh = buildHero(); mesh.scale.set(0.96, 0.96, 0.96); mesh.visible = false; scene.add(mesh); r = { mesh }; this.remotes.set(m.id, r); }
     // Coerce every relayed field — the relay forwards peer payloads verbatim, so a NaN/string x/z/dir would

@@ -1,7 +1,10 @@
 import type { GameSliceEvent } from "../types";
 import type { ClientMessage, RoomCredentials, ServerMessage } from "../shared/protocol";
 import type { SliceClaim } from "../shared/match";
+import { reportDiagnostic } from "./netDiagnostics";
 import { multiplayerWebSocketUrl, waitForMultiplayerServiceConfig } from "./serviceConfig";
+
+type ConnectionState = "connecting" | "online" | "reconnecting" | "offline";
 
 export class MultiplayerClient {
   private socket?: WebSocket;
@@ -16,11 +19,20 @@ export class MultiplayerClient {
   constructor(
     private readonly credentials: RoomCredentials,
     private readonly onMessage: (message: ServerMessage) => void,
-    private readonly onConnection: (state: "connecting" | "online" | "reconnecting" | "offline") => void,
-  ) {}
+    private readonly onConnection: (state: ConnectionState) => void,
+  ) {
+    // 诊断是只读旁路：在构造器里包一层，保证每一处连接状态变化都会同步到面板，
+    // 且不改动调用方拿到的 state 语义。
+    const notify = onConnection;
+    this.onConnection = (state) => {
+      reportDiagnostic("connected", state === "online" ? "ok" : state === "offline" ? "fail" : "pending", state);
+      notify(state);
+    };
+  }
 
   connect(): void {
     this.closed = false;
+    reportDiagnostic("service", "pending");
     this.onConnection(this.reconnectStartedAt ? "reconnecting" : "connecting");
     void this.connectWhenConfigured();
   }
@@ -38,6 +50,7 @@ export class MultiplayerClient {
       );
     } catch (error) {
       this.onConnection("offline");
+      reportDiagnostic("service", "fail", "多人服务地址不可用");
       this.onMessage({
         type: "error",
         message: error instanceof Error ? error.message : "果切多人服务地址不可用。",
