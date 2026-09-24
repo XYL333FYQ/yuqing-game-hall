@@ -15,7 +15,7 @@ on:
     paths:
       - "server-games/**"
       - "games/fruit-party/src/shared/**"
-      - "public/games/littlejs-arcade/dist/**"
+      - "public/games/littlejs-arcade/**"
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
