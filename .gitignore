@@ -1,5 +1,13 @@
 node_modules/
 dist/
+# LittleJS engine runtime bundles are served from the public game package.
+!public/games/littlejs-arcade/dist/
+public/games/littlejs-arcade/dist/*
+!public/games/littlejs-arcade/dist/box2d.wasm.js
+!public/games/littlejs-arcade/dist/box2d.wasm.wasm
+!public/games/littlejs-arcade/dist/littlejs.js
+!public/games/littlejs-arcade/dist/littlejs.release.js
+!public/games/littlejs-arcade/dist/littlejs.min.js
 .vite/
 .playwright-cli/
 output/
