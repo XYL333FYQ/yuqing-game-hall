@@ -9,6 +9,14 @@ on:
       - "functions/**"
       - "games/**"
       - "scripts/**"
+      # 游戏目录还会从外部目录与受限来源清单生成。
+      - "external-games/**"
+      - "game-sources/rejected/**"
+      # 许可页由根目录说明文件和 licenses/ 复制生成。
+      - "licenses/**"
+      - "LICENSE"
+      - "THIRD_PARTY_NOTICES.md"
+      - "SOURCE_AUDIT.md"
       # 运行时变量同步脚本改动也要触发：否则改了同步逻辑却不会重新部署+同步
       - "server-games/scripts/**"
       - "index.html"
