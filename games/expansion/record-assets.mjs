@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const games = JSON.parse(await readFile(new URL('./SOURCES.json', import.meta.url), 'utf8'));
-const excluded = new Set(['source.zip', 'cover.png', 'SOURCE.md', 'LICENSE', 'game.json']);
+const excluded = new Set(['.DS_Store', 'source.zip', 'cover.png', 'SOURCE.md', 'LICENSE', 'game.json']);
 const inventory = {};
 for (const { id } of games) {
   if (!/^[a-z0-9-]+$/.test(id)) throw new Error(`Invalid game id: ${id}`);
