@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 2,
+  "id": "xx142-b2",
+  "order": 22,
+  "discovery": {
+    "audiences": [
+      "single"
+    ],
+    "popularRank": 22
+  },
+  "theme": {
+    "accent": "#48bbaa",
+    "dark": "#252a29"
+  },
+  "presentation": {
+    "title": "十三秒回溯",
+    "originalTitle": "xx142-b2.exe",
+    "mark": "解谜",
+    "category": "时间循环解谜",
+    "tagline": "每次只有十三秒，让过去的自己帮你破局。",
+    "description": "作为潜入网络的程序，利用短暂生命探索机关。失败留下的行动轨迹会继续重演，配合过去的自己破解防线。",
+    "tags": [
+      "解谜",
+      "时间循环",
+      "科幻",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "WASD 或方向键移动；Backspace 提前结束当前循环。",
+      "inputs": [
+        "keyboard",
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "每次只有十三秒，让过去的自己帮你破局。",
+      "先让一个回溯分身压住开关，再在下一轮继续前进。"
+    ],
+    "art": {
+      "cover": "/games/xx142-b2/cover.png",
+      "hero": "/games/xx142-b2/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "浏览器独立游戏运行包",
+    "license": "MIT",
+    "sourceUrl": "https://github.com/js13kGames/xx142-b2.exe",
+    "localization": "中文菜单、操作提示和主要规则；保留原作署名。",
+    "fit": "独立运行包与 JSON 清单；无需新增 VPS 服务。",
+    "highlights": [
+      "每次只有十三秒，让过去的自己帮你破局。"
+    ],
+    "cautions": [
+      "单人游戏，无需房间服务器；如有本地存档，不会自动跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/xx142-b2/index.html"
+    }
+  },
+  "capabilities": [
+    "audio",
+    "fullscreen"
+  ],
+  "permissions": [
+    "fullscreen",
+    "autoplay"
+  ]
+}

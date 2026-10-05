@@ -128,3 +128,54 @@
 Suroi（GPL-3.0）、Scribble.rs（BSD-3-Clause，部分美术保留权利）、TOSIOS（MIT）和 OpenFront（AGPL-3.0；素材 CC BY-SA 4.0）当前不打包进静态站点。游戏厅只提供中文说明和上游在线入口，Manifest 位于 `external-games/`；本项目 VPS 不运行这些第三方整站。
 
 Kaetram Open 的自定义 OPL 明确限制 AI 相关用途，因此本项目不复制、不修改也不发布其运行代码，只保留产品观察与上游源码链接。
+
+## 新增棋牌运行包
+
+- 斗地主：[DavidWang1231/doudizhu-online](https://github.com/DavidWang1231/doudizhu-online)，Copyright (c) 2026 Jiacheng Wang，MIT；完整许可 `public/games/doudizhu/LICENSE`。修改信令 / TURN 配置、错误提示和静态部署路径，保留原规则与合成音效。
+- 掼蛋 / 麻将：[TypeThe0ry/CardRoomPro](https://github.com/TypeThe0ry/CardRoomPro)，Copyright (c) 2026 TypeThe0ry，MIT；完整许可 `public/games/_shared/card-room/LICENSE` 与 `server-games/card-room/LICENSE`。拆分前端 / 后端、启用访客内存模式；封面、扑克图案及地主标识为本项目绘制。未分发上游 demo 图片。
+- CardRoomPro 的原始斗地主底座来自 [laivv/doudizhu](https://github.com/laivv/doudizhu)，原作者 laivv，其 README 声明代码 MIT、网络图片不在许可范围内。本运行包保留代码来源署名，并使用自绘扑克牌替换这些图片。
+- 五子棋：[HullQin/gobang](https://github.com/HullQin/gobang)，Copyright (c) 2020 Hull，MIT；完整许可 `public/games/gobang/LICENSE` 与 `server-games/gobang/LICENSE`。保留前端 SVG 棋盘，Node 实现原房间消息协议并增加回合及胜负校验。
+
+棋牌页面随附的第三方运行组件均保留许可，运行时不从 CDN 下载：
+
+| 组件 | 来源 | 许可文本 |
+| --- | --- | --- |
+| Vue 2.5.17 | https://github.com/vuejs/vue | `licenses/VUE-2.5.17-MIT.txt` |
+| jQuery 2.2.4 | https://github.com/jquery/jquery | `licenses/JQUERY-2.2.4-MIT.txt` |
+| Layer 3.5.1（替换上游旧版） | https://github.com/layui/layer | `licenses/LAYER-3.5.1-MIT.txt` |
+| Socket.IO client 4.8.1 | https://github.com/socketio/socket.io | `licenses/SOCKET.IO-CLIENT-4.8.1-MIT.txt` |
+| PeerJS（复用现有 vendored 运行包） | https://github.com/peers/peerjs | `licenses/PEERJS-MIT.txt` |
+
+固定源版本与改动清单见 `BOARD_GAMES.md`。浏览器可访问 `/legal/THIRD_PARTY_NOTICES.md` 和 `/legal/licenses/` 中的对应文本。
+
+
+## 新增 20 款中文静态游戏（2026-10-05）
+
+固定来源与改动见 `NEW_GAMES.md`、`games/expansion/SOURCES.json`。以下各款保留上游完整许可证，并随站点提供 `/games/<id>/source.zip` 对应源码。共享中文适配与玩法说明使用本项目 MIT 许可，第三方游戏按各自许可分发。
+
+| 游戏 / 路径 | 上游 | 代码许可 |
+| --- | --- | --- |
+| 小黑屋 (`a-dark-room`) | https://github.com/doublespeakgames/adarkroom | MPL-2.0 |
+| 格子大陆 (`gridland`) | https://github.com/doublespeakgames/gridland | MPL-2.0 |
+| 小小牧场 (`tiny-yurts`) | https://github.com/js13kGames/tiny-yurts | MIT |
+| 纸牌远征 (`casual-crusade`) | https://github.com/js13kGames/casual-crusade | MIT |
+| 夺回地狱王座 (`infernal-throne`) | https://github.com/arikwex/infernal-sigil | MIT |
+| 深层突围 (`underrun`) | https://github.com/phoboslab/underrun | MIT |
+| 十三秒回溯 (`xx142-b2`) | https://github.com/js13kGames/xx142-b2.exe | MIT |
+| 星际打包救援 (`packabunchas`) | https://github.com/js13kGames/packabunchas | MIT |
+| 回旋镖勇者 (`bounce-back`) | https://github.com/js13kGames/bounce-back | GPL-2.0-or-later |
+| 积木城堡 (`super-castle`) | https://github.com/js13kGames/super-castle-game | GPL-3.0-only |
+| 亡灵法师诺曼 (`norman-necromancer`) | https://github.com/danprince/js13k-2022 | Unlicense |
+| 线索迷境 (`the-neatness`) | https://github.com/mvasilkov/neatness2022 | GPL-3.0-only |
+| 荒野赏金 (`backcountry`) | https://github.com/js13kGames/backcountry | ISC |
+| 霓虹突袭 (`radius-raid`) | https://github.com/jackrugile/radius-raid-js13k | MIT |
+| 元素防线 (`elematter`) | https://github.com/jackrugile/elematter-js13k | MIT |
+| 守护蜜蜂 (`bee-kind`) | https://github.com/picosonic/js13k-2022 | MIT |
+| 鼠疫小镇 (`rat-plague`) | https://github.com/picosonic/js13k-2023 | MIT |
+| 六边形消除 (`hextris`) | https://github.com/Hextris/hextris | GPL-3.0-or-later |
+| 第十三层 (`thirteenth-floor`) | https://github.com/js13kGames/13th-floor | MIT |
+| 可汗卡牌地牢 (`khan`) | https://github.com/BenjaminWFox/KHAN-js13k-2023 | MIT |
+
+第三方运行组件：jQuery（MIT）、RequireJS（MIT）、Hammer 1.1.2（MIT）、Keypress 1.0.8（Apache-2.0，David Mauro）、jsfxr（Apache-2.0，Markus Neubrand）、Kontra.js 9（MIT，Steven Lambert）、SweetAlert（MIT）、JSONfn（MIT）、RRSSB（MIT）、jQuery Cookie（MIT，Klaus Hartl）、ZzFX（MIT，Frank Force）、natlib 0.1.13（MIT，Mark Vasilkov）。完整文本在 `licenses/` 和 `/legal/licenses/`；Sonant-X 的 zlib 声明直接保留于 Underrun 源文件。
+
+Hextris 的 Exo 2 字体使用 SIL OFL 1.1；Font Awesome 4.1 字体使用 SIL OFL 1.1，CSS 使用 MIT。Picosonic 两款游戏的 Kenney 素材为 CC0；Bee Kind 的《蓝色多瑙河》片段为程序合成的公共领域作曲素材，未复制现代录音。原作 README 署名见每款源码包。

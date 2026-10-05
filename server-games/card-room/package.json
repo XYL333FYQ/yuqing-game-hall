@@ -1,0 +1,22 @@
+{
+  "name": "@yuqing/card-room",
+  "private": true,
+  "version": "1.0.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js && node --check game.js && node --check guandan-game.js && node --check mahjong-game.js",
+    "test": "node test/ai.test.js && node test/history.test.js && node test/reconnect-live.test.js && node test/room-controls.test.js && node --test test/integration.test.cjs",
+    "test:smoke": "node --test test/integration.test.cjs"
+  },
+  "dependencies": {
+    "express": "4.22.3",
+    "socket.io": "4.8.1",
+    "jsonwebtoken": "9.0.3"
+  },
+  "devDependencies": {
+    "socket.io-client": "4.8.1"
+  }
+}

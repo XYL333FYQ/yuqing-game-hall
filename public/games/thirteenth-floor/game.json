@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 2,
+  "id": "thirteenth-floor",
+  "order": 34,
+  "discovery": {
+    "audiences": [
+      "single"
+    ],
+    "popularRank": 34
+  },
+  "theme": {
+    "accent": "#9b8e78",
+    "dark": "#252a29"
+  },
+  "presentation": {
+    "title": "第十三层",
+    "originalTitle": "13th Floor",
+    "mark": "惊悚",
+    "category": "潜行惊悚",
+    "tagline": "找齐房间钥匙，记得躲进黑暗。",
+    "description": "在神秘楼层寻找下一把钥匙，逐个打开房间。手电筒能帮你看清道路，也可能暴露位置，追逐到来时要迅速藏身。",
+    "tags": [
+      "惊悚",
+      "潜行",
+      "探索",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "WASD 移动，鼠标转向，E 或左键互动，F 手电筒。",
+      "inputs": [
+        "keyboard",
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "找齐房间钥匙，记得躲进黑暗。",
+      "留意追踪者的灯光；被发现时关灯、转弯并躲进房间。"
+    ],
+    "art": {
+      "cover": "/games/thirteenth-floor/cover.png",
+      "hero": "/games/thirteenth-floor/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "浏览器独立游戏运行包",
+    "license": "MIT",
+    "sourceUrl": "https://github.com/js13kGames/13th-floor",
+    "localization": "中文菜单、操作提示和主要规则；保留原作署名。",
+    "fit": "独立运行包与 JSON 清单；无需新增 VPS 服务。",
+    "highlights": [
+      "找齐房间钥匙，记得躲进黑暗。"
+    ],
+    "cautions": [
+      "包含追逐与惊悚元素；需要桌面浏览器和 WebGL2。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/thirteenth-floor/index.html"
+    }
+  },
+  "capabilities": [
+    "audio",
+    "fullscreen"
+  ],
+  "permissions": [
+    "fullscreen",
+    "autoplay"
+  ]
+}

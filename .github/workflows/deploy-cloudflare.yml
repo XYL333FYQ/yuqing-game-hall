@@ -18,7 +18,7 @@ on:
       - "THIRD_PARTY_NOTICES.md"
       - "SOURCE_AUDIT.md"
       # 运行时变量同步脚本改动也要触发：否则改了同步逻辑却不会重新部署+同步
-      - "server-games/scripts/**"
+      - "server-games/scripts/sync-pages-config.*"
       - "index.html"
       - "package.json"
       - "pnpm-lock.yaml"
@@ -69,7 +69,7 @@ jobs:
       # 把公开的运行时地址从 GitHub Variables 同步到 Pages 项目。
       # 必须在 deploy 之前：Pages 的运行时变量是在部署时快照进该次部署的，
       # 部署之后再改，对已经上线的版本不生效。
-      # 只动这三个键，其它已有变量原样保留。
+      # 只动这五个键，其它已有变量原样保留。
       # ------------------------------------------------------------------
       - name: Sync runtime configuration to Cloudflare Pages
         env:
@@ -79,6 +79,8 @@ jobs:
           FRUIT_PARTY_SERVICE_URL: ${{ vars.FRUIT_PARTY_SERVICE_URL }}
           SANCTUARY_RELAY_URL: ${{ vars.SANCTUARY_RELAY_URL }}
           WEBRTC_SERVICE_URL: ${{ vars.WEBRTC_SERVICE_URL }}
+          CARD_ROOM_SERVICE_URL: ${{ vars.CARD_ROOM_SERVICE_URL }}
+          GOBANG_SERVICE_URL: ${{ vars.GOBANG_SERVICE_URL }}
         run: node server-games/scripts/sync-pages-config.mjs
 
       - name: Test the runtime configuration sync

@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 2,
+  "id": "backcountry",
+  "order": 28,
+  "discovery": {
+    "audiences": [
+      "single"
+    ],
+    "popularRank": 28
+  },
+  "theme": {
+    "accent": "#cf9865",
+    "dark": "#252a29"
+  },
+  "presentation": {
+    "title": "荒野赏金",
+    "originalTitle": "Backcountry",
+    "mark": "竞速",
+    "category": "西部赏金冒险",
+    "tagline": "接下通缉令，在西部荒野赚取赏金。",
+    "description": "在立体西部小镇接下通缉任务，移动、追击并攻击敌人，完成任务后领取赏金。每日地图会变化，行动与战斗都由鼠标控制。",
+    "tags": [
+      "动作",
+      "射击",
+      "随机地图",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "鼠标点击地面移动；点击敌人攻击；在小镇接受任务。",
+      "inputs": [
+        "keyboard",
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "接下通缉令，在西部荒野赚取赏金。",
+      "接下通缉任务后再出城，利用走位避免被敌人围住。"
+    ],
+    "art": {
+      "cover": "/games/backcountry/cover.png",
+      "hero": "/games/backcountry/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "浏览器独立游戏运行包",
+    "license": "ISC",
+    "sourceUrl": "https://github.com/js13kGames/backcountry",
+    "localization": "中文菜单、操作提示和主要规则；保留原作署名。",
+    "fit": "独立运行包与 JSON 清单；无需新增 VPS 服务。",
+    "highlights": [
+      "接下通缉令，在西部荒野赚取赏金。"
+    ],
+    "cautions": [
+      "单人游戏，无需房间服务器；如有本地存档，不会自动跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/backcountry/index.html"
+    }
+  },
+  "capabilities": [
+    "audio",
+    "fullscreen"
+  ],
+  "permissions": [
+    "fullscreen",
+    "autoplay"
+  ]
+}

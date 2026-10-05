@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 2,
+  "id": "tiny-yurts",
+  "order": 18,
+  "discovery": {
+    "audiences": [
+      "single"
+    ],
+    "popularRank": 18
+  },
+  "theme": {
+    "accent": "#90a166",
+    "dark": "#252a29"
+  },
+  "presentation": {
+    "title": "小小牧场",
+    "originalTitle": "Tiny Yurts",
+    "mark": "经营",
+    "category": "道路经营",
+    "tagline": "为牧场铺路，让每一个小家都忙得过来。",
+    "description": "拖出道路，把不同颜色的毡房与牧场相连。动物越来越多，有限道路和拥堵让每次扩建都需要取舍。",
+    "tags": [
+      "经营",
+      "策略",
+      "休闲",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "按住鼠标拖动铺路；右键删除；空格暂停。",
+      "inputs": [
+        "keyboard",
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "为牧场铺路，让每一个小家都忙得过来。",
+      "可以暂停后规划道路；住户需要往返，别只接通一头。"
+    ],
+    "art": {
+      "cover": "/games/tiny-yurts/cover.png",
+      "hero": "/games/tiny-yurts/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "浏览器独立游戏运行包",
+    "license": "MIT",
+    "sourceUrl": "https://github.com/js13kGames/tiny-yurts",
+    "localization": "中文菜单、操作提示和主要规则；保留原作署名。",
+    "fit": "独立运行包与 JSON 清单；无需新增 VPS 服务。",
+    "highlights": [
+      "为牧场铺路，让每一个小家都忙得过来。"
+    ],
+    "cautions": [
+      "单人游戏，无需房间服务器；如有本地存档，不会自动跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/tiny-yurts/index.html"
+    }
+  },
+  "capabilities": [
+    "audio",
+    "fullscreen"
+  ],
+  "permissions": [
+    "fullscreen",
+    "autoplay"
+  ]
+}

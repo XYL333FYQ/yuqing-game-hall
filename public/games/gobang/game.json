@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 2,
+  "id": "gobang",
+  "order": 15,
+  "discovery": {
+    "audiences": [
+      "duo",
+      "multi"
+    ],
+    "popularRank": 15
+  },
+  "theme": {
+    "accent": "#98613b",
+    "dark": "#352b23"
+  },
+  "presentation": {
+    "title": "五子棋",
+    "originalTitle": "HullQin · Gobang",
+    "mark": "棋牌",
+    "category": "双人棋盘对弈",
+    "tagline": "黑白轮流落子，抢先连成五颗。",
+    "description": "在十五路棋盘上轮流落子，横、竖或斜向连成五颗即可获胜。支持同屏双人、好友房间和旁观，重新进入房间可以继续棋局。",
+    "tags": [
+      "棋牌",
+      "五子棋",
+      "本地双人",
+      "好友联机"
+    ],
+    "play": {
+      "modes": "好友房间 / 同屏双人 / 观战",
+      "players": "2 人对弈，可旁观",
+      "controls": "鼠标点击选择与操作",
+      "inputs": [
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "无需登录，用同一个房间号对弈",
+      "同屏双人随时开局",
+      "完整连五判断与房间棋局恢复"
+    ],
+    "art": {
+      "cover": "/games/gobang/cover.svg",
+      "hero": "/games/gobang/cover.svg"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "hybrid",
+    "technology": "原生 JavaScript · SVG · Node.js · WebSocket",
+    "license": "MIT；依赖组件许可见 THIRD_PARTY_NOTICES.md",
+    "sourceUrl": "https://github.com/HullQin/gobang",
+    "localization": "中文界面；保留原作玩法，接入自建服务运行时配置。",
+    "fit": "沿用上游棋盘与消息协议，后端移植为独立 Node 服务，并校验轮次、占位与胜负。",
+    "highlights": [
+      "无需登录，用同一个房间号对弈",
+      "同屏双人随时开局",
+      "完整连五判断与房间棋局恢复"
+    ],
+    "cautions": [
+      "自由五子棋，不使用连珠禁手规则",
+      "无 AI，人少时可玩同屏双人",
+      "联机需配置 GOBANG_SERVICE_URL，后端重启会清空房间"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/gobang/index.html"
+    }
+  },
+  "capabilities": [
+    "multiplayer",
+    "fullscreen",
+    "storage"
+  ],
+  "permissions": [
+    "fullscreen",
+    "autoplay"
+  ]
+}

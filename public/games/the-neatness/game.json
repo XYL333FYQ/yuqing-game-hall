@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 2,
+  "id": "the-neatness",
+  "order": 27,
+  "discovery": {
+    "audiences": [
+      "single"
+    ],
+    "popularRank": 27
+  },
+  "theme": {
+    "accent": "#7bb0aa",
+    "dark": "#252a29"
+  },
+  "presentation": {
+    "title": "线索迷境",
+    "originalTitle": "The Neatness",
+    "mark": "益智",
+    "category": "连线解谜",
+    "tagline": "看似简单的线条，藏着一层又一层规则。",
+    "description": "在迷宫般的线条图案中寻找正确路线。关卡逐渐加入新规则，需要观察图形和反馈，而不仅仅是连起两点。",
+    "tags": [
+      "益智",
+      "解谜",
+      "逻辑",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "按住鼠标从起点拖向终点，避开障碍；两侧的路径会同时变化。",
+      "inputs": [
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "看似简单的线条，藏着一层又一层规则。",
+      "先观察两侧的障碍，画出一条能同时连通的路线。"
+    ],
+    "art": {
+      "cover": "/games/the-neatness/cover.png",
+      "hero": "/games/the-neatness/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "浏览器独立游戏运行包",
+    "license": "GPL-3.0-only",
+    "sourceUrl": "https://github.com/mvasilkov/neatness2022",
+    "localization": "中文菜单、操作提示和主要规则；保留原作署名。",
+    "fit": "独立运行包与 JSON 清单；无需新增 VPS 服务。",
+    "highlights": [
+      "看似简单的线条，藏着一层又一层规则。"
+    ],
+    "cautions": [
+      "单人游戏，无需房间服务器；如有本地存档，不会自动跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/the-neatness/index.html"
+    }
+  },
+  "capabilities": [
+    "audio",
+    "fullscreen"
+  ],
+  "permissions": [
+    "fullscreen",
+    "autoplay"
+  ]
+}

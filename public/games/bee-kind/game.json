@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 2,
+  "id": "bee-kind",
+  "order": 31,
+  "discovery": {
+    "audiences": [
+      "single"
+    ],
+    "popularRank": 31
+  },
+  "theme": {
+    "accent": "#c5aa53",
+    "dark": "#252a29"
+  },
+  "presentation": {
+    "title": "守护蜜蜂",
+    "originalTitle": "Bee Kind",
+    "mark": "冒险",
+    "category": "生态冒险",
+    "tagline": "护住蜂巢，带小蜜蜂们度过危机。",
+    "description": "扮演养蜂兔子，在横版和俯视地图之间穿梭。保护蜂巢、收集蜂蜜和武器，阻止敌人破坏正在成长的蜂群。",
+    "tags": [
+      "冒险",
+      "像素",
+      "防守",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "方向键移动；上方向键跳跃；回车、空格或 Shift 使用蜂蜜枪。",
+      "inputs": [
+        "keyboard"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "护住蜂巢，带小蜜蜂们度过危机。",
+      "关注蜂巢附近的敌人，幼虫吃到蘑菇后会成为威胁。"
+    ],
+    "art": {
+      "cover": "/games/bee-kind/cover.png",
+      "hero": "/games/bee-kind/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "浏览器独立游戏运行包",
+    "license": "MIT",
+    "sourceUrl": "https://github.com/picosonic/js13k-2022",
+    "localization": "中文菜单、操作提示和主要规则；保留原作署名。",
+    "fit": "独立运行包与 JSON 清单；无需新增 VPS 服务。",
+    "highlights": [
+      "护住蜂巢，带小蜜蜂们度过危机。"
+    ],
+    "cautions": [
+      "单人游戏，无需房间服务器；如有本地存档，不会自动跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/bee-kind/index.html"
+    }
+  },
+  "capabilities": [
+    "audio",
+    "fullscreen"
+  ],
+  "permissions": [
+    "fullscreen",
+    "autoplay"
+  ]
+}

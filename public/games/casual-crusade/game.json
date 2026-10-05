@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 2,
+  "id": "casual-crusade",
+  "order": 19,
+  "discovery": {
+    "audiences": [
+      "single"
+    ],
+    "popularRank": 19
+  },
+  "theme": {
+    "accent": "#cea873",
+    "dark": "#252a29"
+  },
+  "presentation": {
+    "title": "纸牌远征",
+    "originalTitle": "Casual Crusade",
+    "mark": "策略",
+    "category": "路线策略",
+    "tagline": "铺下卡牌，为勇士开出一条冒险之路。",
+    "description": "把手中的道路卡放进棋盘，连接宝物、战斗和出口。方向、生命与战利品一起决定下一步走向。",
+    "tags": [
+      "策略",
+      "卡牌",
+      "冒险",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "鼠标拖动道路卡，点击卡牌旋转，连接到勇士所在道路。",
+      "inputs": [
+        "keyboard",
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "铺下卡牌，为勇士开出一条冒险之路。",
+      "先看卡牌方向，避免把自己引向无法离开的死路。"
+    ],
+    "art": {
+      "cover": "/games/casual-crusade/cover.png",
+      "hero": "/games/casual-crusade/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "浏览器独立游戏运行包",
+    "license": "MIT",
+    "sourceUrl": "https://github.com/js13kGames/casual-crusade",
+    "localization": "中文菜单、操作提示和主要规则；保留原作署名。",
+    "fit": "独立运行包与 JSON 清单；无需新增 VPS 服务。",
+    "highlights": [
+      "铺下卡牌，为勇士开出一条冒险之路。"
+    ],
+    "cautions": [
+      "单人游戏，无需房间服务器；如有本地存档，不会自动跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/casual-crusade/index.html"
+    }
+  },
+  "capabilities": [
+    "audio",
+    "fullscreen"
+  ],
+  "permissions": [
+    "fullscreen",
+    "autoplay"
+  ]
+}

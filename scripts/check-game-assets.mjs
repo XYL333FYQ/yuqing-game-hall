@@ -6,6 +6,23 @@ import { collectGameManifests } from "./generate-game-catalog.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const requiredFiles = [
+  "public/games/_shared/peerjs.min.js",
+  "public/games/_shared/gobang-config.js",
+  "public/games/_shared/card-room/config.js",
+  "public/games/_shared/card-room/js/socket.io.min.js",
+  "public/games/_shared/card-room/js/layer/layer.js",
+  "public/games/_shared/card-room/js/layer/theme/default/layer.css",
+  "public/games/_shared/card-room/images/poker.svg",
+  "public/games/_shared/card-room/images/dizhu.svg",
+  "public/games/_shared/card-room/LICENSE",
+  "public/games/doudizhu/js/game.js",
+  "public/games/doudizhu/js/net.js",
+  "public/games/doudizhu/LICENSE",
+  "public/games/gobang/LICENSE",
+  "public/games/_shared/game-chinese.js",
+  "public/games/_shared/game-help.js",
+  "public/games/_shared/expansion-LICENSE",
+
   "public/games/_shared/yuqing-bridge.js",
   "public/games/der-koloss/index.html",
   "public/games/der-koloss/LICENSE",
@@ -75,10 +92,50 @@ try {
     } catch {
       failures.push(`Manifest 指向的 iframe 文件不存在：${manifest.id} → ${entry}`);
     }
+    for (const art of [manifest.presentation.art.cover, manifest.presentation.art.hero]) {
+      if (!art?.startsWith("/games/")) continue;
+      if (art.includes("..")) {
+        failures.push(`Manifest 图片路径不安全：${manifest.id} → ${art}`);
+        continue;
+      }
+      try {
+        await access(path.join(root, "public", art.slice(1)), constants.R_OK);
+      } catch {
+        failures.push(`Manifest 图片不存在：${manifest.id} → ${art}`);
+      }
+    }
   }
   console.log(`已根据 ${manifests.length} 份 Manifest 检查 ${iframeEntries.length} 个 iframe 入口。`);
 } catch (error) {
   failures.push(`无法读取游戏 Manifest：${error instanceof Error ? error.message : String(error)}`);
+}
+
+// Checking the actual runtime inventory catches missing maps/audio as well as
+// entry files. A SPA fallback can otherwise return HTML with status 200.
+try {
+  const sources = JSON.parse(await readFile(path.join(root, "games/expansion/SOURCES.json"), "utf8"));
+  const inventory = JSON.parse(await readFile(path.join(root, "games/expansion/runtime-assets.json"), "utf8"));
+  for (const { id } of sources) {
+    const files = inventory[id];
+    if (!Array.isArray(files) || !files.includes("index.html")) {
+      failures.push(`游戏缺少完整运行资源清单：${id}`);
+      continue;
+    }
+    for (const name of [...files, "LICENSE", "SOURCE.md", "source.zip", "cover.png"]) {
+      if (name.includes("..") || path.isAbsolute(name)) {
+        failures.push(`游戏资源路径不安全：${id} → ${name}`);
+        continue;
+      }
+      try {
+        await access(path.join(root, "public/games", id, name), constants.R_OK);
+      } catch {
+        failures.push(`游戏运行资源不存在：${id} → ${name}`);
+      }
+    }
+  }
+  console.log(`已按完整资源清单检查 ${sources.length} 款新增游戏。`);
+} catch (error) {
+  failures.push(`新增游戏资源清单检查失败：${error instanceof Error ? error.message : String(error)}`);
 }
 
 if (failures.length) {

@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 2,
+  "id": "radius-raid",
+  "order": 29,
+  "discovery": {
+    "audiences": [
+      "single"
+    ],
+    "popularRank": 29
+  },
+  "theme": {
+    "accent": "#5da8c5",
+    "dark": "#252a29"
+  },
+  "presentation": {
+    "title": "霓虹突袭",
+    "originalTitle": "Radius Raid",
+    "mark": "射击",
+    "category": "街机射击",
+    "tagline": "一边走位一边瞄准，穿过不断涌来的敌群。",
+    "description": "在霓虹竞技场内面对不断升级的敌群，拾取强化并坚持更久。移动、瞄准和弹幕躲避同时进行。",
+    "tags": [
+      "射击",
+      "街机",
+      "挑战",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "WASD 或方向键移动；鼠标瞄准，左键射击；P 暂停。",
+      "inputs": [
+        "keyboard",
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "一边走位一边瞄准，穿过不断涌来的敌群。",
+      "围着敌群走位，优先获取强化，避免被围住。"
+    ],
+    "art": {
+      "cover": "/games/radius-raid/cover.png",
+      "hero": "/games/radius-raid/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "浏览器独立游戏运行包",
+    "license": "MIT",
+    "sourceUrl": "https://github.com/jackrugile/radius-raid-js13k",
+    "localization": "中文菜单、操作提示和主要规则；保留原作署名。",
+    "fit": "独立运行包与 JSON 清单；无需新增 VPS 服务。",
+    "highlights": [
+      "一边走位一边瞄准，穿过不断涌来的敌群。"
+    ],
+    "cautions": [
+      "单人游戏，无需房间服务器；如有本地存档，不会自动跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/radius-raid/index.html"
+    }
+  },
+  "capabilities": [
+    "audio",
+    "fullscreen"
+  ],
+  "permissions": [
+    "fullscreen",
+    "autoplay"
+  ]
+}

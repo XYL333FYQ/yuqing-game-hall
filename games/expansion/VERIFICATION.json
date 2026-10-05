@@ -1,0 +1,275 @@
+{
+  "date": "2026-10-05",
+  "environment": "Chrome desktop, 1280x800, wrangler Pages preview with production CSP",
+  "scope": "启动、中文玩法面板、第一段实际操作；人工查看 20 张游戏画面。不覆盖完整通关、所有剧情、手机或真实 VPS。",
+  "checks": {
+    "build": true,
+    "platformTests": 102,
+    "localizationTests": 3,
+    "missingMapRegression": true,
+    "zipCRC": 20,
+    "catalogEntries": 35,
+    "staticFiles": 1791,
+    "visibleCatalogGames": 34
+  },
+  "games": [
+    {
+      "id": "a-dark-room",
+      "errors": [],
+      "consoleErrors": [],
+      "failed": [],
+      "remote": [],
+      "observed": {
+        "fireLit": true
+      },
+      "csp": true,
+      "chineseHelp": true
+    },
+    {
+      "id": "gridland",
+      "errors": [],
+      "consoleErrors": [],
+      "failed": [],
+      "remote": [],
+      "observed": {
+        "tiles": 128
+      },
+      "csp": true,
+      "chineseHelp": true
+    },
+    {
+      "id": "tiny-yurts",
+      "errors": [],
+      "consoleErrors": [],
+      "failed": [],
+      "remote": [],
+      "observed": {},
+      "csp": true,
+      "chineseHelp": true
+    },
+    {
+      "id": "casual-crusade",
+      "errors": [],
+      "consoleErrors": [],
+      "failed": [],
+      "remote": [],
+      "observed": {},
+      "csp": true,
+      "chineseHelp": true
+    },
+    {
+      "id": "infernal-throne",
+      "errors": [],
+      "consoleErrors": [],
+      "failed": [],
+      "remote": [],
+      "observed": {},
+      "csp": true,
+      "chineseHelp": true
+    },
+    {
+      "id": "underrun",
+      "errors": [],
+      "consoleErrors": [],
+      "failed": [],
+      "remote": [],
+      "observed": {
+        "level": 1,
+        "entities": 64,
+        "moved": true
+      },
+      "csp": true,
+      "chineseHelp": true
+    },
+    {
+      "id": "xx142-b2",
+      "errors": [],
+      "consoleErrors": [],
+      "failed": [],
+      "remote": [],
+      "observed": {
+        "canvasVisible": true
+      },
+      "csp": true,
+      "chineseHelp": true
+    },
+    {
+      "id": "packabunchas",
+      "errors": [],
+      "consoleErrors": [],
+      "failed": [],
+      "remote": [],
+      "observed": {
+        "state": "game",
+        "pieces": 4
+      },
+      "csp": true,
+      "chineseHelp": true
+    },
+    {
+      "id": "bounce-back",
+      "errors": [],
+      "consoleErrors": [],
+      "failed": [],
+      "remote": [],
+      "observed": {},
+      "csp": true,
+      "chineseHelp": true
+    },
+    {
+      "id": "super-castle",
+      "errors": [],
+      "consoleErrors": [],
+      "failed": [],
+      "remote": [],
+      "observed": {},
+      "csp": true,
+      "chineseHelp": true
+    },
+    {
+      "id": "norman-necromancer",
+      "errors": [],
+      "consoleErrors": [],
+      "failed": [],
+      "remote": [],
+      "observed": {},
+      "csp": true,
+      "chineseHelp": true
+    },
+    {
+      "id": "the-neatness",
+      "errors": [],
+      "consoleErrors": [],
+      "failed": [],
+      "remote": [],
+      "observed": {},
+      "csp": true,
+      "chineseHelp": true
+    },
+    {
+      "id": "backcountry",
+      "errors": [],
+      "consoleErrors": [],
+      "failed": [],
+      "remote": [],
+      "observed": {
+        "models": 8,
+        "entities": 2225
+      },
+      "csp": true,
+      "chineseHelp": true
+    },
+    {
+      "id": "radius-raid",
+      "errors": [],
+      "consoleErrors": [],
+      "failed": [],
+      "remote": [],
+      "observed": {
+        "state": "play",
+        "bullets": 15,
+        "enemies": 31
+      },
+      "csp": true,
+      "chineseHelp": true
+    },
+    {
+      "id": "elematter",
+      "errors": [],
+      "consoleErrors": [],
+      "failed": [],
+      "remote": [],
+      "observed": {
+        "towers": 1
+      },
+      "csp": true,
+      "chineseHelp": true
+    },
+    {
+      "id": "bee-kind",
+      "errors": [],
+      "consoleErrors": [],
+      "failed": [],
+      "remote": [],
+      "observed": {},
+      "csp": true,
+      "chineseHelp": true
+    },
+    {
+      "id": "rat-plague",
+      "errors": [],
+      "consoleErrors": [],
+      "failed": [],
+      "remote": [],
+      "observed": {},
+      "csp": true,
+      "chineseHelp": true
+    },
+    {
+      "id": "hextris",
+      "errors": [],
+      "consoleErrors": [],
+      "failed": [],
+      "remote": [],
+      "observed": {
+        "state": 1
+      },
+      "csp": true,
+      "chineseHelp": true
+    },
+    {
+      "id": "thirteenth-floor",
+      "errors": [],
+      "consoleErrors": [],
+      "failed": [],
+      "remote": [],
+      "observed": {
+        "hud": "🗝️ #1301\n♥"
+      },
+      "csp": true,
+      "chineseHelp": true
+    },
+    {
+      "id": "khan",
+      "errors": [],
+      "consoleErrors": [],
+      "failed": [],
+      "remote": [],
+      "observed": {
+        "enemyHealthChanged": true
+      },
+      "csp": true,
+      "chineseHelp": true
+    }
+  ],
+  "hall": [
+    {
+      "catalogCards": 34,
+      "images": []
+    },
+    {
+      "detail": "http://127.0.0.1:5292/library/norman-necromancer",
+      "chinese": 1
+    },
+    {
+      "launch": "http://127.0.0.1:5292/play/norman-necromancer",
+      "iframe": "/games/norman-necromancer/index.html",
+      "loaded": ""
+    },
+    {
+      "id": "the-neatness",
+      "canvases": 2,
+      "errors": []
+    },
+    {
+      "id": "hextris",
+      "state": 1,
+      "errors": []
+    },
+    {
+      "id": "thirteenth-floor",
+      "canvasHeight": 810,
+      "errors": []
+    }
+  ]
+}

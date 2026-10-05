@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 2,
+  "id": "mahjong",
+  "order": 14,
+  "discovery": {
+    "audiences": [
+      "single",
+      "multi"
+    ],
+    "popularRank": 14
+  },
+  "theme": {
+    "accent": "#6e9569",
+    "dark": "#163731"
+  },
+  "presentation": {
+    "title": "四人麻将",
+    "originalTitle": "CardRoomPro · Mahjong",
+    "mark": "棋牌",
+    "category": "四人休闲牌桌",
+    "tagline": "摸牌、吃碰杠胡，约朋友坐满一桌。",
+    "description": "四人麻将牌桌，支持摸牌、出牌、吃碰杠胡与实时观战。用房间号约朋友，也可以邀请 AI 填满空位进行练习。",
+    "tags": [
+      "棋牌",
+      "麻将",
+      "好友联机",
+      "休闲"
+    ],
+    "play": {
+      "modes": "好友房间 / AI 补位 / 观战",
+      "players": "1–4 人参与，4 个座位",
+      "controls": "鼠标点击选择与操作",
+      "inputs": [
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "四方牌桌与清晰的牌河",
+      "邀请 AI 陪练和查看出牌建议",
+      "房间码加入与短线恢复"
+    ],
+    "art": {
+      "cover": "/games/mahjong/cover.svg",
+      "hero": "/games/mahjong/cover.svg"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "hybrid",
+    "technology": "Vue 2 · Socket.IO · Node.js",
+    "license": "MIT；依赖组件许可见 THIRD_PARTY_NOTICES.md",
+    "sourceUrl": "https://github.com/TypeThe0ry/CardRoomPro",
+    "localization": "中文界面；保留原作玩法，接入自建服务运行时配置。",
+    "fit": "静态游戏页面与纯数据后端分离；和掼蛋共用 CARD_ROOM_SERVICE_URL。",
+    "highlights": [
+      "四方牌桌与清晰的牌河",
+      "邀请 AI 陪练和查看出牌建议",
+      "房间码加入与短线恢复"
+    ],
+    "cautions": [
+      "包括 AI 陪练在内均需要牌房后端",
+      "采用上游基础四人规则，不等同于各地麻将规则",
+      "访客与内存模式，重启不保留战绩和牌局"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/mahjong/index.html"
+    }
+  },
+  "capabilities": [
+    "audio",
+    "multiplayer",
+    "fullscreen",
+    "storage"
+  ],
+  "permissions": [
+    "fullscreen",
+    "autoplay"
+  ]
+}

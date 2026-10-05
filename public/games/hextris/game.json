@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 2,
+  "id": "hextris",
+  "order": 33,
+  "discovery": {
+    "audiences": [
+      "single"
+    ],
+    "popularRank": 33
+  },
+  "theme": {
+    "accent": "#579fc4",
+    "dark": "#252a29"
+  },
+  "presentation": {
+    "title": "六边形消除",
+    "originalTitle": "Hextris",
+    "mark": "消除",
+    "category": "旋转消除",
+    "tagline": "旋转六边形，让坠落色块连成一片。",
+    "description": "旋转中央六边形，把落下的色块堆在六个面上。同色连成片即可消除，连续消除带来更高分数，也腾出更大空间。",
+    "tags": [
+      "消除",
+      "益智",
+      "街机",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "左右方向键或 A / D 旋转；空格暂停。",
+      "inputs": [
+        "keyboard",
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "旋转六边形，让坠落色块连成一片。",
+      "相邻两个面的同色块也能形成连接，不要只盯一个面。"
+    ],
+    "art": {
+      "cover": "/games/hextris/cover.png",
+      "hero": "/games/hextris/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "浏览器独立游戏运行包",
+    "license": "GPL-3.0-or-later",
+    "sourceUrl": "https://github.com/Hextris/hextris",
+    "localization": "中文菜单、操作提示和主要规则；保留原作署名。",
+    "fit": "独立运行包与 JSON 清单；无需新增 VPS 服务。",
+    "highlights": [
+      "旋转六边形，让坠落色块连成一片。"
+    ],
+    "cautions": [
+      "单人游戏，无需房间服务器；如有本地存档，不会自动跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/hextris/index.html"
+    }
+  },
+  "capabilities": [
+    "audio",
+    "fullscreen"
+  ],
+  "permissions": [
+    "fullscreen",
+    "autoplay"
+  ]
+}

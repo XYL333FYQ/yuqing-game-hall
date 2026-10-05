@@ -2,6 +2,8 @@ packages:
   - server-games/fruit-party
   - server-games/sanctuarys-end
   - server-games/webrtc-gateway
+  - server-games/card-room
+  - server-games/gobang
 
 allowBuilds:
   esbuild: true

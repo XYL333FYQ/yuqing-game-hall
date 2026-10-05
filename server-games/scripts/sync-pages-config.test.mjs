@@ -1,6 +1,6 @@
 // sync-pages-config.mjs 的测试。
 //
-// 这里最需要守住的是「不要破坏用户已有的变量」：同步必须只动我们负责的三个键，
+// 这里最需要守住的是「不要破坏用户已有的变量」：同步必须只动我们负责的五个键，
 // 其余原样保留；拿不准的时候就中止，而不是把别人的配置写没了。
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
@@ -10,6 +10,8 @@ const values = {
   FRUIT_PARTY_SERVICE_URL: "https://rooms.example.com",
   SANCTUARY_RELAY_URL: "wss://sanctuary.example.com/socket",
   WEBRTC_SERVICE_URL: "https://rtc.example.com",
+  CARD_ROOM_SERVICE_URL: "https://cards.example.com",
+  GOBANG_SERVICE_URL: "wss://gobang.example.com/socket",
 };
 
 const projectWith = (envVars) => ({
@@ -20,6 +22,13 @@ const projectWith = (envVars) => ({
 const mergedVars = (result) => result.payload.deployment_configs.production.env_vars;
 
 describe("地址校验", () => {
+  it("棋牌后端与五子棋可以独立更换地址，并校验协议和路径", () => {
+    assert.equal(validateServiceUrl("CARD_ROOM_SERVICE_URL", "https://new-cards.example.com").ok, true);
+    assert.equal(validateServiceUrl("GOBANG_SERVICE_URL", "wss://new-gobang.example.com/socket").ok, true);
+    assert.equal(validateServiceUrl("CARD_ROOM_SERVICE_URL", "https://cards.example.com/prefix").ok, false);
+    assert.equal(validateServiceUrl("GOBANG_SERVICE_URL", "https://gobang.example.com/socket").ok, false);
+    assert.equal(validateServiceUrl("CARD_ROOM_SERVICE_URL", "").value, "");
+  });
   it("接受带路径的中继地址与根路径的 gateway 地址", () => {
     assert.deepEqual(validateServiceUrl("SANCTUARY_RELAY_URL", "wss://sanctuary.example.com/socket"), {
       ok: true,
@@ -65,7 +74,7 @@ describe("地址校验", () => {
 });
 
 describe("合并进 Pages 项目", () => {
-  it("写入三个受管键，并保留其它已有变量", () => {
+  it("写入五个受管键，并保留其它已有变量", () => {
     const result = buildProjectPatch(
       projectWith({
         KEEP_ME: { type: "plain_text", value: "kept" },
@@ -105,6 +114,8 @@ describe("合并进 Pages 项目", () => {
       FRUIT_PARTY_SERVICE_URL: { type: "plain_text", value: "https://rooms.example.com" },
       SANCTUARY_RELAY_URL: { type: "plain_text", value: "wss://sanctuary.example.com/socket" },
       WEBRTC_SERVICE_URL: { type: "plain_text", value: "https://rtc.example.com" },
+      CARD_ROOM_SERVICE_URL: { type: "plain_text", value: "https://cards.example.com" },
+      GOBANG_SERVICE_URL: { type: "plain_text", value: "wss://gobang.example.com/socket" },
     }), values);
     assert.equal(result.ok, true, result.message);
     assert.deepEqual(result.changes, []);

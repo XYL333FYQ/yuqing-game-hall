@@ -1,0 +1,128 @@
+/* =====================================================================
+ * 雀阁 · Modern Guofeng Theme Tokens
+ * 现代国风 / 高级茶馆竞技场 / 液态玻璃 设计令牌
+ * ===================================================================== */
+
+:root {
+  /* —— 国风主色 —— */
+  --ink-900:     #0a1416;   /* 浓墨 */
+  --ink-800:     #0f1f22;
+  --ink-700:     #14282b;
+  --ink-600:     #1b3539;
+
+  --jade-900:    #0d3a35;   /* 墨翠 */
+  --jade-700:    #1a5e54;
+  --jade-500:    #4fb6a3;   /* 玉 */
+  --jade-300:    #8dd5c4;
+  --jade-100:    #d6f1e9;
+
+  --gold-900:    #6b4d1c;
+  --gold-700:    #a37b2c;
+  --gold-500:    #d4a85a;   /* 鎏金 */
+  --gold-400:    #e9c178;
+  --gold-300:    #f3d99a;
+  --gold-100:    #fbf1cf;
+  --gold:        var(--gold-500);
+  --gold-200:    var(--gold-100);
+  --gold-soft:   var(--gold-300);
+
+  --vermilion-700: #8a1f1c;
+  --vermilion-500: #c8362f; /* 朱砂 */
+  --vermilion-400: #e85a4f;
+  --vermilion-300: #f08a82;
+  --vermilion:      var(--vermilion-500);
+  --vermilion-deep: var(--vermilion-700);
+  --vermilion-soft: var(--vermilion-300);
+
+  --jade:       var(--jade-500);
+  --jade-soft:  var(--jade-300);
+  --jade-line:  rgba(141, 213, 196, 0.45);
+
+  --paper-100:   #f7efd9;   /* 宣纸米 */
+  --paper-200:   #ede0c2;
+  --paper-300:   #d8c79a;
+
+  --tea-700:     #3d2a1a;   /* 茶褐 */
+  --tea-500:     #6b4a2b;
+
+  /* —— 语义色 —— */
+  --bg:          var(--ink-900);
+  --surface:     rgba(255, 255, 255, 0.04);
+  --text:        #ecead9;
+  --text-soft:   rgba(236, 234, 217, 0.72);
+  --text-mute:   rgba(236, 234, 217, 0.45);
+  --accent:      var(--gold-500);
+  --accent-soft: var(--gold-300);
+  --danger:      var(--vermilion-500);
+  --success:     var(--jade-500);
+  --warning:     var(--gold-400);
+
+  /* —— 液态玻璃 —— */
+  --glass-bg:        rgba(255, 255, 255, 0.06);
+  --glass-bg-strong: rgba(255, 255, 255, 0.10);
+  --glass-bg-soft:   rgba(255, 255, 255, 0.03);
+  --glass-border:    rgba(255, 255, 255, 0.14);
+  --glass-border-gold: rgba(212, 168, 90, 0.35);
+  --glass-blur:      saturate(160%) blur(22px);
+  --glass-blur-strong: saturate(180%) blur(30px);
+
+  /* —— 渐变 —— */
+  --grad-arena: radial-gradient(ellipse at 50% 35%, #1c4a47 0%, #0e2826 45%, #06141a 100%);
+  --grad-hall:  radial-gradient(ellipse at 50% 0%, #1f3a3e 0%, #0c1d22 60%, #060d10 100%);
+  --grad-login: radial-gradient(ellipse at 30% 20%, #1f4742 0%, #0d1f24 50%, #050b0e 100%);
+  --grad-gold:  linear-gradient(135deg, #f3d99a 0%, #d4a85a 45%, #a37b2c 100%);
+  --grad-gold-shine: linear-gradient(135deg, #fbf1cf 0%, #e9c178 30%, #d4a85a 55%, #a37b2c 100%);
+  --grad-vermilion: linear-gradient(135deg, #f08a82 0%, #c8362f 55%, #8a1f1c 100%);
+  --grad-jade:  linear-gradient(135deg, #8dd5c4 0%, #4fb6a3 50%, #1a5e54 100%);
+  --grad-felt:  radial-gradient(ellipse at 50% 50%, #245d52 0%, #0e3a35 60%, #07211e 100%);
+
+  /* —— 阴影 / 高光 —— */
+  --shadow-sm:  0 2px 6px rgba(0,0,0,0.25);
+  --shadow-md:  0 8px 24px rgba(0,0,0,0.35);
+  --shadow-lg:  0 18px 48px rgba(0,0,0,0.45);
+  --shadow-glow-gold: 0 0 18px rgba(233, 193, 120, 0.55), 0 0 42px rgba(212, 168, 90, 0.25);
+  --shadow-glow-jade: 0 0 18px rgba(141, 213, 196, 0.55), 0 0 42px rgba(79, 182, 163, 0.25);
+  --shadow-glow-vermilion: 0 0 18px rgba(232, 90, 79, 0.55), 0 0 42px rgba(200, 54, 47, 0.25);
+  --inner-light: inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.25);
+
+  /* —— 几何 —— */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-pill: 999px;
+
+  /* —— 排版 —— */
+  --font-brush: "Ma Shan Zheng", "ZCOOL XiaoWei", "Noto Serif SC", "STXingkai", "Kaiti SC", serif;
+  --font-serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", serif;
+  --font-sans:  "Inter", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-mono:  "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+
+  /* —— 节奏 —— */
+  --ease-soft:  cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-back:  cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast:   140ms;
+  --dur-base:   240ms;
+  --dur-slow:   420ms;
+
+  /* —— 卡牌尺寸 —— */
+  --card-w: 90px;
+  --card-h: 120px;
+
+  /* —— 古风头像（内联 SVG 玉牌 / 篆刻） —— */
+  /* 注意：CSS url() 内的 # 必须转义为 %23 */
+  --avatar-default: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><radialGradient id='g' cx='32%25' cy='28%25' r='85%25'><stop offset='0%25' stop-color='%23a8e3d2'/><stop offset='55%25' stop-color='%231a5e54'/><stop offset='100%25' stop-color='%23072a26'/></radialGradient></defs><circle cx='50' cy='50' r='50' fill='url(%23g)'/><circle cx='50' cy='50' r='42' fill='none' stroke='%23e9c178' stroke-width='1.2' opacity='0.65'/><circle cx='50' cy='50' r='38' fill='none' stroke='%23fbf1cf' stroke-width='0.4' opacity='0.45'/><text x='50' y='70' text-anchor='middle' font-family='STKaiti,KaiTi,Kaiti SC,STSong,serif' font-weight='700' font-size='56' fill='%23fbf1cf'>雅</text></svg>");
+  --avatar-king:    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><radialGradient id='g' cx='32%25' cy='28%25' r='85%25'><stop offset='0%25' stop-color='%23ffb4ac'/><stop offset='55%25' stop-color='%23c8362f'/><stop offset='100%25' stop-color='%234a0f0d'/></radialGradient></defs><circle cx='50' cy='50' r='50' fill='url(%23g)'/><circle cx='50' cy='50' r='42' fill='none' stroke='%23fbf1cf' stroke-width='1.2' opacity='0.7'/><circle cx='50' cy='50' r='38' fill='none' stroke='%23fbf1cf' stroke-width='0.4' opacity='0.45'/><path d='M30 26 L40 18 L50 24 L60 18 L70 26 L66 34 L34 34 Z' fill='%23fbf1cf' opacity='0.85'/><text x='50' y='74' text-anchor='middle' font-family='STKaiti,KaiTi,Kaiti SC,STSong,serif' font-weight='700' font-size='52' fill='%23fbf1cf'>主</text></svg>");
+}
+
+/* 紧凑模式（窄屏自动启用） */
+@media (max-width: 1024px) {
+  :root { --card-w: 70px; --card-h: 94px; }
+}
+@media (max-width: 640px) {
+  :root { --card-w: 54px; --card-h: 72px; }
+}
+@media (max-width: 900px) and (max-height: 480px) and (orientation: landscape) {
+  :root { --card-w: 46px; --card-h: 61px; }
+}

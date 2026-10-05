@@ -1,0 +1,3014 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="description" content="雀阁 · 纸牌房是一个支持斗地主、掼蛋与四人麻将的实时多人在线牌局平台，提供 AI 陪玩、智囊推荐、观战、历史复盘和 Discuz SSO。">
+  <meta name="keywords" content="在线棋牌游戏,多人牌局,斗地主,掼蛋,麻将,麻将AI,纸牌AI,实时对战,Socket.IO,Discuz SSO,CardRoomPro">
+  <meta name="author" content="TypeThe0ry">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="theme-color" content="#0e2422">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="雀阁 · 纸牌房">
+  <meta property="og:title" content="雀阁 · 斗地主、掼蛋与麻将在线牌局">
+  <meta property="og:description" content="实时多人牌局、AI 陪玩、智囊推荐、观战与历史复盘。">
+  <meta property="og:locale" content="zh_CN">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="雀阁 · 在线斗地主、掼蛋与麻将">
+  <meta name="twitter:description" content="实时多人牌局与 AI 陪玩平台。">
+  <link rel="icon" href="data:,">
+  <title>掼蛋 · 好友棋牌房</title>
+  <link rel="stylesheet" href="../_shared/card-room/css/theme.css">
+  <link rel="stylesheet" href="../_shared/card-room/css/style.css?v=reconnect-live-20260901-1">
+</head>
+
+<body class="theme-guofeng">
+  <div id="app" v-cloak>
+    <div v-if="connectionState === 'reconnecting' || (resumePending && where === 2)" class="connection-banner" role="status" aria-live="polite">
+      <span class="connection-dot"></span>{{connectionMessage || '网络连接中，正在恢复牌局…'}}
+    </div>
+    <!-- 登录界面 -->
+    <div class="full-screen login-wrapper" v-if="where === 0">
+      <div class="login-panel  layout-center">
+        <div class="row title">
+          雀阁
+        </div>
+        <template v-if="authMode === 'discuz' && isAutoLogin">
+          <div class="auto-login">正在使用 ZWWX.CLUB 登录，请稍候…</div>
+          <div class="row" style="margin-top:14px;text-align:center;">
+            <a href="javascript:;" @click="cancelAutoLogin()" style="color:#888;font-size:12px;">迟迟无法进入？点此取消并改用其他方式</a>
+          </div>
+        </template>
+        <template v-else-if="authMode === 'discuz' && !guestMode">
+          <div v-if="loginError" class="login-error" style="margin:8px 0 12px;padding:10px 12px;background:#3b1f1f;border:1px solid #8a3a3a;color:#ffb3b3;border-radius:6px;font-size:13px;line-height:1.5;text-align:left;">
+            <div style="font-weight:bold;margin-bottom:4px;">登录失败</div>
+            <div>{{loginError}}</div>
+            <div v-if="debugMode" style="margin-top:6px;color:#aaa;font-size:11px;word-break:break-all;">token 片段：{{tokenSnippet || '(无)'}}</div>
+          </div>
+          <div class="login-form" style="display:flex;flex-direction:column;gap:12px;align-items:center;">
+            <button @click="goDiscuzLogin">使用 ZWWX.CLUB 账号登录</button>
+            <button class="btn-ghost" @click="guestMode = true">以访客身份进入</button>
+          </div>
+        </template>
+        <template v-else>
+          <p v-if="loginError" class="login-error" role="status">{{loginError}}</p>
+          <div class="login-form">
+            <input type="text" class="input" placeholder="请输入您的雅号（访客）" v-model.trim="posState.self.name" @keyup.enter="login"><button
+              @click="login">入  座</button>
+          </div>
+          <div class="row" style="margin-top:8px;text-align:center;">
+            <a v-if="authMode === 'discuz'" href="javascript:;" @click="guestMode = false" style="color:#888;font-size:12px;">返回登录方式选择</a>
+          </div>
+        </template>
+      </div>
+      <section class="public-discovery"><h1>好友棋牌房</h1><p>约朋友开一桌，人数不足时可邀请 AI 陪练。</p></section>
+      <noscript><p class="public-discovery-noscript">雀阁支持斗地主、掼蛋和四人麻将。请启用 JavaScript 进入实时牌局。</p></noscript>
+    </div>
+
+
+    <!-- 大厅 -->
+    <div class="full-screen house" v-if="where === 1">
+      <nav class="row text-right quick-bar" aria-label="大厅功能">
+        <div class="quick-brand">
+          <strong>雀阁</strong>
+          <span>纸牌房</span>
+        </div>
+        <span v-if="myUser && myUser.username" class="user-badge" :title="'已用 Discuz 账号登录 (uid=' + myUser.uid + ')'">{{myUser.username}}</span>
+        <div class="quick-actions">
+          <button class="btn-ghost btn-mute" type="button" @click="toggleMute"
+            :title="muted ? '开启音效' : '静音'">{{muted ? '♪ 静音' : '♪ 音效'}}</button>
+          <button class="btn-ghost" type="button" @click="openStats" aria-label="查看我的战绩">我的战绩</button>
+          <button class="btn-ghost" type="button" @click="openHistory" aria-label="查看历史战局">历史战局</button>
+          <button class="btn-ghost" type="button" @click="openSiteStats" aria-label="查看实时数据统计">数据统计</button>
+          <button class="btn-ghost" type="button" @click="openRules" aria-label="查看玩法规则">玩法规则</button>
+          <button type="button" @click="quickJoin" aria-label="快速加入一局游戏">快速入局</button>
+        </div>
+      </nav>
+      <div class="hall-shell">
+        <div class="hall-hero">
+          <div>
+            <div class="hall-kicker">多人纸牌 · 动态房间</div>
+            <h1>{{gameTypeName(selectedGameType)}}大厅</h1>
+          <p>{{gameDescription(selectedGameType)}}</p>
+          </div>
+          <div class="hall-stats">
+            <div>
+              <strong>{{lobbyStats.open}}</strong>
+              <span>公开房</span>
+            </div>
+            <div>
+              <strong>{{lobbyStats.players}}</strong>
+              <span>在线座位</span>
+            </div>
+            <div>
+              <strong>{{lobbyStats.playing}}</strong>
+              <span>对局中</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hall-actions">
+          <div class="mode-tabs">
+            <button type="button" :class="{active:selectedGameType==='doudizhu'}" @click="selectedGameType='doudizhu'">斗地主</button>
+            <button type="button" :class="{active:selectedGameType==='guandan'}" @click="selectedGameType='guandan'">掼蛋</button>
+            <button type="button" :class="{active:selectedGameType==='mahjong'}" @click="selectedGameType='mahjong'">麻将</button>
+          </div>
+          <button type="button" class="btn-vermilion" @click="createRoom(false)">开公开房</button>
+          <button type="button" class="btn-ghost" @click="createRoom(true)">开私密房</button>
+          <div class="room-code-join">
+            <input type="text" class="input" maxlength="6" placeholder="输入房号" v-model.trim="roomCodeInput" @keyup.enter="joinRoomByCode">
+            <button type="button" @click="joinRoomByCode">加入</button>
+          </div>
+        </div>
+
+        <div v-if="!filteredRooms.length" class="empty-hall">
+          <strong>{{gameTypeName(selectedGameType)}}暂无公开房</strong>
+          <span>可以直接快速入局，系统会自动创建并入座。</span>
+        </div>
+
+        <div class="room-grid" v-if="filteredRooms.length">
+          <div v-for="desk in filteredRooms" class="desk room-card" :class="{'desk-busy': deskBusyCount(desk) > 0}">
+            <div class="room-card-head">
+              <span>{{desk.gameLabel || gameTypeName(desk.gameType)}}</span>
+              <b>#{{desk.roomCode || desk.deskId}}</b>
+            </div>
+            <div class="room-card-meta">
+              <span>{{deskBusyCount(desk)}} / {{desk.seatCount || desk.positions.length}} 人</span>
+              <span v-if="desk.gameType === 'guandan'">打 {{desk.guandanLevelLabel || '2'}}</span>
+              <span v-if="desk.botCount">AI · {{aiDifficultyText(desk.aiDifficulty)}}</span>
+              <span>{{roomStatusText(desk)}}</span>
+            </div>
+            <div class="seat-strip">
+              <button v-for="position in desk.positions" type="button" class="seat-chip" :class="{filled: position.state > 0, ready: position.state === 2}"
+                @click="sitDown(desk.deskId,position)" :title="position.userName || '空位'">
+                {{seatInitial(position)}}
+              </button>
+            </div>
+            <div class="room-card-foot">
+              <button type="button" class="btn-ghost" @click="copyRoomCode(desk.roomCode || desk.deskId)">复制房号</button>
+              <button type="button" v-if="deskBusyCount(desk) > 0" class="btn-ghost" @click.stop="spectate(desk.deskId)">观战</button>
+              <button type="button" v-if="deskHasBot(desk)" class="btn-bot-takeover" @click.stop="takeoverRandomBot(desk)">顶号 AI</button>
+              <button type="button" @click="joinOpenSeat(desk)">入房</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- 房间 -->
+    <div class="full-screen room" v-if="where === 2" :class="{'room-spec': isSpec, 'room-guandan': gameType === 'guandan', 'room-mahjong': gameType === 'mahjong', 'room-playing': roomState.state > 0 && roomState.state < 3, 'room-waiting': roomState.state === 0 || roomState.state === 3}">
+      <button class="btn-exit-room" @click="exitRoom">{{isSpec ? '退出观战' : '返回大厅'}}</button>
+      <span v-if="myUser && myUser.username" class="user-badge user-badge-room" :title="'已用 Discuz 账号登录 (uid=' + myUser.uid + ')'">{{myUser.username}}</span>
+      <div v-if="isSpec" class="spec-badge">观 战 模 式</div>
+      <div class="room-topbar">
+        <div class="room-title">
+          <strong>{{gameTypeName(gameType)}}</strong>
+          <span>房号 {{roomCode || deskId}}</span>
+          <span v-if="gameType === 'guandan'">打 {{guandanLevelLabel}}</span>
+        </div>
+        <label class="ai-difficulty-control" :class="{locked: aiDifficultyLocked, owner: canEditAiDifficulty}" title="仅房主可调整，开局后自动锁定">
+          <span>AI 难度</span>
+          <select :value="aiDifficulty" @change="setAiDifficulty($event.target.value)" :disabled="!canEditAiDifficulty">
+            <option v-for="item in aiDifficultyOptions" :key="item.value" :value="item.value">{{item.label}}</option>
+          </select>
+          <em v-if="aiDifficultyLocked">本局锁定</em>
+          <em v-else-if="!isRoomOwner && !isSpec">仅房主</em>
+          <em v-else-if="isSpec">只读</em>
+        </label>
+        <div class="room-top-actions">
+          <span>{{currentRoomPlayers}} / {{gameType === 'doudizhu' ? 3 : 4}} 人</span>
+          <button type="button" class="btn-ghost" @click="copyRoomCode(roomCode || deskId)">复制房号</button>
+          <button type="button" class="btn-ghost" @click="openRules">规则</button>
+        </div>
+      </div>
+
+      <!-- 掼蛋队伍计分板 -->
+      <div class="guandan-board" v-if="gameType === 'guandan'">
+        <div class="guandan-board-title">掼蛋记分</div>
+        <div class="guandan-level">当前打 <strong>{{guandanLevelLabel}}</strong></div>
+        <div class="guandan-teams">
+          <div class="guandan-team-row" v-for="team in guandanTeams" :class="{active: team.score > 0}">
+            <div>
+              <strong>{{team.name}}</strong>
+              <span>{{team.members}}</span>
+            </div>
+            <b>+{{team.score}}</b>
+          </div>
+        </div>
+        <div class="guandan-order" v-if="guandanLastOrder.length">
+          <span>上局名次</span>
+          <em>{{guandanLastOrder.join(' / ')}}</em>
+        </div>
+      </div>
+
+      <!-- 累计记分板 -->
+      <div class="score-board" v-if="gameType === 'doudizhu' && scoreList.length">
+        <div class="score-board-title">本桌积分</div>
+        <div class="score-board-row" v-for="row in scoreList" :key="row.name">
+          <span class="score-board-name">{{row.name}}</span>
+          <span class="score-board-num" :class="{ pos: row.total > 0, neg: row.total < 0 }">
+            {{row.total > 0 ? '+' + row.total : row.total}}
+          </span>
+        </div>
+      </div>
+
+      <!-- 麻将牌桌：四方牌墙、四方牌河与真实花色牌面。 -->
+      <div class="mahjong-table" v-if="gameType === 'mahjong'">
+        <div class="mahjong-info-panel">
+          <span class="mahjong-kicker">雀阁牌局</span>
+          <strong>牌墙 {{mahjong.wallCount}} 张</strong>
+          <span v-if="roomState.state === 0">等待诸位入座</span>
+          <span v-else-if="roomState.state === 3">本局已收官，可再次准备</span>
+          <span v-else>{{mahjongTurnText}}</span>
+        </div>
+
+        <div class="mahjong-seat mahjong-seat-top" :class="{active: roomState.ctxPos === 'top'}">
+          <div class="mahjong-seat-head"><i class="mahjong-seat-wind">{{mahjongWindForDirection('top')}}</i><span>{{posState.top.name}}</span><b v-if="posIdForDirection('top') === 0">庄</b><em>{{mahjongHandCount('top')}}</em></div>
+          <div class="mahjong-back-row"><i v-for="n in mahjongBackCount('top')" :key="'top-' + n"></i></div>
+          <div class="mahjong-meld-row"><span v-for="(meld, index) in mahjong.melds.top" :key="'top-meld-' + index" class="mahjong-meld"><em v-for="(tile, ti) in meld.cards" :key="'tm-' + ti"><mahjong-tile-face :tile="tile"></mahjong-tile-face></em></span></div>
+        </div>
+        <div class="mahjong-seat mahjong-seat-left" :class="{active: roomState.ctxPos === 'left'}">
+          <div class="mahjong-seat-head"><i class="mahjong-seat-wind">{{mahjongWindForDirection('left')}}</i><span>{{posState.left.name}}</span><b v-if="posIdForDirection('left') === 0">庄</b><em>{{mahjongHandCount('left')}}</em></div>
+          <div class="mahjong-back-stack"><i v-for="n in mahjongBackCount('left')" :key="'left-' + n"></i></div>
+          <div class="mahjong-meld-row"><span v-for="(meld, index) in mahjong.melds.left" :key="'left-meld-' + index" class="mahjong-meld"><em v-for="(tile, ti) in meld.cards" :key="'lm-' + ti"><mahjong-tile-face :tile="tile"></mahjong-tile-face></em></span></div>
+        </div>
+        <div class="mahjong-seat mahjong-seat-right" :class="{active: roomState.ctxPos === 'right'}">
+          <div class="mahjong-seat-head"><i class="mahjong-seat-wind">{{mahjongWindForDirection('right')}}</i><span>{{posState.right.name}}</span><b v-if="posIdForDirection('right') === 0">庄</b><em>{{mahjongHandCount('right')}}</em></div>
+          <div class="mahjong-back-stack"><i v-for="n in mahjongBackCount('right')" :key="'right-' + n"></i></div>
+          <div class="mahjong-meld-row"><span v-for="(meld, index) in mahjong.melds.right" :key="'right-meld-' + index" class="mahjong-meld"><em v-for="(tile, ti) in meld.cards" :key="'rm-' + ti"><mahjong-tile-face :tile="tile"></mahjong-tile-face></em></span></div>
+        </div>
+        <!-- 观战者也要看到真实的第四个座位，但不展示该玩家手牌。 -->
+        <div class="mahjong-seat mahjong-seat-bottom" v-if="isSpec && posState.self.state" :class="{active: roomState.ctxPos === 'self'}">
+          <div class="mahjong-seat-head"><i class="mahjong-seat-wind">{{mahjongWindForDirection('self')}}</i><span>{{posState.self.name}}</span><b v-if="posIdForDirection('self') === 0">庄</b><em>{{mahjongHandCount('self')}}</em></div>
+          <div class="mahjong-back-row"><i v-for="n in mahjongBackCount('self')" :key="'self-spec-' + n"></i></div>
+          <div class="mahjong-meld-row"><span v-for="(meld, index) in mahjong.melds.self" :key="'self-spec-meld-' + index" class="mahjong-meld"><em v-for="(tile, ti) in meld.cards" :key="'sm-spec-' + ti"><mahjong-tile-face :tile="tile"></mahjong-tile-face></em></span></div>
+        </div>
+
+        <div class="mahjong-board">
+          <div class="mahjong-wall mahjong-wall-top"><i v-for="n in 17" :key="'wall-top-' + n"></i></div>
+          <div class="mahjong-wall mahjong-wall-left"><i v-for="n in 17" :key="'wall-left-' + n"></i></div>
+          <div class="mahjong-wall mahjong-wall-right"><i v-for="n in 17" :key="'wall-right-' + n"></i></div>
+          <div class="mahjong-wall mahjong-wall-bottom"><i v-for="n in 17" :key="'wall-bottom-' + n"></i></div>
+
+          <div class="mahjong-river-zone mahjong-river-top">
+            <span v-for="(tile, index) in mahjong.discards.top" :key="'td-' + index" class="mahjong-tile mahjong-river-tile" :class="[{last: isMahjongLastDiscard('top', index)}]" :title="mahjongTileLabel(tile)"><mahjong-tile-face :tile="tile"></mahjong-tile-face></span>
+          </div>
+          <div class="mahjong-river-zone mahjong-river-left">
+            <span v-for="(tile, index) in mahjong.discards.left" :key="'ld-' + index" class="mahjong-tile mahjong-river-tile" :class="[{last: isMahjongLastDiscard('left', index)}]" :title="mahjongTileLabel(tile)"><mahjong-tile-face :tile="tile"></mahjong-tile-face></span>
+          </div>
+          <div class="mahjong-river-zone mahjong-river-right">
+            <span v-for="(tile, index) in mahjong.discards.right" :key="'rd-' + index" class="mahjong-tile mahjong-river-tile" :class="[{last: isMahjongLastDiscard('right', index)}]" :title="mahjongTileLabel(tile)"><mahjong-tile-face :tile="tile"></mahjong-tile-face></span>
+          </div>
+          <div class="mahjong-river-zone mahjong-river-self">
+            <span v-for="(tile, index) in mahjong.discards.self" :key="'sd-' + index" class="mahjong-tile mahjong-river-tile" :class="[{last: isMahjongLastDiscard('self', index)}]" :title="mahjongTileLabel(tile)"><mahjong-tile-face :tile="tile"></mahjong-tile-face></span>
+          </div>
+
+          <div class="mahjong-compass">
+            <i class="wind-top" :class="{active: roomState.ctxPos === 'top'}">{{mahjongWindForDirection('top')}}</i>
+            <i class="wind-left" :class="{active: roomState.ctxPos === 'left'}">{{mahjongWindForDirection('left')}}</i>
+            <i class="wind-right" :class="{active: roomState.ctxPos === 'right'}">{{mahjongWindForDirection('right')}}</i>
+            <i class="wind-self" :class="{active: roomState.ctxPos === 'self'}">{{mahjongWindForDirection('self')}}</i>
+            <span><strong>{{mahjong.wallCount}}</strong><small>余张</small></span>
+          </div>
+        </div>
+
+        <div v-if="!isSpec && roomState.state > 0 && roomState.state < 3" class="mahjong-hand-wrap" :class="{active: roomState.ctxPos === 'self'}">
+          <div class="mahjong-self-label"><i class="mahjong-seat-wind">{{mahjongWindForDirection('self')}}</i><span>{{posState.self.name}}</span><b v-if="posIdForDirection('self') === 0">庄</b><em>{{mahjongHandCount('self')}} 张</em></div>
+          <div v-if="mahjong.melds.self.length" class="mahjong-meld-row mahjong-self-melds"><span v-for="(meld, index) in mahjong.melds.self" :key="'self-meld-' + index" class="mahjong-meld"><em v-for="(tile, ti) in meld.cards" :key="'sm-' + ti"><mahjong-tile-face :tile="tile"></mahjong-tile-face></em></span></div>
+          <div class="mahjong-hand">
+            <button v-for="(tile, index) in posState.self.cards" :key="'self-tile-' + index + '-' + tile.value" type="button" class="mahjong-tile mahjong-hand-tile" :class="[{selected: tile.selected}]" :title="mahjongTileLabel(tile)" :aria-label="mahjongTileLabel(tile)" @click="selectMahjongTile(tile)"><mahjong-tile-face :tile="tile"></mahjong-tile-face></button>
+          </div>
+        </div>
+
+        <div class="mahjong-actions" v-if="!isSpec && roomState.state > 0 && roomState.state < 3 && (roomState.ctxPos === 'self' || mahjong.claimActions.length)">
+          <span class="clock">{{roomState.timeout}}</span>
+          <button type="button" class="btn btn-ghost btn-ai" @click="mahjongSuggest" title="分析向听、进张与牌河风险">智囊</button>
+          <button v-if="mahjong.claimActions.indexOf('hu') > -1" type="button" class="btn btn-vermilion" @click="mahjongAction('hu')">胡</button>
+          <button v-if="mahjong.claimActions.indexOf('gang') > -1" type="button" class="btn btn-jade" @click="mahjongAction('gang')">杠</button>
+          <button v-if="mahjong.claimActions.indexOf('peng') > -1" type="button" class="btn btn-call" @click="mahjongAction('peng')">碰</button>
+          <button v-if="mahjong.claimActions.indexOf('chi') > -1" type="button" class="btn btn-call" @click="mahjongAction('chi')">吃</button>
+          <button v-if="mahjong.claimActions.indexOf('pass') > -1" type="button" class="btn btn-ghost" @click="mahjongAction('pass')">过</button>
+          <button v-if="roomState.ctxPos === 'self' && mahjong.selectedTile && mahjong.action === 'discard'" type="button" class="btn btn-vermilion" @click="mahjongDiscard">出牌</button>
+        </div>
+
+        <div v-if="mahjong.advice" class="mahjong-advice">
+          <button type="button" class="mahjong-advice-close" @click="mahjong.advice = null" aria-label="关闭智囊">×</button>
+          <div class="mahjong-advice-head"><i>谋</i><span>麻将智囊</span><strong>{{mahjong.advice.title}}</strong></div>
+          <p>{{mahjong.advice.reason}}</p>
+          <div v-if="mahjong.advice.effectiveTiles && mahjong.advice.effectiveTiles.length" class="mahjong-advice-waits">
+            <span>有效牌</span>
+            <em v-for="value in mahjong.advice.effectiveTiles" :key="'advice-' + value" class="mahjong-advice-tile"><mahjong-tile-face :tile="{value:value,type:0}"></mahjong-tile-face></em>
+            <b>约 {{mahjong.advice.ukeire}} 张</b>
+          </div>
+          <div v-if="mahjong.advice.alternatives && mahjong.advice.alternatives.length > 1" class="mahjong-advice-alt">
+            备选：<span v-for="(item, index) in mahjong.advice.alternatives.slice(1)" :key="'alt-' + index">{{item.label}} · {{item.shanten === 0 ? '听牌' : item.shanten + '向听'}} · {{item.ukeire}}张</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-group" v-if="gameType !== 'mahjong' && !isSpec && roomState.state > 0 && roomState.state < 3 && roomState.ctxPos === 'self'">
+        <span class="clock">{{roomState.timeout}}</span>
+        <template v-if="roomState.state === 1">
+          <button class="btn btn-call" v-for="score in roomState.ctxScore" @click="callScore(score)">{{score}}分</button>
+          <button class="btn btn-call" @click="callScore(0)">不叫</button>
+        </template>
+        <template v-if="roomState.state === 2">
+          <button class="btn btn-vermilion" @click="playCards">出  牌</button>
+          <button class="btn btn-ghost btn-ai" type="button" @click="aiSuggest" title="智囊推荐">智 囊</button>
+          <button class="btn btn-jade" @click="passCards" v-if="roomState.ctxCard.len && roomState.ctxCard.ctxPos !== roomState.ctxPos">不  出</button>
+        </template>
+
+      </div>
+
+      <button v-if="!isSpec && posState.self.state < 2" @click="prepare" class="btn-prepare">准 备</button>
+
+      <!-- 等待区操作：召唤AI / 请走AI -->
+      <div class="bot-bar" v-if="!isSpec && (roomState.state === 0 || roomState.state === 3)">
+        <button v-if="hasEmptySeat" class="btn-bot btn-bot-add" type="button" @click="addBots">{{gameType === 'doudizhu' ? '召 唤 A I 对 手' : '召 唤 A I 补 位'}}</button>
+        <button v-if="hasBotSeat" class="btn-bot btn-bot-remove" type="button" @click="removeBots">请 走 A I</button>
+      </div>
+
+      <div v-if="isSpec && roomState.state === 0" class="spec-tip">本桌正在准备中，待开局后可观战。</div>
+
+      <div v-if="roomState.paused" class="game-pause-panel">
+        <div class="game-pause-kicker">对局已暂停</div>
+        <strong>{{roomState.pausePlayerName || '玩家'}} 已退出</strong>
+        <span>保留牌局 {{pauseSeconds}} 秒，等待玩家回归或房主补位</span>
+        <button v-if="canCallPauseAI" type="button" class="btn btn-jade game-pause-ai" @click="addBots">召唤 AI 补位并继续</button>
+      </div>
+
+      <div class="card-groups" v-if="gameType !== 'mahjong' && roomState.state">
+
+        <!-- 自己的牌列表 -->
+        <div class="card-group card-group-self" :style="handGroupStyle(posState.self.cards, 'self')" v-if="!isSpec && !(roomState.state === 3 && posState.self.state === 2)">
+          <div @dragstart.prevent
+            @mousedown.prevent="dragSelectStart(card, $event)"
+            @mouseenter="dragSelectOver(card)"
+            @touchstart.prevent="dragSelectStart(card, $event)"
+            @touchmove.prevent="dragSelectTouchMove($event)"
+            v-for="(card,index) in posState.self.cards"
+            class="card" :class="'card-' + card.value + '-' + card.type" :data-card-key="card.value + '_' + card.type + '_' + (card.deck || 0)" :style="{left:index * handGap(posState.self.cards, 'self') + 'px',top:card.selected ? '-20px' : 0}">
+            </div>
+        </div>
+        <!-- 观战者看底部玩家的牌背，不能把第一个座位整块省略。 -->
+        <div class="card-group card-group-self card-group-spectator-self" :style="handGroupStyle(posState.self.cards, 'self')" v-if="isSpec && roomState.state > 0 && roomState.state < 3 && posState.self.state">
+          <div v-for="(card,index) in posState.self.cards" class="card card-unknow" :style="{left:index * handGap(posState.self.cards, 'self') + 'px'}"></div>
+          <div class="text-tips text-tips-self text-center">剩余：{{posState.self.cards.length}}张</div>
+        </div>
+        <!-- 左家的牌列表 -->
+        <div class="card-group card-group-left" :style="handGroupStyle(posState.left.cards, 'side')">
+          <div @dragStart=" dragStart($event)" v-for="(card,index) in posState.left.cards" class="card" :class="roomState.state === 3 ? 'card-' + card.value + '-' + card.type : 'card-unknow'"
+            :style="opponentCardStyle(posState.left.cards, 'side', index)">
+          </div>
+          <div class="icon-group icon-group-left text-left" v-if="roomState.ctxPos == 'left' && roomState.state < 3">
+            <span class="clock">{{roomState.timeout}}</span>
+          </div>
+          <div class="text-tips text-tips-left text-left" v-if="roomState.state < 3">剩余：{{posState.left.cards.length}}张</div>
+
+        </div>
+        <!-- 右家的牌列表 -->
+        <div class="card-group card-group-right" :style="handGroupStyle(posState.right.cards, 'side')">
+          <div @dragStart="dragStart($event)" v-for="(card,index) in posState.right.cards" class="card" :class="roomState.state === 3 ? 'card-' + card.value + '-' + card.type : 'card-unknow'"
+            :style="opponentCardStyle(posState.right.cards, 'side', index)">
+          </div>
+          <div class="icon-group icon-group-right text-right" v-if="roomState.ctxPos == 'right' && roomState.state < 3">
+            <span class="clock">{{roomState.timeout}}</span>
+          </div>
+          <div class="text-tips text-tips-right text-right" v-if="roomState.state < 3">剩余：{{posState.right.cards.length}}张</div>
+        </div>
+        <!-- 对家/上方玩家（掼蛋） -->
+        <div class="card-group card-group-top card-group-up" v-if="gameType === 'guandan'" :style="handGroupStyle(posState.top.cards, 'top')">
+          <div @dragStart="dragStart($event)" v-for="(card,index) in posState.top.cards" class="card" :class="roomState.state === 3 ? 'card-' + card.value + '-' + card.type : 'card-unknow'"
+            :style="opponentCardStyle(posState.top.cards, 'top', index)">
+          </div>
+          <div class="icon-group icon-group-top text-center" v-if="roomState.ctxPos == 'top' && roomState.state < 3">
+            <span class="clock">{{roomState.timeout}}</span>
+          </div>
+          <div class="text-tips text-tips-top text-center" v-if="roomState.state < 3">剩余：{{posState.top.cards.length}}张</div>
+        </div>
+
+        <!-- 斗地主底牌列表 -->
+        <div class="card-group card-group-top" v-if="gameType === 'doudizhu'" :style="handGroupStyle(posState.kitty.cards, 'kitty')">
+          <div @dragStart="dragStart($event)" v-for="(card,index) in posState.kitty.cards" class="card" :style="{left:index * handGap(posState.kitty.cards, 'kitty') + 'px'}"
+            :class="roomState.state >= 2 ? 'card-' + card.value + '-' + card.type : ' card-unknow' ">
+          </div>
+        </div>
+
+
+      </div>
+
+      <!-- 出牌区域 -->
+      <div class="screen-center" v-if="gameType !== 'mahjong'">
+        <!-- 左家的出牌区域 -->
+        <div class="card-ctx card-ctx-left" v-if="(roomState.state === 2 && (posState.left.ctxCards.length || posState.left.isPass)) || (roomState.state === 1 && posState.left.callScore > -1)" :style="handGroupStyle(posState.left.ctxCards, 'ctxSide')">
+          <template v-if="roomState.state === 2">
+            <div v-if="!posState.left.isPass" @dragStart="dragStart($event)" v-for="(card,index) in posState.left.ctxCards"
+              class="card" :class="'card-' + card.value + '-' + card.type" :style="{left:index * handGap(posState.left.ctxCards, 'ctxSide') + 'px'}">
+            </div>
+            <div v-if="posState.left.isPass" class="score-tipe pass-tipe">
+              不出
+            </div>
+          </template>
+          <span class="score-tipe" v-if="roomState.state == 1 && posState.left.callScore > -1">{{posState.left.callScore
+            > 0 ? posState.left.callScore + '分' : '不叫' }}</span>
+
+        </div>
+        <!-- 自己的出牌区域 -->
+        <div class="card-ctx card-ctx-self" v-if="(roomState.state === 2 && (posState.self.ctxCards.length || posState.self.isPass)) || (roomState.state === 1 && posState.self.callScore > -1)" :style="handGroupStyle(posState.self.ctxCards, 'ctxSelf')">
+          <template v-if="roomState.state === 2">
+            <div v-if="!posState.self.isPass" @dragStart="dragStart($event)" v-for="(card,index) in posState.self.ctxCards"
+              class="card" :class="'card-' + card.value + '-' + card.type" :style="{left:index * handGap(posState.self.ctxCards, 'ctxSelf') + 'px'}">
+            </div>
+            <div v-if="posState.self.isPass" class="score-tipe pass-tipe">
+              不出
+            </div>
+          </template>
+          <span class="score-tipe" v-if="roomState.state == 1 && posState.self.callScore > -1">
+            {{posState.self.callScore
+            > 0 ? posState.self.callScore + '分' : '不叫' }}
+          </span>
+
+        </div>
+        <!-- 右家的出牌区域 -->
+        <div class="card-ctx card-ctx-right" v-if="(roomState.state === 2 && (posState.right.ctxCards.length || posState.right.isPass)) || (roomState.state === 1 && posState.right.callScore > -1)" :style="handGroupStyle(posState.right.ctxCards, 'ctxSide')">
+          <template v-if="roomState.state === 2">
+            <div v-if="!posState.right.isPass" @dragStart="dragStart($event)" v-for="(card,index) in posState.right.ctxCards"
+              class="card" :class="'card-' + card.value + '-' + card.type" :style="{left:index * handGap(posState.right.ctxCards, 'ctxSide') + 'px'}">
+            </div>
+            <div v-if="posState.right.isPass" class="score-tipe pass-tipe">
+              不出
+            </div>
+          </template>
+          <span class="score-tipe" v-if="roomState.state == 1 && posState.right.callScore > -1">{{posState.right.callScore
+            > 0 ? posState.right.callScore + '分' : '不叫' }}</span>
+
+        </div>
+        <!-- 上家的出牌区域（掼蛋） -->
+        <div class="card-ctx card-ctx-top" v-if="gameType === 'guandan' && roomState.state === 2 && (posState.top.ctxCards.length || posState.top.isPass)" :style="handGroupStyle(posState.top.ctxCards, 'ctxTop')">
+          <template v-if="roomState.state === 2">
+            <div v-if="!posState.top.isPass" @dragStart="dragStart($event)" v-for="(card,index) in posState.top.ctxCards"
+              class="card" :class="'card-' + card.value + '-' + card.type" :style="{left:index * handGap(posState.top.ctxCards, 'ctxTop') + 'px'}">
+            </div>
+            <div v-if="posState.top.isPass" class="score-tipe pass-tipe">
+              不出
+            </div>
+          </template>
+        </div>
+      </div>
+      <!-- 玩家头像 -->
+      <div class="players" v-if="gameType !== 'mahjong'">
+        <div class="screen-center">
+          <div class="player-wrapper player-top" v-if="gameType === 'guandan' && posState.top.state" :style="topPlayerStyle">
+            <div class="player-photo" :class="{'player-photo-bot': posState.top.isBot}" :style="playerPhotoStyle(posState.top)">
+              <span class="bot-tag" v-if="posState.top.isBot">AI</span>
+              <span class="team-tag team-ally">队友</span>
+            </div>
+            <div class="player-name text-center">{{posState.top.name}}</div>
+            <div class="text-center player-status" v-if="posState.top.state === 2 && (roomState.state === 0 || roomState.state === 3)">准备</div>
+          </div>
+          <div class="player-wrapper player-left" v-if="posState.left.state">
+            <div class="player-photo" :class="{'player-photo-king':posState.left.isDizhu, 'player-photo-bot': posState.left.isBot}" :style="playerPhotoStyle(posState.left)">
+              <span class="bot-tag" v-if="posState.left.isBot">AI</span>
+              <span class="team-tag team-rival" v-if="gameType === 'guandan'">对手</span>
+            </div>
+            <div class="player-name text-center">{{posState.left.name}}</div>
+            <div class="text-center player-status" v-if="posState.left.state === 2 && (roomState.state === 0 || roomState.state === 3)">准备</div>
+            <!-- <div class="text-center" v-if="posState.left.isDizhu">
+            <img src="../_shared/card-room/images/dizhu.svg" alt="">
+          </div> -->
+          </div>
+          <div class="player-wrapper player-right" v-if="posState.right.state">
+            <div class="player-photo" :class="{'player-photo-king':posState.right.isDizhu, 'player-photo-bot': posState.right.isBot}" :style="playerPhotoStyle(posState.right)">
+              <span class="bot-tag" v-if="posState.right.isBot">AI</span>
+              <span class="team-tag team-rival" v-if="gameType === 'guandan'">对手</span>
+            </div>
+            <div class="player-name text-center">{{posState.right.name}}</div>
+            <div class="text-center player-status" v-if="posState.right.state === 2 && (roomState.state === 0 || roomState.state === 3)">准备</div>
+            <!-- <div class="text-center" v-if="posState.right.isDizhu">
+            <img src="../_shared/card-room/images/dizhu.svg" alt="">
+          </div> -->
+          </div>
+
+        </div>
+
+        <div class="player-wrapper player-self-ctx" :class="{'spectator-self': isSpec}" v-if="roomState.state > 0 && !(roomState.state === 3 && posState.self.state === 2)">
+          <div class="player-photo" :class="{'player-photo-king':posState.self.isDizhu}" :style="playerPhotoStyle(posState.self)"></div>
+          <div class="player-name text-center">{{posState.self.name}}</div>
+        </div>
+
+        <div class="player-wrapper player-self" v-if="roomState.state === 0 || (roomState.state === 3 && posState.self.state === 2)">
+          <div class="player-photo" :class="{'player-photo-king':posState.self.isDizhu}" :style="playerPhotoStyle(posState.self)"></div>
+          <div class="player-name text-center">{{posState.self.name}}</div>
+          <div class="text-center player-status" v-if="posState.self.state === 2 && (roomState.state === 0 || roomState.state === 3)">准备</div>
+          <!-- <div class="text-center" v-if="posState.self.isDizhu">
+          <img src="../_shared/card-room/images/dizhu.svg" alt="">
+        </div> -->
+        </div>
+      </div>
+
+      <div class="msg-box" :class="{collapsed: chatCollapsed}">
+        <div class="msg-box-head">
+          <span class="msg-box-title">茶馆 · 闲话</span>
+          <button class="msg-box-toggle" type="button" @click="chatCollapsed = !chatCollapsed"
+            :title="chatCollapsed ? '展开聊天' : '收起聊天'">
+            <span v-if="chatCollapsed">▴</span><span v-else>▾</span>
+          </button>
+        </div>
+        <div class="msg-body">
+          <div class="msg-list scroll-bar" ref="msgBox">
+            <div class="msg-item"
+              v-for="msg in msgList" :key="msg.id"
+              :class="msg.type === 'SYS' ? 'msg-sys' : (msg.posId === posId ? 'msg-user msg-self' : 'msg-user msg-other')">
+              <template v-if="msg.type === 'SYS'">
+                <span class="msg-sys-stamp">系</span>
+                <span class="msg-sys-text">{{msg.content}}</span>
+              </template>
+              <template v-else>
+                <div class="msg-meta">
+                  <span class="msg-name">{{msg.name}}</span>
+                  <span class="msg-time">{{msg.time}}</span>
+                </div>
+                <div class="msg-bubble">{{msg.content}}</div>
+              </template>
+            </div>
+          </div>
+          <div class="msg-foot">
+            <input type="text" class="msg-input" ref="msgInput" placeholder="说点什么…" maxlength="120"
+              @keyup.enter="sendMessage(false)">
+            <button class="msg-send" type="button" @click="sendMessage(false)">发送</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="landscape-lock" v-if="where === 2">
+      <div class="landscape-lock-panel">
+        <span class="landscape-lock-icon">↺</span>
+        <div class="landscape-lock-title">请横屏游戏</div>
+        <div class="landscape-lock-text">手机端牌桌只支持横屏布局，旋转屏幕后继续对局。</div>
+      </div>
+    </div>
+
+  </div>
+  <script>
+    function getURLParam(name) {
+      return new URLSearchParams(window.location.search).get(name);
+    }
+  </script>
+  <script src="../_shared/card-room/js/vue.min.js"></script>
+  <script src="../_shared/card-room/js/socket.io.min.js"></script>
+  <script src="../_shared/card-room/config.js"></script>
+  <script src="../_shared/card-room/js/jquery.min.js"></script>
+  <script src="../_shared/card-room/js/layer/layer.js"></script>
+  <script src="../_shared/card-room/js/parser.js"></script>
+  <script src="../_shared/card-room/js/ai-suggest.js?v=20260626-1"></script>
+  <script src="../_shared/card-room/js/guandan-suggest.js?v=20260626-2"></script>
+  <script src="../_shared/card-room/js/smart-ai.js?v=20260822-1"></script>
+  <script src="../_shared/card-room/js/mahjong-ai.js?v=20260822-1"></script>
+  <script src="../_shared/card-room/js/effects.js?v=20260626-2"></script>
+  <script>
+
+
+
+
+
+    function _getCookie(name) {
+      var match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+      if (match) return decodeURIComponent(match[2]);
+      return null;
+    }
+
+    // 跨域 SSO：优先从 URL hash (#token=xxx) 拿，其次 localStorage，最后才是 cookie
+    function _getDiscuzToken() { return ''; }
+    function createClient() {
+      return io(window.YUQING_CARD_ROOM_SERVICE_URL, { autoConnect: false, transports: ['websocket'], auth: {} });
+    }
+
+    // 断线恢复只保存房间定位和身份标识，不保存手牌等对局机密；
+    // sessionStorage 让同一标签页刷新/网络重连可恢复，主动退出时会清除。
+    var ROOM_RESUME_STORAGE_KEY = 'cardroom_room_resume_v1';
+    function readRoomResumeStorage() {
+      try {
+        var raw = sessionStorage.getItem(ROOM_RESUME_STORAGE_KEY);
+        if (!raw) return null;
+        var data = JSON.parse(raw);
+        if (!data || !data.deskId || !data.mode || (data.mode !== 'player' && data.mode !== 'spectator')) return null;
+        if (data.mode === 'player' && (data.posId === undefined || data.posId === null || data.posId === '')) return null;
+        return {
+          mode: data.mode,
+          deskId: data.deskId,
+          roomCode: data.roomCode || data.deskId,
+          posId: data.mode === 'spectator' ? 'spec' : Number(data.posId),
+          gameType: data.gameType || 'doudizhu',
+          guestId: data.guestId || '',
+          uid: data.uid || '',
+          userName: data.userName || '',
+          savedAt: Number(data.savedAt || 0),
+        };
+      } catch (e) {
+        return null;
+      }
+    }
+    function writeRoomResumeStorage(data) {
+      try { sessionStorage.setItem(ROOM_RESUME_STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
+    }
+    function clearRoomResumeStorage() {
+      try { sessionStorage.removeItem(ROOM_RESUME_STORAGE_KEY); } catch (e) {}
+    }
+
+    var MAHJONG_TILES = [];
+    ['万', '条', '筒'].forEach(function (suit) {
+      ['一', '二', '三', '四', '五', '六', '七', '八', '九'].forEach(function (rank) {
+        MAHJONG_TILES.push({ label: rank + suit, suit: suit === '万' ? 'wan' : (suit === '条' ? 'tiao' : 'tong') });
+      });
+    });
+    ['东', '南', '西', '北'].forEach(function (label) { MAHJONG_TILES.push({ label: label, suit: 'honor' }); });
+    ['中', '发', '白'].forEach(function (label) { MAHJONG_TILES.push({ label: label, suit: 'honor' }); });
+
+    Vue.component('mahjong-tile-face', {
+      props: ['tile'],
+      computed: {
+        value: function () { return this.tile ? Number(this.tile.value) : 0; },
+        suit: function () {
+          if (this.value < 9) return 'wan';
+          if (this.value < 18) return 'tiao';
+          if (this.value < 27) return 'tong';
+          return 'honor';
+        },
+        rank: function () { return this.value < 27 ? (this.value % 9) + 1 : 0; },
+        rankText: function () { return ['一', '二', '三', '四', '五', '六', '七', '八', '九'][this.rank - 1] || ''; },
+        honorText: function () { return ['东', '南', '西', '北', '中', '發', ''][this.value - 27] || ''; },
+        cells: function () {
+          var map = {
+            1: [5], 2: [1, 9], 3: [1, 5, 9], 4: [1, 3, 7, 9],
+            5: [1, 3, 5, 7, 9], 6: [1, 3, 4, 6, 7, 9],
+            7: [1, 3, 4, 5, 6, 7, 9], 8: [1, 2, 3, 4, 6, 7, 8, 9],
+            9: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+          };
+          return map[this.rank] || [];
+        }
+      },
+      methods: {
+        cellOn: function (n) { return this.cells.indexOf(n) > -1; }
+      },
+      template: '<span class="mahjong-face" :class="[\'mahjong-face-\' + suit, \'rank-\' + rank]">' +
+        '<template v-if="suit === \'wan\'"><b class="wan-rank">{{rankText}}</b><b class="wan-mark">萬</b></template>' +
+        '<span v-else-if="suit === \'tong\'" class="mahjong-pips"><i v-for="n in 9" :key="n" :class="[\'pip-\' + n, {on: cellOn(n)}]"></i></span>' +
+        '<span v-else-if="suit === \'tiao\'" class="mahjong-bamboos"><i v-for="n in 9" :key="n" :class="[\'bamboo-\' + n, {on: cellOn(n)}]"><b></b></i></span>' +
+        '<span v-else-if="value === 33" class="white-dragon"><i></i></span>' +
+        '<b v-else class="honor-glyph" :class="{\'dragon-red\': value === 31, \'dragon-green\': value === 32}">{{honorText}}</b>' +
+      '</span>'
+    });
+
+    var vm = new Vue({
+      el: "#app",
+      data: function () {
+        return {
+          msgList: [],//聊天消息
+          chatCollapsed: false,//聊天面板收起态
+          _msgSeq: 0,//本地消息序号兜底，避免 :key 冲突
+          isSpec: false,//是否处于观战模式
+          muted: false,//全局静音
+          scoreBoard: {},//本桌累计积分 { name: number }
+          scoreSeen: [],//本桌出现过的玩家名顺序，保证显示稳定
+          lastRoundDelta: null,//上一局的得分明细 [{name,delta}]
+          aiSeenCards: [],//本局公开打出的牌，供智囊做记牌与控制力判断
+          guandanScore: {
+            team0: 0,
+            team1: 0
+          },
+          guandanLastOrder: [],
+
+          where: 0,//0登录界面 1大厅 2房间,
+          isAutoLogin: false,
+          authMode: 'guest',// 登录分支：discuz=论坛/访客，guest=普通游客
+          guestMode: true,// 选择以访客身份进入
+          loginError: '',//登录错误持久横幅
+          debugMode: /[?&]debug=1\b/.test(location.search),//?debug=1 显示调试信息
+          tokenSnippet: '',//最近一次握手用的 token 前后段（仅在 debug 显示）
+          guestId: '',//访客稳定身份，用于访问自己参与过的私密房复盘
+          // 跨域 SSO 桥接入口：论坛域名上的 bridge.php
+          discuzLoginUrl: 'https://zwwx.club/discuz-sso/bridge.php',
+          // 我的战绩
+          myScore: null,
+          siteStats: null,
+          // 当前登录用户信息（仅 SSO 自动登录时填充）
+          myUser: null,
+          topList: [],
+          topLists: { doudizhu: [], guandan: [], mahjong: [] },
+          myScores: { doudizhu: null, guandan: null, mahjong: null },
+          posId: '',//座位号
+          deskId: '',//桌号
+          roomCode: '',
+          roomOwnerName: '',
+          aiDifficulty: 'normal',
+          aiDifficultyOptions: [
+            { value: 'easy', label: '简单' },
+            { value: 'normal', label: '标准' },
+            { value: 'hard', label: '困难' },
+          ],
+          gameType: 'doudizhu',
+          selectedGameType: 'guandan',
+          roomCodeInput: '',
+          mahjong: {
+            wallCount: 0,
+            action: '',
+            ctxPos: '',
+            handCounts: { 0: 0, 1: 0, 2: 0, 3: 0 },
+            discards: { self: [], left: [], right: [], top: [] },
+            melds: { self: [], left: [], right: [], top: [] },
+            claimActions: [],
+            lastDiscard: null,
+            selectedTile: null,
+            advice: null,
+          },
+          guandanLevelLabel: '2',
+          guandanLevelRank: 15,
+          desks: [],
+           client: '',
+           viewportWidth: window.innerWidth || 1280,
+           _pauseTicker: null,
+           connectionState: 'connecting',
+           connectionMessage: '',
+           resumePending: false,
+           _socketLoggedIn: false,
+           _socketWasConnected: false,
+           _resumeRequest: null,
+           _resumeRetryTimer: null,
+
+           cards: [],
+
+          //房间状态
+          roomState: {
+            state: 0,//0准备状态 1叫分状态 2打牌状态 3结束状态
+            paused: false,
+            pausePosId: '',
+            pausePlayerName: '',
+            pauseRemainingMs: 0,
+            ctxPos: '', //当前该哪个座位谁出牌或叫分 left right or self
+            ctxCard: { //上家玩家的牌型
+              len: 0,
+              key: '',
+              type: '',
+              ctxPos: ''
+            },
+            ctxScore: [],
+            timeout: 15,
+
+          },
+          //座位状态
+          posState: {
+            kitty: {
+              cards: []
+            },
+            top: {
+              state: 0,
+              cards: [],
+              ctxCards: [],
+              isPass: false,
+              isDizhu: false,
+              isBot: false,
+              callScore: -1,
+              avatarUrl: '',
+              name: '游客'
+            },
+            left: {
+              state: 0,//0没人，1未准备 2准备
+              cards: [],
+              ctxCards: [],
+              isPass: false,
+              isDizhu: false,
+              isBot: false,
+              callScore: -1,
+              avatarUrl: '',
+              name: '游客'
+            },
+            right: {
+              state: 0,//0没人，1未准备 2准备
+              cards: [],
+              ctxCards: [],
+              isPass: false,
+              isDizhu: false,
+              isBot: false,
+              callScore: -1,
+              avatarUrl: '',
+              name: '游客'
+            },
+            self: {
+              state: 0,//0没人，1未准备 2准备
+              cards: [],
+              ctxCards: [],
+              isPass: false,
+              isDizhu: false,
+              isBot: false,
+              callScore: -1,
+              avatarUrl: '',
+              name: ''
+            }
+          }
+        }
+      },
+      mounted: function () {
+        var self = this;
+        this.$nextTick(function () {
+          try {
+            var savedGuestId = localStorage.getItem('cardroom_guest_id');
+            if (!savedGuestId) {
+              savedGuestId = 'guest-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+              localStorage.setItem('cardroom_guest_id', savedGuestId);
+            }
+            this.guestId = savedGuestId;
+          } catch (e) {}
+          document.oncontextmenu = function (e) {
+            e.preventDefault();
+            self.playCards();
+          };
+
+          // 拖拽多选：松开鼠标/手指时结束本次选择
+          window.addEventListener('mouseup', function () { self.dragSelectEnd(); });
+          window.addEventListener('touchend', function () { self.dragSelectEnd(); });
+          window.addEventListener('touchcancel', function () { self.dragSelectEnd(); });
+          window.addEventListener('resize', function () {
+            self.viewportWidth = window.innerWidth || 1280;
+          });
+
+          // if Discuz token exists, mark as auto-login and the server will validate it
+          var _token = this.authMode === 'discuz' ? _getDiscuzToken() : '';
+          if (_token) {
+            this.isAutoLogin = true;
+            // debug 模式记录 token 片段
+            this.tokenSnippet = _token.length > 24 ? (_token.slice(0, 12) + '...' + _token.slice(-8)) : _token;
+            // 控制台输出便于排查
+            console.log('[login] token detected, length=' + _token.length + ', snippet=' + this.tokenSnippet);
+            // fallback to manual login if token doesn't produce LOGIN_SUCCESS quickly
+            this._autoLoginTimer = setTimeout(function () {
+              if (this.where === 0 && this.isAutoLogin) {
+                this.cancelAutoLogin('登录超时（5 秒内服务器无响应）。可能原因：服务端 JWT_SECRET 与论坛侧不一致 / token 已过期 / 服务端未安装 jsonwebtoken。请查看服务端日志。');
+              }
+            }.bind(this), 5000);
+          }
+
+          this.client = createClient();
+          window.YUQING_CARD_ROOM_READY.then(function () {
+            this.client.io.uri = window.YUQING_CARD_ROOM_SERVICE_URL;
+            this.client.connect();
+          }.bind(this)).catch(function (error) {
+            this.loginError = error.message;
+            layer.msg(error.message, { time: 6000 });
+          }.bind(this));
+
+          // Socket.IO 会自动重连；应用层再用短期房间凭据恢复原座位/观战状态。
+          this.client.on('connect', function () {
+            var reconnecting = this._socketWasConnected;
+            this.connectionState = 'connected';
+            this._socketWasConnected = true;
+            if (!reconnecting) return;
+
+            var resume = readRoomResumeStorage();
+            // 访客没有服务端握手身份，需要在新 socket 上重新 LOGIN；
+            // SSO 用户由服务端中间件自动注册，随后 LOGIN_SUCCESS 会触发恢复。
+            if ((this.authMode === 'guest' || this.guestMode)) {
+              var userName = (resume && resume.userName) || this.posState.self.name;
+              if (userName) {
+                this._socketLoggedIn = false;
+                this.client.emit('LOGIN', { userName: userName, guestId: this.guestId });
+              }
+            }
+          }.bind(this));
+
+          this.client.on('disconnect', function () {
+            if (this.where === 2) this.saveRoomResume();
+            this.connectionState = 'reconnecting';
+            this.connectionMessage = this.where === 2
+              ? '网络中断，正在恢复当前牌局…'
+              : '网络中断，正在重新连接…';
+            this.resumePending = !!readRoomResumeStorage();
+            this._socketLoggedIn = false;
+          }.bind(this));
+
+          this.client.on('connect_error', function (err) {
+            if (this.where === 2 || readRoomResumeStorage()) {
+              this.connectionState = 'reconnecting';
+              this.connectionMessage = '网络连接失败，正在重试…';
+              this.resumePending = !!readRoomResumeStorage();
+            } else if (this.isAutoLogin) {
+              this.cancelAutoLogin('网络异常：' + (err && err.message ? err.message : '无法连接服务器'));
+            }
+          }.bind(this));
+
+          this.client.on('MESSAGE', function (data) {
+            layer.msg(data.msg);
+          }.bind(this));
+
+          // 站点统计由服务端实时广播，打开统计弹窗时直接反映最新快照。
+          this.client.on('SITE_STATS_UPDATE', function (data) {
+            this.siteStats = data || null;
+          }.bind(this));
+
+
+          this.client.on('LOGIN_SUCCESS', function (data) {
+            var resume = readRoomResumeStorage();
+            var shouldResume = !!resume;
+            this.desks = data;
+            // 当前页面已经在牌桌时保持桌面，避免断线期间闪回大厅；
+            // 刷新页面则先落到大厅，收到 SITDOWN/SPECTATE_SUCCESS 后再进入牌桌。
+            this.where = shouldResume && this.where === 2 ? 2 : 1;
+            this.isAutoLogin = false;
+            this._socketLoggedIn = true;
+            this.connectionState = 'connected';
+            this.connectionMessage = '';
+            if (this._autoLoginTimer) { clearTimeout(this._autoLoginTimer); this._autoLoginTimer = null; }
+            layer.closeAll();
+            if (shouldResume) {
+              this.resumePending = true;
+              this.$nextTick(function () { this.resumeRoomAfterLogin(); }.bind(this));
+            }
+          }.bind(this));
+
+          // 服务端推送的个人战绩
+          this.client.on('MY_SCORE', function (row) {
+            this.myScore = row || null;
+            if (row && row.gameType) {
+              this.$set(this.myScores, row.gameType, row);
+            }
+          }.bind(this));
+
+          // SSO 自动登录后服务端会推送 WHOAMI
+          this.client.on('WHOAMI', function (data) {
+            this.myUser = data || null;
+            // 预填自己的座位名，坐下后头像名称、聊天等都会用这个
+            if (data && data.username) {
+              this.posState.self.name = data.username;
+            }
+            if (data && data.avatarUrl) {
+              this.posState.self.avatarUrl = data.avatarUrl;
+            }
+          }.bind(this));
+
+          this.client.on('LOGIN_FAIL', function (data) {
+            layer.closeAll();
+            if (this.isAutoLogin) {
+              this.cancelAutoLogin(data && data.msg ? data.msg : '自动登录失败');
+            } else {
+              this._socketLoggedIn = false;
+              layer.msg(data.msg);
+            }
+          }.bind(this));
+
+          this.client.on('ROOM_CREATED', function (data) {
+            if (data && data.isPrivate && data.roomCode) {
+              layer.msg('私密房已创建：' + data.roomCode, { time: 1400 });
+            }
+          }.bind(this));
+
+          this.client.on('AI_DIFFICULTY_CHANGE', function (data) {
+            if (!data) return;
+            this.aiDifficulty = data.aiDifficulty || this.aiDifficulty;
+            if (data.changedBy && data.changedBy !== ((this.myUser && this.myUser.username) || this.posState.self.name)) {
+              layer.msg('房主将 AI 难度调整为：' + (data.aiDifficultyLabel || this.aiDifficultyText(data.aiDifficulty)), { time: 1200 });
+            }
+          }.bind(this));
+
+          this.client.on('QUICK_JOIN', function (data) {
+            if (data.success) {
+              this.client.emit('SITDOWN', { deskId: data.deskId, posId: data.posId })
+            } else {
+              layer.closeAll();
+              layer.msg('快速加入失败');
+            }
+          }.bind(this));
+
+
+          this.client.on('SITDOWN_SUCCESS', function (data) {
+            this.where = 2;
+            this.isSpec = false;
+            this.posId = data.posId;
+            this.deskId = data.deskId;
+            this.roomCode = data.roomCode || data.deskId;
+            this.roomOwnerName = data.ownerName || '';
+            this.aiDifficulty = data.aiDifficulty || 'normal';
+            this.gameType = data.gameType || 'doudizhu';
+            this.guandanLevelLabel = data.guandanLevelLabel || '2';
+            this.guandanLevelRank = data.guandanLevelRank || this.rankFromLabel(this.guandanLevelLabel);
+            (data.positions || data.posInfos || []).forEach(function (pos) {
+              this.updatePosStatus(pos.posId, pos.state, pos.userName, !!pos.isBot, pos.avatarUrl);
+            }.bind(this))
+            this.updatePosStatus(data.posId, 1, this.posState.self.name || (this.myUser && this.myUser.username) || '游客', false, (this.myUser && this.myUser.avatarUrl) || this.posState.self.avatarUrl || '');
+            this.posState.self.isDizhu = false;
+            this.applyPauseState(data.paused);
+            if (data.gameInProgress && data.snapshot) {
+              this.applySpectateSnapshot(data.snapshot);
+            }
+            //this.msgList = [];
+            this.$nextTick(function () {
+              if (this.$refs.msgInput) this.$refs.msgInput.value = '';
+            });
+            this.saveRoomResume();
+            if (data.resumed) this.completeRoomResume();
+            layer.closeAll();
+          }.bind(this));
+
+          this.client.on('SITDOWN_ERROR', function (data) {
+            layer.closeAll();
+            layer.msg(data.msg);
+          }.bind(this));
+
+          this.client.on('RESUME_ROOM_ERROR', function (data) {
+            var code = data && data.code;
+            if (code === 'ALREADY_IN_ROOM') {
+              this.completeRoomResume();
+              return;
+            }
+            if (code === 'ROOM_NOT_FOUND' || code === 'RESUME_EXPIRED' || code === 'IDENTITY_MISMATCH' || code === 'SEAT_TAKEN') {
+              this.clearRoomResume();
+              if (this.where === 2) this.resetRoomStatus();
+            } else {
+              this._resumeRequest = null;
+              this.resumePending = false;
+            }
+            layer.closeAll();
+            layer.msg((data && data.msg) || '房间恢复失败，请重新入房');
+          }.bind(this));
+
+          this.client.on('AI_DIFFICULTY_ERROR', function (data) {
+            layer.closeAll();
+            if (data && data.aiDifficulty) this.aiDifficulty = data.aiDifficulty;
+            layer.msg((data && data.msg) || 'AI 难度调整失败');
+          }.bind(this));
+
+
+          this.client.on('UNSITDOWN_SUCCESS', function (data) {
+            this.resetRoomStatus();
+            this.desks = data;
+            layer.closeAll();
+          }.bind(this));
+
+          // 观战进入成功
+          this.client.on('SPECTATE_SUCCESS', function (data) {
+            this.where = 2;
+            this.deskId = data.deskId;
+            this.roomCode = data.roomCode || data.deskId;
+            this.roomOwnerName = data.ownerName || '';
+            this.aiDifficulty = data.aiDifficulty || 'normal';
+            this.gameType = data.gameType || 'doudizhu';
+            this.guandanLevelLabel = data.guandanLevelLabel || '2';
+            this.guandanLevelRank = data.guandanLevelRank || this.rankFromLabel(this.guandanLevelLabel);
+            this.isSpec = true;
+            this.posId = 'spec';
+            // 初始化座位状态名字
+            (data.positions || []).forEach(function (p) {
+              this.updatePosStatus(p.posId, p.state, p.userName, !!p.isBot, p.avatarUrl);
+            }.bind(this));
+            this.posState.self.isDizhu = false;
+            this.applyPauseState(data.paused);
+            if (data.gameInProgress && data.snapshot) {
+              this.applySpectateSnapshot(data.snapshot);
+            }
+            this.$nextTick(function () {
+              if (this.$refs.msgInput) this.$refs.msgInput.value = '';
+            });
+            this.saveRoomResume();
+            if (data.resumed) this.completeRoomResume();
+            layer.closeAll();
+            if (!data.resumed) layer.msg('已进入观战', { time: 1200 });
+          }.bind(this));
+
+          this.client.on('SPECTATE_ERROR', function (data) {
+            layer.closeAll();
+            layer.msg(data.msg || '观战失败');
+          }.bind(this));
+
+          this.client.on('REFRESH_LIST', function (data) {
+            this.desks = data;
+          }.bind(this));
+
+          this.client.on('STATUS_CHANGE', function (data) {
+            this.updateHouseStatus(data.deskId, data.posId, data.state);
+          }.bind(this));
+
+          this.client.on('POS_STATUS_CHANGE', function (data) {
+            var direct = this.getDirectionByPosId(data.posId);
+            this.updatePosStatus(data.posId, data.state, data.userName, data.isBot, data.avatarUrl);
+          }.bind(this));
+
+          this.client.on('POS_STATUS_RESET', function (data) {
+            data.pos.forEach(function (pos) {
+              this.updatePosStatus(pos.posId, data.state);
+            }.bind(this));
+          }.bind(this));
+
+          this.client.on('ROOM_STATUS_CHANGE', function (data) {
+            this.roomState.state = data.state;
+          }.bind(this));
+
+          this.client.on('GAME_PAUSED', function (data) {
+            this.startTimer(false);
+            this.roomState.timeout = 0;
+            this.applyPauseState(data);
+            layer.msg('玩家退出，对局已暂停，保留 1 分钟', { time: 1800 });
+          }.bind(this));
+
+          this.client.on('GAME_RESUMED', function (data) {
+            this.applyGameResume(data);
+            layer.msg(data && data.source === 'ai' ? 'AI 已补位，对局继续' : '玩家已回归，对局继续', { time: 1400 });
+          }.bind(this));
+
+          this.client.on('GAME_PAUSE_EXPIRED', function (data) {
+            this.startTimer(false);
+            this.applyPauseState(null);
+            this.roomState.state = 0;
+            layer.msg((data && data.playerName ? data.playerName : '玩家') + ' 离开超时，本局已结束', { time: 2200 });
+          }.bind(this));
+
+          this.client.on('FORCE_EXIT_EV', function (data) {
+            layer.msg(data.msg);
+
+            this.roomState.state = 3;
+            this.posState.left.callScore = -1;
+            this.posState.right.callScore = -1;
+            this.posState.self.callScore = -1;
+
+            var direct = this.getDirectionByPosId(data.posId);
+            this.posState[direct].ctxCards = [];
+            this.posState[direct].cards = [];
+            this.startTimer(false);
+
+          }.bind(this));
+
+          this.client.on('PREPARE_SUCCESS', function (data) {
+            this.posState.self.state = 2;
+            layer.closeAll();
+          }.bind(this));
+
+          //游戏开始
+          this.client.on('GAME_START', function (data) {
+            this.gameType = data.gameType || this.gameType || 'doudizhu';
+            this.aiDifficulty = data.aiDifficulty || this.aiDifficulty || 'normal';
+            this.aiSeenCards = [];
+            this.mahjong.advice = null;
+            this.roomState.state = (this.gameType === 'guandan' || this.gameType === 'mahjong') ? 2 : 1;
+            if (this.gameType === 'guandan') {
+              this.guandanLevelLabel = data.levelLabel || this.guandanLevelLabel || '2';
+              this.guandanLevelRank = data.levelRank || this.rankFromLabel(this.guandanLevelLabel);
+              this.roomState.ctxPos = this.getDirectionByPosId(data.ctxPos);
+              this.roomState.ctxCard = { len: 0, key: '', type: '', ctxPos: '' };
+            }
+            if (this.gameType === 'mahjong') {
+              this.initMahjongState(data.mahjong || {});
+              this.roomState.ctxPos = this.getDirectionByPosId(data.ctxPos);
+            }
+            this.initCards(data.cards);
+            this.posState.left.callScore = -1;
+            this.posState.right.callScore = -1;
+            this.posState.top.callScore = -1;
+            this.posState.self.callScore = -1;
+
+            this.posState.left.isPass = false;
+            this.posState.right.isPass = false;
+            this.posState.top.isPass = false;
+            this.posState.self.isPass = false;
+
+            this.posState.left.isDizhu = false;
+            this.posState.right.isDizhu = false;
+            this.posState.top.isDizhu = false;
+            this.posState.self.isDizhu = false;
+
+            this.posState.left.ctxCards = [];
+            this.posState.right.ctxCards = [];
+            this.posState.top.ctxCards = [];
+            this.posState.self.ctxCards = [];
+
+            // —— 发牌 / 洗牌音效 ——
+            if (window.FX) {
+              if (this.gameType === 'mahjong') {
+                FX.beep('mahjong-shuffle');
+                setTimeout(function () { window.FX && FX.beep('mahjong-draw'); }, 560);
+              } else {
+                FX.beep('deal');
+                setTimeout(function () { window.FX && FX.beep('deal'); }, 220);
+              }
+            }
+
+          }.bind(this));
+
+
+          //叫分事件
+          this.client.on('CTX_USER_CHANGE', function (data) {
+            this.updateCtxInfo(data);
+          }.bind(this));
+
+          //显示底牌事件
+          this.client.on('SHOW_TOP_CARD', function (data) {
+            this.roomState.state = 2;
+            var direct = this.getDirectionByPosId(data.dizhuPosId);
+            if (direct == 'self') {
+              data.topCards.forEach(function (card) {
+                card.selected = true;
+              })
+            }
+            this.posState[direct].cards = this.posState[direct].cards.concat(data.topCards).sort(function (a, b) {
+              return a.value - b.value;
+            });
+            this.posState.kitty.cards = data.topCards;
+            this.roomState.ctxPos = direct;
+            this.posState[direct].isDizhu = true;
+            this.roomState.timeout = data.timeout;
+            this.startTimer(this.autoPlayCards.bind(this));
+
+            // —— 身份登场特效（地主 / 农民 因人而异）——
+            if (window.FX) {
+              if (direct === 'self') {
+                FX.flash('地 主', { cls: 'fx-king-emerge', life: 1600 });
+              } else {
+                FX.flash('农 民', { cls: 'fx-farmer-emerge', life: 1600 });
+              }
+              FX.beep('call');
+            }
+          }.bind(this));
+
+
+
+          this.client.on('CTX_PLAY_CHANGE', function (data) {
+            var direct = this.getDirectionByPosId(data.ctxData.posId);
+            this.posState[direct].ctxCards = data.ctxData.cards;
+            this.posState[direct].isPass = data.isPass;
+            if (data.trickReset) {
+              this.roomState.ctxCard = { len: 0, key: '', type: '', ctxPos: '' };
+              this.posState.left.isPass = false;
+              this.posState.right.isPass = false;
+              this.posState.top.isPass = false;
+              this.posState.self.isPass = false;
+            }
+            if (!data.isPass) {
+              this.roomState.ctxCard.len = data.ctxData.len;
+              this.roomState.ctxCard.key = data.ctxData.key;
+              this.roomState.ctxCard.type = data.ctxData.type;
+              this.roomState.ctxCard.ctxPos = direct;
+              if (data.ctxData.cards && data.ctxData.cards.length) {
+                this.aiSeenCards = this.aiSeenCards.concat(data.ctxData.cards.map(function (card) {
+                  return { value: Number(card.value), type: Number(card.type) || 0, deck: card.deck };
+                }));
+              }
+            }
+            this.removeCards(direct, data.ctxData.cards);
+            this.roomState.ctxPos = this.getDirectionByPosId(data.posId);
+            //如果是自己出牌就清空上一轮自己出的牌
+            if (this.roomState.ctxPos === 'self') {
+              this.posState.self.ctxCards = [];
+            }
+            this.posState[this.roomState.ctxPos].isPass = false;
+            this.roomState.timeout = data.timeout;
+            this.startTimer(this.autoPlayCards.bind(this));
+
+            // —— 特效与音效 ——
+            if (window.FX) {
+              if (data.isPass) {
+                FX.play('PASS', { isPass: true });
+              } else if (data.ctxData.type) {
+                FX.play(data.ctxData.type, { posDir: direct });
+              }
+            }
+          }.bind(this));
+
+          this.client.on('PLAY_CARD_ERROR', function (data) {
+            layer.msg('你的牌不符合规则');
+          }.bind(this))
+          this.client.on('PLAY_CARD_SUCCESS', function (cards) {
+            this.removeCards('self', cards);
+            this.posState.self.ctxCards = cards;
+          }.bind(this))
+
+          this.client.on('MAHJONG_DISCARD', function (data) {
+            if (!data || !data.card) return;
+            var direct = this.getDirectionByPosId(data.posId);
+            if (direct && this.posState[direct]) {
+              this.removeCards(direct, [data.card]);
+              this.posState[direct].cards.forEach(function (card) { card.selected = false; });
+            }
+            this.mahjong.lastDiscard = { posId: data.posId, card: data.card };
+            if (direct && this.mahjong.discards[direct]) this.mahjong.discards[direct].push(data.card);
+            this.mahjong.selectedTile = null;
+            if (window.FX) FX.beep('mahjong-discard');
+          }.bind(this));
+
+          this.client.on('MAHJONG_STATE', function (data) {
+            this.handleMahjongState(data || {});
+          }.bind(this));
+
+          this.client.on('MAHJONG_ERROR', function (data) {
+            layer.msg((data && data.msg) || '麻将操作无效');
+          }.bind(this));
+
+          this.client.on('GAME_OVER', function (data) {
+            this.mahjong.advice = null;
+            if ((data && data.gameType) === 'mahjong' || this.gameType === 'mahjong') {
+              this.startTimer(false);
+              this.roomState.state = 3;
+              this.mahjong.claimActions = [];
+              var mahjongWon = !this.isSpec && data && data.winner && data.winner.indexOf(Number(this.posId)) > -1;
+              var mahjongTitle = this.isSpec ? '本局结束' : (mahjongWon ? '恭喜你，胡牌了' : '本局有人先和');
+              var mahjongContent = '<div class="round-result-panel"><div class="msg-title msg-' + (mahjongWon || this.isSpec ? 'success' : 'fail') + '">' + this.htmlEscape(mahjongTitle) + '</div>' +
+                '<div class="round-summary">' + this.htmlEscape(data && data.draw ? '牌山摸尽，流局' : ((data && data.winType) || '基础牌型胡牌')) + '</div></div>';
+              layer.open({ icon: this.isSpec || mahjongWon ? 6 : 5, title: '麻将结果', content: mahjongContent });
+              if (window.FX) FX.beep(data && data.draw ? 'pass' : 'mahjong-hu');
+              ['left', 'right', 'top', 'self'].forEach(function (direct) {
+                if (this.posState[direct]) {
+                  this.posState[direct].state = this.posState[direct].state ? 1 : 0;
+                  this.posState[direct].isPass = false;
+                }
+              }.bind(this));
+              return;
+            }
+            if ((data && data.gameType) === 'guandan' || this.gameType === 'guandan') {
+              var myTeam = Number(this.posId) % 2;
+              var winTeam = data.winner && data.winner.length ? data.winner[0] % 2 : -1;
+              var iWonGd = this.isSpec ? false : myTeam === winTeam;
+              var orderText = (data.finishOrder || []).map(function (pid, idx) {
+                var direct = this.getDirectionByPosId(pid);
+                var name = this.posState[direct] && this.posState[direct].name || ('玩家' + (pid + 1));
+                return (idx + 1) + '. ' + name;
+              }.bind(this)).join('<br>');
+              var winKey = (winTeam === 0) ? 'team0' : 'team1';
+              this.guandanScore[winKey] += (data.rankDelta || 1);
+              this.guandanLastOrder = (data.finishOrder || []).map(function (pid) {
+                return this.getNameByPosId(pid);
+              }.bind(this));
+              this.guandanLevelLabel = data.nextLevelLabel || this.guandanLevelLabel;
+              layer.open({
+                icon: this.isSpec || iWonGd ? 6 : 5,
+                title: '本局结果',
+                content: '<div class="msg-title msg-' + (this.isSpec || iWonGd ? 'success' : 'fail') + '">' +
+                  (this.isSpec ? '本局结束' : (iWonGd ? '恭喜你，你赢了' : '很遗憾，你输了')) +
+                  '</div><div>头游队伍升级 +' + (data.rankDelta || 1) + '</div>' +
+                  '<div style="margin-top:8px;line-height:1.7;">' + orderText + '</div>' +
+                  '<div class="go-board-title">下一局</div><div>打 ' + (data.nextLevelLabel || this.guandanLevelLabel || '2') + '</div>'
+              });
+              this.startTimer(false);
+              this.roomState.state = 3;
+              ['left', 'right', 'top', 'self'].forEach(function (direct) {
+                this.posState[direct].state = this.posState[direct].state ? 1 : 0;
+                this.posState[direct].isPass = false;
+                this.posState[direct].ctxCards = [];
+              }.bind(this));
+              if (window.FX) FX.beep(iWonGd || this.isSpec ? 'win' : 'lose');
+              return;
+            }
+            var iWon = !this.isSpec && data.winner.indexOf(this.posId) > - 1;
+            var msg = this.isSpec ? '本局结束' : (iWon ? '恭喜你，你赢了' : '很遗憾，你输了');
+            var icon = (this.isSpec || iWon) ? 6 : 5;
+
+            // —— 计算每位玩家本局得分（标准斗地主：地主双倍）——
+            var unit = data.score * data.ratio; // 单倍分
+            var dizhuWon = data.winner.length === 1;
+            var dizhuId = dizhuWon ? data.winner[0] : data.loser[0];
+            var roundDelta = [];
+            [0, 1, 2].forEach(function (pid) {
+              var direct = this.getDirectionByPosId(pid);
+              var name = this.posState[direct] && this.posState[direct].name;
+              if (!name) return;
+              var delta;
+              if (pid === dizhuId) delta = (dizhuWon ? 1 : -1) * unit * 2;
+              else delta = (dizhuWon ? -1 : 1) * unit;
+              this.bumpScore(name, delta);
+              roundDelta.push({
+                name: name,
+                delta: delta,
+                isDizhu: pid === dizhuId,
+                won: data.winner.indexOf(pid) > -1
+              });
+            }.bind(this));
+            this.lastRoundDelta = roundDelta;
+
+            var esc = this.htmlEscape;
+            var content = '<div class="round-result-panel">' +
+              '<div class="msg-title msg-' + (icon === 6 ? 'success' : 'fail') + '">' + esc(msg) + '</div>' +
+              '<div class="round-summary">底分 ' + esc(data.score) + ' / 倍率 ' + esc(data.ratio) + '，本局输赢如下</div>' +
+              '<div class="round-delta-list">';
+            roundDelta.forEach(function (row) {
+              var sign = row.delta > 0 ? '+' : '';
+              content += '<div class="round-delta-row ' + (row.won ? 'won' : 'lost') + '">' +
+                '<span class="round-player"><b>' + esc(row.name) + '</b><em>' + (row.isDizhu ? '地主' : '农民') + '</em></span>' +
+                '<span class="round-delta-num ' + (row.delta >= 0 ? 'pos' : 'neg') + '">' + sign + esc(row.delta) + '分</span>' +
+                '</div>';
+            });
+            content += '</div>';
+
+            // —— 累计积分一览 ——
+            content += '<div class="go-board-title">本桌累计积分</div><div class="go-board">';
+            this.scoreList.forEach(function (row) {
+              var sign = row.total > 0 ? '+' : '';
+              content += '<div class="go-board-row"><span class="go-board-name">' + esc(row.name) + '</span><span class="go-board-num ' + (row.total >= 0 ? 'pos' : 'neg') + '">' + sign + esc(row.total) + '</span></div>';
+            });
+            content += '</div></div>';
+
+
+            layer.open({
+              icon: icon,
+              title: '本局结果',
+              content: content
+            });
+
+
+            // layer.alert(msg, {
+            //   icon: icon,
+            // });
+            this.startTimer(false);//停止计时器
+            this.roomState.state = 3;
+
+            this.posState.left.state = 1;
+            this.posState.left.callScore = -1;
+            this.posState.left.isPass = false;
+
+            this.posState.right.state = 1;
+            this.posState.right.callScore = -1;
+            this.posState.right.isPass = false;
+
+            this.posState.self.state = 1;
+            this.posState.self.callScore = -1;
+            this.posState.self.isPass = false;
+
+            // —— 胜负音效 ——
+            if (window.FX) FX.beep(iWon ? 'win' : (this.isSpec ? 'win' : 'lose'));
+
+          }.bind(this));
+
+
+          this.client.on('USER_MESSAGE', function (data) {
+            var direct = this.getDirectionByPosId(data.posId);
+            var name = data.type === 'SYS' ? '系统' : (data.name || (this.posState[direct] && this.posState[direct].name) || '游客');
+            this.msgList.push({
+              type: data.type,
+              id: data.id != null ? data.id : ('local_' + (++this._msgSeq)),
+              time: data.time,
+              name: name,
+              posId: data.posId,
+              content: data.msg
+            });
+            // 历史限长，避免 DOM 过大
+            if (this.msgList.length > 80) {
+              this.msgList.splice(0, this.msgList.length - 80);
+            }
+            this.$nextTick(function () {
+              if (this.$refs.msgBox) {
+                this.$refs.msgBox.scrollTop = this.$refs.msgBox.scrollHeight;
+              }
+            });
+          }.bind(this));
+
+        }.bind(this));
+      },
+      methods: {
+        htmlEscape: function (value) {
+          return String(value == null ? '' : value).replace(/[&<>"'\/]/g, function (ch) {
+            return ({
+              '&': '&amp;',
+              '<': '&lt;',
+              '>': '&gt;',
+              '"': '&quot;',
+              "'": '&#39;',
+              '/': '&#47;'
+            })[ch];
+          });
+        },
+        clearPauseCountdown: function () {
+          if (this._pauseTicker) {
+            clearInterval(this._pauseTicker);
+            this._pauseTicker = null;
+          }
+        },
+        applyPauseState: function (data) {
+          this.clearPauseCountdown();
+          if (!data) {
+            this.roomState.paused = false;
+            this.roomState.pausePosId = '';
+            this.roomState.pausePlayerName = '';
+            this.roomState.pauseRemainingMs = 0;
+            return;
+          }
+          this.roomState.paused = true;
+          this.roomState.pausePosId = data.posId == null ? '' : data.posId;
+          this.roomState.pausePlayerName = data.playerName || '玩家';
+          this.roomState.pauseRemainingMs = Math.max(0, Number(data.remainingMs || (Number(data.expiresAt || 0) - Date.now())));
+          this._pauseTicker = setInterval(function () {
+            this.roomState.pauseRemainingMs = Math.max(0, Number(data.expiresAt || 0) - Date.now());
+            if (this.roomState.pauseRemainingMs <= 0) this.clearPauseCountdown();
+          }.bind(this), 250);
+        },
+        applyGameResume: function (data) {
+          data = data || {};
+          this.applyPauseState(null);
+          this.roomState.state = Number(data.status || this.roomState.state || 2);
+          this.roomState.timeout = Number(data.timeout || 30);
+          if (data.gameType) this.gameType = data.gameType;
+          if (data.aiDifficulty) this.aiDifficulty = data.aiDifficulty;
+          if (this.gameType === 'mahjong' && data.mahjong) {
+            this.initMahjongState(data.mahjong);
+            this.roomState.ctxPos = this.getDirectionByPosId(data.mahjong.ctxPos);
+          } else {
+            this.roomState.ctxPos = this.getDirectionByPosId(data.ctxPos);
+            if (data.ctxScore) this.roomState.ctxScore = data.ctxScore;
+            if (data.calledScores) {
+              Object.keys(data.calledScores).forEach(function (pid) {
+                var direct = this.getDirectionByPosId(Number(pid));
+                if (direct && this.posState[direct]) this.posState[direct].callScore = data.calledScores[pid];
+              }.bind(this));
+            }
+            if (data.lastCardInfo) {
+              this.roomState.ctxCard = {
+                len: data.lastCardInfo.len || 0,
+                key: data.lastCardInfo.key || '',
+                type: data.lastCardInfo.type || '',
+                ctxPos: data.lastCardInfo.posId == null ? '' : this.getDirectionByPosId(data.lastCardInfo.posId)
+              };
+            }
+          }
+          this.startTimer(this.isSpec ? false : this.autoPlayCards.bind(this));
+        },
+        openStats: function () {
+          var self = this;
+          var escapeHtml = function (value) {
+            return String(value == null ? '' : value).replace(/[&<>"'\/]/g, function (ch) {
+              return ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;',
+                '/': '&#47;'
+              })[ch];
+            });
+          };
+          var formatInt = function (value) {
+            var n = Number(value);
+            return Number.isFinite(n) ? Math.round(n) : 0;
+          };
+          var formatGames = function (value) {
+            var n = Number(value);
+            return Number.isFinite(n) && n > 0 ? Math.round(n) : 0;
+          };
+          var formatWinRate = function (wins, gamesN) {
+            return gamesN ? Math.round(formatGames(wins) * 1000 / gamesN) / 10 : 0;
+          };
+          var games = ['doudizhu', 'guandan', 'mahjong'];
+          var labels = { doudizhu: '斗地主', guandan: '掼蛋', mahjong: '麻将' };
+          var icons = { doudizhu: '斗', guandan: '蛋', mahjong: '麻' };
+          var activeGame = games.indexOf(self.selectedGameType) > -1 ? self.selectedGameType : 'doudizhu';
+          var loading = false;
+          self.topLists = { doudizhu: [], guandan: [], mahjong: [] };
+          self.myScores = { doudizhu: null, guandan: null, mahjong: null };
+          var html = '<div id="stats-panel" class="stats-panel stats-rebuild">' +
+            '<div class="lb-hero">' +
+              '<div class="lb-hero-copy"><span class="lb-eyebrow">雀阁 · 赛季积分</span><h2>积分榜</h2><p>三种玩法独立排名，胜负与积分实时结算。</p></div>' +
+              '<button type="button" class="lb-refresh" id="stats-refresh"><span>↻</span>刷新</button>' +
+            '</div>' +
+            '<div id="stats-mine" class="lb-overview"><div class="stats-loading">战绩加载中...</div></div>' +
+            '<div id="stats-tabs" class="lb-tabs" role="tablist"></div>' +
+            '<div id="stats-top" class="lb-board-wrap"><div class="stats-loading">积分榜加载中...</div></div>';
+          if (self.myUser && self.myUser.uid) html += '<div class="stats-foot"><a href="javascript:;" id="stats-logout">退出登录</a></div>';
+          html += '</div>';
+          var idx = layer.open({
+            type: 1,
+            title: '积分榜',
+            shadeClose: true,
+            area: 'auto',
+            maxWidth: 0,
+            content: html
+          });
+          var scoreCard = function (gt) {
+            var s = self.myScores[gt];
+            if (!self.myUser || !self.myUser.uid) return '<article class="lb-card lb-card-guest"><div class="lb-card-top"><span><i>' + icons[gt] + '</i>' + labels[gt] + '</span><b>—</b></div><strong>游客模式</strong><small>登录后保存你的积分与排名</small></article>';
+            if (!s) return '<article class="lb-card"><div class="lb-card-top"><span><i>' + icons[gt] + '</i>' + labels[gt] + '</span><b>未上榜</b></div><strong>—</strong><small>暂无对局记录</small></article>';
+            var gamesN = formatGames(s.games);
+            var winsN = formatGames(s.wins);
+            var lossesN = formatGames(s.losses);
+            var rank = (self.topLists[gt] || []).findIndex(function (row) { return String(row.uid) === String(s.uid); });
+            return '<article class="lb-card"><div class="lb-card-top"><span><i>' + icons[gt] + '</i>' + labels[gt] + '</span><b>' + (rank > -1 ? 'NO.' + (rank + 1) : '未上榜') + '</b></div><strong>' + formatInt(s.score) + '</strong><div class="lb-card-meta"><span>' + winsN + '胜 ' + lossesN + '负</span><span>' + formatWinRate(winsN, gamesN) + '% 胜率</span></div><small>' + gamesN + ' 局 · 当前玩法积分</small></article>';
+          };
+          var board = function (gt) {
+            var rows = self.topLists[gt] || [];
+            var top = rows.slice(0, 3);
+            var podiumOrder = [1, 0, 2].filter(function (i) { return !!top[i]; });
+            var podium = podiumOrder.map(function (i) {
+              var r = top[i];
+              var winsN = formatGames(r.wins);
+              return '<div class="lb-podium-item rank-' + (i + 1) + '"><div class="lb-podium-medal">' + (i + 1) + '</div><strong>' + escapeHtml(r.username || ('uid#' + r.uid)) + '</strong><b>' + formatInt(r.score) + '</b><small>' + formatWinRate(winsN, formatGames(r.games)) + '% 胜率</small></div>';
+            }).join('');
+            var trs = rows.map(function (r, i) {
+              var gamesN = formatGames(r.games);
+              var rate = formatWinRate(r.wins, gamesN);
+              var playerName = r.username || ('uid#' + r.uid);
+              var mine = self.myUser && self.myUser.uid && String(r.uid) === String(self.myUser.uid) ? ' class="is-me"' : '';
+              var rankText = i < 3 ? ['🥇', '🥈', '🥉'][i] : (i + 1);
+              return '<tr' + mine + '><td><b class="lb-rank-cell">' + rankText + '</b></td><td><span class="lb-player"><i>' + escapeHtml(String(playerName).slice(0, 1).toUpperCase()) + '</i>' + escapeHtml(playerName) + '</span></td><td class="lb-score-cell">' + formatInt(r.score) + '</td><td>' + rate + '%</td><td>' + gamesN + '</td></tr>';
+            }).join('');
+            if (!rows.length) return '<section class="lb-board"><div class="lb-board-head"><div><span>当前榜单</span><h3>' + labels[gt] + '</h3></div><small>暂无积分数据</small></div><div class="lb-empty"><span>✦</span><b>还没有上榜玩家</b><small>完成一局对战后，这里会记录你的成绩。</small></div></section>';
+            return '<section class="lb-board"><div class="lb-board-head"><div><span>当前榜单 · TOP ' + Math.min(rows.length, 20) + '</span><h3>' + labels[gt] + '</h3></div><small>共 ' + rows.length + ' 位上榜玩家</small></div><div class="lb-podium">' + podium + '</div><div class="lb-table-wrap"><table><thead><tr><th>#</th><th>玩家</th><th>积分</th><th>胜率</th><th>局数</th></tr></thead><tbody>' + trs + '</tbody></table></div></section>';
+          };
+          var renderTabs = function () {
+            var tabs = document.getElementById('stats-tabs');
+            if (!tabs) return;
+            tabs.innerHTML = games.map(function (gt) {
+              return '<button type="button" class="lb-tab' + (gt === activeGame ? ' active' : '') + '" data-game="' + gt + '" role="tab"><i>' + icons[gt] + '</i><span>' + labels[gt] + '</span></button>';
+            }).join('');
+            tabs.querySelectorAll('.lb-tab').forEach(function (tab) {
+              tab.onclick = function () {
+                activeGame = tab.getAttribute('data-game') || 'doudizhu';
+                render();
+              };
+            });
+          };
+          var fitStatsDialog = function () {
+            requestAnimationFrame(function () {
+              var layerEl = document.getElementById('layui-layer' + idx);
+              var panel = document.getElementById('stats-panel');
+              if (!layerEl || !panel) return;
+              var content = layerEl.querySelector('.layui-layer-content');
+              var title = layerEl.querySelector('.layui-layer-title');
+              if (!content) return;
+              var titleHeight = title ? title.offsetHeight : 0;
+              var maxContentHeight = Math.max(180, Math.min(760, (window.innerHeight || 480) - titleHeight - 24));
+
+              // 先恢复自然高度，再按内容高度（及视口上限）设置弹窗。
+              panel.style.height = 'auto';
+              content.style.height = 'auto';
+              layerEl.style.height = 'auto';
+              var contentHeight = Math.min(panel.scrollHeight, maxContentHeight);
+              content.style.height = contentHeight + 'px';
+              panel.style.height = '100%';
+              layerEl.style.height = (titleHeight + contentHeight) + 'px';
+              layerEl.style.top = Math.max(12, Math.round((window.innerHeight - titleHeight - contentHeight) / 2)) + 'px';
+            });
+          };
+          var render = function () {
+            var mine = document.getElementById('stats-mine');
+            var top = document.getElementById('stats-top');
+            if (mine) mine.innerHTML = games.map(scoreCard).join('');
+            renderTabs();
+            if (top) top.innerHTML = board(activeGame);
+            var refresh = document.getElementById('stats-refresh');
+            if (refresh) {
+              refresh.disabled = loading;
+              refresh.classList.toggle('is-loading', loading);
+              refresh.onclick = loadData;
+            }
+            var logout = document.getElementById('stats-logout');
+            if (logout) logout.onclick = function () {
+              try { sessionStorage.removeItem('discuz_token'); localStorage.removeItem('discuz_token'); } catch (e) {}
+              layer.close(idx);
+              location.reload();
+            };
+            fitStatsDialog();
+          };
+          var loadData = function () {
+            if (loading) return;
+            loading = true;
+            render();
+            var token = self.token || (function () { try { return sessionStorage.getItem('discuz_token') || localStorage.getItem('discuz_token') || ''; } catch (e) { return ''; } }());
+            var topRequests = games.map(function (gt) {
+              return fetch(window.YUQING_CARD_ROOM_SERVICE_URL + '/api/score/top?gameType=' + gt + '&limit=20').then(function (r) { return r.ok ? r.json() : []; }).then(function (rows) {
+                self.topLists[gt] = Array.isArray(rows) ? rows : [];
+              }).catch(function () { self.topLists[gt] = []; });
+            });
+            var mineRequests = self.myUser && self.myUser.uid ? games.map(function (gt) {
+              return fetch(window.YUQING_CARD_ROOM_SERVICE_URL + '/api/score/me?gameType=' + gt, { headers: token ? { Authorization: 'Bearer ' + token } : {} }).then(function (r) { return r.ok ? r.json() : null; }).then(function (row) {
+                self.myScores[gt] = row && row.uid ? row : null;
+              }).catch(function () { self.myScores[gt] = null; });
+            }) : [];
+            Promise.all(topRequests.concat(mineRequests)).then(function () {
+              loading = false;
+              render();
+            }, function () {
+              loading = false;
+              render();
+            });
+          };
+          render();
+          loadData();
+        },
+        historyViewerQuery: function () {
+          var params = [];
+          if (this.guestId) params.push('guestId=' + encodeURIComponent(this.guestId));
+          return params.join('&');
+        },
+        historyViewerHeaders: function () {
+          var token = _getDiscuzToken();
+          return token ? { Authorization: 'Bearer ' + token } : {};
+        },
+        historyCardText: function (card, gameType) {
+          if (!card) return '';
+          var value = Number(card.value);
+          if (gameType === 'mahjong') {
+            var mahjongLabels = ['一万', '二万', '三万', '四万', '五万', '六万', '七万', '八万', '九万', '一条', '二条', '三条', '四条', '五条', '六条', '七条', '八条', '九条', '一筒', '二筒', '三筒', '四筒', '五筒', '六筒', '七筒', '八筒', '九筒', '东', '南', '西', '北', '中', '发', '白'];
+            return mahjongLabels[value] || ('牌' + value);
+          }
+          var labels = { 11: 'J', 12: 'Q', 13: 'K', 14: 'A', 15: '2', 16: '小王', 17: '大王' };
+          var suits = ['♠', '♥', '♣', '♦'];
+          return (labels[value] || String(value)) + (value >= 16 ? '' : (suits[Number(card.type) || 0] || ''));
+        },
+        historyMoveText: function (move, record) {
+          var player = (record.players || []).find(function (item) { return Number(item.posId) === Number(move.posId); });
+          var name = (player && player.username) || ('玩家' + (Number(move.posId) + 1));
+          var source = move.source === 'ai' ? ' · AI' : '';
+          if (move.type === 'call') return name + ' 叫分 ' + Number(move.score || 0) + ' 分' + source;
+          if (move.type === 'play') {
+            var cards = (move.cards || []).map(function (card) { return this.historyCardText(card, record.gameType); }.bind(this)).join(' ');
+            return name + (move.pass ? ' 不出' : ' 出牌 ' + (cards || '—')) + source;
+          }
+          var actionLabels = { discard: '出牌', chi: '吃', peng: '碰', gang: '杠', angang: '暗杠', hu: '胡', pass: '过' };
+          var action = actionLabels[move.action] || move.action || '操作';
+          var cardText = move.card ? ' ' + this.historyCardText(move.card, record.gameType) : '';
+          return name + ' ' + action + cardText + source;
+        },
+        openHistory: function () {
+          var self = this;
+          var esc = this.htmlEscape;
+          var panelHtml = '<div id="history-panel" class="history-panel">' +
+            '<div class="history-hero"><div><span class="history-eyebrow">雀阁 · 战局档案</span><h2>历史战局</h2><p>公开房所有人可查看；私密房仅本局参与者可复盘。</p></div><button type="button" class="lb-refresh" id="history-refresh">↻ 刷新</button></div>' +
+            '<div class="history-filter"><button type="button" class="history-filter-btn active" data-game="all">全部</button><button type="button" class="history-filter-btn" data-game="doudizhu">斗地主</button><button type="button" class="history-filter-btn" data-game="guandan">掼蛋</button><button type="button" class="history-filter-btn" data-game="mahjong">麻将</button></div>' +
+            '<div id="history-list" class="history-list"><div class="stats-loading">战局加载中...</div></div>' +
+            '</div>';
+          var historyWidth = Math.max(220, Math.min(900, (window.innerWidth || 360) - 20));
+          var historyHeight = Math.max(180, Math.min(780, (window.innerHeight || 480) - 60));
+          var idx = layer.open({ type: 1, title: '历史战局', shadeClose: true, area: [historyWidth + 'px', historyHeight + 'px'], content: panelHtml });
+          var panel = document.getElementById('history-panel');
+          var list = document.getElementById('history-list');
+          var activeGame = 'all';
+          var loading = false;
+          var query = function (extra) {
+            var base = self.historyViewerQuery();
+            return (base ? base + '&' : '') + (extra || '');
+          };
+          var formatTime = function (stamp) {
+            if (!stamp) return '时间未知';
+            try { return new Date(Number(stamp)).toLocaleString('zh-CN', { hour12: false }); } catch (e) { return '时间未知'; }
+          };
+          var playerNames = function (record, ids) {
+            return (ids || []).map(function (pid) {
+              var p = (record.players || []).find(function (item) { return Number(item.posId) === Number(pid); });
+              return p ? p.username : ('玩家' + (Number(pid) + 1));
+            }).join('、');
+          };
+          var resultText = function (record) {
+            if (record.result && record.result.draw) return '流局';
+            var names = playerNames(record, record.result && record.result.winner);
+            return names ? '胜者：' + names : '已完成';
+          };
+          var renderList = function (data) {
+            var items = (data && data.items) || [];
+            if (!items.length) {
+              list.innerHTML = '<div class="history-empty"><span>◌</span><b>暂无可查看的历史战局</b><small>完成一局游戏后，复盘记录会出现在这里。</small></div>';
+              return;
+            }
+            list.innerHTML = items.map(function (item) {
+              var privacy = item.isPrivate ? '<em class="history-private">私密</em>' : '<em class="history-public">公开</em>';
+              var players = (item.players || []).map(function (p) { return esc(p.username || '玩家'); }).join(' · ');
+              return '<article class="history-item"><div class="history-item-main"><div class="history-item-title"><strong>' + esc(item.gameLabel || self.gameTypeName(item.gameType)) + '</strong>' + privacy + '<span>#' + esc(item.roomCode || item.deskId) + '</span></div><div class="history-item-meta"><span>' + esc(formatTime(item.endedAt)) + '</span><span>' + esc(resultText(item)) + '</span><span>' + Number(item.moveCount || 0) + ' 手</span></div><small>' + players + '</small></div><button type="button" class="history-view-btn" data-history-id="' + Number(item.id) + '">查看复盘</button></article>';
+            }).join('');
+            list.querySelectorAll('[data-history-id]').forEach(function (button) {
+              button.onclick = function () { openDetail(Number(button.getAttribute('data-history-id'))); };
+            });
+          };
+          var renderDetail = function (record) {
+            var moves = record.moves || [];
+            var current = 0;
+            var timer = null;
+            panel.innerHTML = '<div class="history-hero"><div><span class="history-eyebrow">' + esc(record.isPrivate ? '私密房 · 参与者可见' : '公开房 · 全员可见') + '</span><h2>' + esc(record.gameLabel || self.gameTypeName(record.gameType)) + '复盘</h2><p>#' + esc(record.roomCode || record.deskId) + ' · ' + esc(formatTime(record.endedAt)) + '</p></div><button type="button" class="lb-refresh" id="history-back">← 返回</button></div>' +
+              '<div class="replay-players">' + (record.players || []).map(function (p) { return '<span class="replay-player' + (p.isBot ? ' is-bot' : '') + '">' + esc(p.username || '玩家') + (p.isBot ? ' · AI' : '') + '</span>'; }).join('') + '</div>' +
+              '<div id="replay-stage" class="replay-stage"></div><div class="replay-controls"><button type="button" id="replay-prev">上一手</button><input id="replay-range" type="range" min="0" max="' + moves.length + '" value="0"><button type="button" id="replay-next">下一手</button><button type="button" id="replay-auto">自动播放</button></div><div id="replay-timeline" class="replay-timeline"></div><div class="replay-result"><b>结果</b><span>' + esc(resultText(record)) + '</span></div>';
+            var stage = document.getElementById('replay-stage');
+            var timeline = document.getElementById('replay-timeline');
+            var range = document.getElementById('replay-range');
+            var renderStep = function () {
+              var last = current > 0 ? moves[current - 1] : null;
+              stage.innerHTML = '<span class="replay-count">第 ' + current + ' / ' + moves.length + ' 手</span><strong>' + esc(last ? self.historyMoveText(last, record) : '点击下一手开始复盘') + '</strong><small>' + (last ? esc(formatTime(last.at)) : '按顺序查看叫分、出牌和麻将操作') + '</small>';
+              range.value = current;
+              timeline.innerHTML = moves.map(function (move, index) { return '<button type="button" class="replay-step' + (index < current ? ' done' : '') + (index === current - 1 ? ' active' : '') + '" data-step="' + (index + 1) + '">' + (index + 1) + '<span>' + esc(self.historyMoveText(move, record)) + '</span></button>'; }).join('');
+              timeline.querySelectorAll('[data-step]').forEach(function (button) { button.onclick = function () { current = Number(button.getAttribute('data-step')); renderStep(); }; });
+            };
+            var stopAuto = function () { if (timer) { clearInterval(timer); timer = null; } var auto = document.getElementById('replay-auto'); if (auto) auto.textContent = '自动播放'; };
+            document.getElementById('history-back').onclick = function () { stopAuto(); var content = panel.parentNode; content.innerHTML = panelHtml; panel = document.getElementById('history-panel'); list = document.getElementById('history-list'); bindList(); loadList(); };
+            document.getElementById('replay-prev').onclick = function () { current = Math.max(0, current - 1); renderStep(); };
+            document.getElementById('replay-next').onclick = function () { current = Math.min(moves.length, current + 1); renderStep(); };
+            range.oninput = function () { current = Number(range.value); renderStep(); };
+            document.getElementById('replay-auto').onclick = function () { if (timer) { stopAuto(); return; } var auto = document.getElementById('replay-auto'); auto.textContent = '暂停'; timer = setInterval(function () { if (current >= moves.length) { stopAuto(); return; } current++; renderStep(); }, 1200); };
+            renderStep();
+          };
+          var openDetail = function (id) {
+            list.innerHTML = '<div class="stats-loading">复盘加载中...</div>';
+            fetch(window.YUQING_CARD_ROOM_SERVICE_URL + '/api/history/' + encodeURIComponent(id) + '?' + query(), { headers: self.historyViewerHeaders() }).then(function (r) { if (!r.ok) throw new Error('history'); return r.json(); }).then(renderDetail).catch(function () { list.innerHTML = '<div class="history-empty"><b>这局复盘不可见或已不存在</b><small>私密房只能由实际参与者查看。</small></div>'; });
+          };
+          var bindList = function () {
+            if (!panel) return;
+            list = document.getElementById('history-list');
+            panel.querySelectorAll('.history-filter-btn').forEach(function (button) { button.onclick = function () { activeGame = button.getAttribute('data-game') || 'all'; panel.querySelectorAll('.history-filter-btn').forEach(function (item) { item.classList.toggle('active', item === button); }); loadList(); }; });
+            var refresh = document.getElementById('history-refresh');
+            if (refresh) refresh.onclick = loadList;
+          };
+          var loadList = function () {
+            if (loading) return;
+            loading = true;
+            if (list) list.innerHTML = '<div class="stats-loading">战局加载中...</div>';
+            fetch(window.YUQING_CARD_ROOM_SERVICE_URL + '/api/history?limit=30&gameType=' + encodeURIComponent(activeGame) + '&' + query(), { headers: self.historyViewerHeaders() }).then(function (r) { if (!r.ok) throw new Error('history'); return r.json(); }).then(renderList).catch(function () { if (list) list.innerHTML = '<div class="history-empty"><b>历史战局加载失败</b><small>请稍后刷新重试。</small></div>'; }).finally(function () { loading = false; });
+          };
+          bindList();
+          loadList();
+        },
+        openSiteStats: function () {
+          var self = this;
+          var esc = this.htmlEscape;
+          var html = '<div id="site-stats-panel" class="site-stats-panel"><div class="history-hero"><div><span class="history-eyebrow">雀阁 · 运营数据</span><h2>数据统计 <em class="site-stats-live"><i>●</i> 实时</em></h2><p>累计访问、开局、游玩人次与观战数据 · <span id="site-stats-updated">等待同步</span></p></div><button type="button" class="lb-refresh" id="site-stats-refresh">↻ 刷新</button></div><div id="site-stats-grid" class="site-stats-grid"><div class="stats-loading">数据加载中...</div></div></div>';
+          var statsWidth = Math.max(220, Math.min(760, (window.innerWidth || 360) - 20));
+          var statsHeight = Math.max(180, Math.min(620, (window.innerHeight || 480) - 60));
+          var grid = null;
+          var updated = null;
+          var loading = false;
+          var pollTimer = null;
+          var unwatch = null;
+          var cleaned = false;
+          var cleanup = function () {
+            if (cleaned) return;
+            cleaned = true;
+            if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+            if (unwatch) { unwatch(); unwatch = null; }
+          };
+          var render = function (data) {
+            if (!grid) return;
+            data = data || {};
+            var quality = data.dataQuality || {};
+            var cards = [{ key: 'games', label: '完成战局', icon: '局' }, { key: 'visits', label: '页面访问', icon: '访' }, { key: 'plays', label: '游玩人次', icon: '玩' }, { key: 'game_starts', label: '开局次数', icon: '开' }, { key: 'socket_connections', label: '连接次数', icon: '连' }, { key: 'spectator_visits', label: '观战次数', icon: '观' }];
+            var cardsHtml = cards.map(function (card) { return '<article class="site-stat-card"><i>' + card.icon + '</i><strong>' + Number(data[card.key] || 0).toLocaleString() + '</strong><span>' + esc(card.label) + '</span></article>'; }).join('');
+            var byGame = Array.isArray(data.byGame) ? data.byGame : (Array.isArray(quality.byGame) ? quality.byGame.map(function (item) { return { gameType: item.gameType, starts: item.completedEstimate || 0, games: item.completedEstimate || 0, plays: item.playerRounds || 0 }; }) : []);
+            var gameRows = byGame.map(function (item) { var label = item.gameType === 'mahjong' ? '麻将' : (item.gameType === 'guandan' ? '掼蛋' : '斗地主'); return '<div><b>' + label + '</b><span>游玩人次 ' + Number(item.plays || 0).toLocaleString() + ' · 开局 ' + Number(item.starts || 0).toLocaleString() + '</span><strong>' + Number(item.games || 0).toLocaleString() + ' 局</strong></div>'; }).join('');
+            var updatedAt = Number(data.updatedAt || 0);
+            if (updated) updated.textContent = updatedAt ? '最后同步 ' + new Date(updatedAt * 1000).toLocaleTimeString() : '实时同步中';
+            grid.innerHTML = cardsHtml + (gameRows ? '<section class="site-stats-breakdown"><h3>各玩法实时数据</h3>' + gameRows + '</section>' : '') + '<div class="site-stats-note"><span class="site-stats-live-dot">●</span> 服务端实时推送 · 数据变化后自动更新</div>';
+          };
+          var load = function (showLoading) {
+            if (loading) return;
+            loading = true;
+            if (showLoading && grid) grid.innerHTML = '<div class="stats-loading">数据加载中...</div>';
+            fetch(window.YUQING_CARD_ROOM_SERVICE_URL + '/api/site-stats?_=' + Date.now(), { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } }).then(function (r) { return r.ok ? r.json() : {}; }).then(render).catch(function () {
+              if (!self.siteStats) render({});
+              if (updated) updated.textContent = '同步失败，等待重试';
+            }).finally(function () { loading = false; });
+          };
+          var idx = layer.open({ type: 1, title: '数据统计', shadeClose: true, area: [statsWidth + 'px', statsHeight + 'px'], content: html, end: cleanup });
+          grid = document.getElementById('site-stats-grid');
+          updated = document.getElementById('site-stats-updated');
+          unwatch = self.$watch('siteStats', function (data) { if (data) render(data); });
+          document.getElementById('site-stats-refresh').onclick = function () { load(true); };
+          // Socket.IO 是主通道；15 秒轮询作为断线/代理缓存场景的兜底。
+          pollTimer = setInterval(function () { load(false); }, 15000);
+          if (self.siteStats) render(self.siteStats);
+          load(!self.siteStats);
+        },
+        goDiscuzLogin: function () {
+          // 跨域桥接：论坛登录 → 生成 JWT → 302 回本页并带 #token=xxx
+          var back = location.protocol + '//' + location.host + '/';
+          var url = this.discuzLoginUrl;
+          url += (url.indexOf('?') >= 0 ? '&' : '?') + 'redirect=' + encodeURIComponent(back);
+          location.href = url;
+        },
+        cancelAutoLogin: function (msg) {
+          // 退出自动登录流程：清掉可能过期的 token + 让用户重新选择
+          this.isAutoLogin = false;
+          if (this._autoLoginTimer) { clearTimeout(this._autoLoginTimer); this._autoLoginTimer = null; }
+          try { sessionStorage.removeItem('discuz_token'); localStorage.removeItem('discuz_token'); } catch (e) {}
+          // 清掉 cookie 兜底
+          try { document.cookie = 'discuz_token=; path=/; max-age=0'; } catch (e) {}
+          if (msg) {
+            this.loginError = msg;
+            // 同时打到控制台便于复制
+            console.error('[login]', msg);
+          }
+        },
+        getRoomResume: function () {
+          return readRoomResumeStorage();
+        },
+        saveRoomResume: function () {
+          if (!this.deskId || this.posId === '' || this.posId === null || this.posId === undefined) return;
+          var mode = this.isSpec ? 'spectator' : 'player';
+          writeRoomResumeStorage({
+            mode: mode,
+            deskId: this.deskId,
+            roomCode: this.roomCode || this.deskId,
+            posId: mode === 'spectator' ? 'spec' : Number(this.posId),
+            gameType: this.gameType || 'doudizhu',
+            guestId: this.guestId || '',
+            uid: this.myUser && this.myUser.uid ? String(this.myUser.uid) : '',
+            userName: (this.myUser && this.myUser.username) || this.posState.self.name || '',
+            savedAt: Date.now(),
+          });
+        },
+        clearRoomResume: function () {
+          clearRoomResumeStorage();
+          this.resumePending = false;
+          this._resumeRequest = null;
+          if (this._resumeRetryTimer) {
+            clearTimeout(this._resumeRetryTimer);
+            this._resumeRetryTimer = null;
+          }
+        },
+        resumeRoomAfterLogin: function () {
+          var resume = readRoomResumeStorage();
+          if (!resume || !this.client || !this.client.connected || !this._socketLoggedIn) return;
+          if (this._resumeRequest) return;
+          this._resumeRequest = resume;
+          this.resumePending = true;
+          this.connectionState = 'connected';
+          this.connectionMessage = '正在恢复当前牌局…';
+          this.client.emit('RESUME_ROOM', {
+            mode: resume.mode,
+            deskId: resume.deskId,
+            roomCode: resume.roomCode,
+            posId: resume.posId,
+            gameType: resume.gameType,
+          });
+          if (this._resumeRetryTimer) clearTimeout(this._resumeRetryTimer);
+          this._resumeRetryTimer = setTimeout(function () {
+            if (!this._resumeRequest) return;
+            this._resumeRequest = null;
+            this.resumePending = false;
+            this.connectionMessage = '恢复请求超时，请稍候重试或返回大厅';
+          }.bind(this), 8000);
+        },
+        completeRoomResume: function () {
+          if (this._resumeRetryTimer) {
+            clearTimeout(this._resumeRetryTimer);
+            this._resumeRetryTimer = null;
+          }
+          this._resumeRequest = null;
+          this.resumePending = false;
+          this.connectionState = 'connected';
+          this.connectionMessage = '';
+        },
+        login: function () {
+          if (!this.posState.self.name) {
+            return layer.msg('请输入名字');
+          }
+          if (this.posState.self.name.length > 10) {
+            return layer.msg('名字不超过10个字');
+          }
+          layer.load({ type: 3 });
+          this.client.emit('LOGIN', { userName: this.posState.self.name, guestId: this.guestId });
+        },
+        gameDescription: function (gameType) {
+          if (gameType === 'guandan') return '四人两副牌，队友协作升级，适合一桌慢慢磨出默契。';
+          if (gameType === 'mahjong') return '四人麻将，摸牌、出牌、吃碰杠胡，支持 AI 补位与观战。';
+          return '三人经典斗地主，支持 AI 陪玩、智囊推荐和观战。';
+        },
+        gameTypeName: function (gameType) {
+          if (gameType === 'guandan') return '掼蛋';
+          if (gameType === 'mahjong') return '麻将';
+          return '斗地主';
+        },
+        aiDifficultyText: function (value) {
+          var labels = { easy: '简单', normal: '标准', hard: '困难' };
+          return labels[String(value || 'normal').toLowerCase()] || '标准';
+        },
+        rankFromLabel: function (label) {
+          if (label === 'J') return 11;
+          if (label === 'Q') return 12;
+          if (label === 'K') return 13;
+          if (label === 'A') return 14;
+          if (label === '2') return 15;
+          var n = Number(label);
+          return n >= 3 && n <= 15 ? n : 15;
+        },
+        getNameByPosId: function (posId) {
+          var direct = this.getDirectionByPosId(posId);
+          return (direct && this.posState[direct] && this.posState[direct].name) || ('玩家' + (Number(posId) + 1));
+        },
+        roomStatusText: function (desk) {
+          if (!desk) return '等待中';
+          if (desk.paused) return '对局暂停';
+          if (desk.state > 1) return '对局中';
+          if (this.deskBusyCount(desk) >= (desk.seatCount || (desk.positions || []).length)) return '满员待开';
+          if (this.deskBusyCount(desk) > 0) return '等待队友';
+          return '可加入';
+        },
+        seatInitial: function (position) {
+          if (!position || !position.state) return '+';
+          var name = position.userName || '客';
+          if (position.isBot) return 'AI';
+          return name.slice(0, 1);
+        },
+        deskHasBot: function (desk) {
+          if (!desk) return false;
+          if (Number(desk.botCount) > 0) return true;
+          return (desk.positions || []).some(function (position) { return !!position.isBot; });
+        },
+        joinOpenSeat: function (desk) {
+          if (!desk) return;
+          var pos = (desk.positions || []).find(function (p) { return p.state === 0; });
+          if (!pos) {
+            if (this.deskHasBot(desk)) return this.takeoverRandomBot(desk);
+            return layer.msg('房间已满，可先观战');
+          }
+          this.sitDown(desk.deskId, pos);
+        },
+        takeoverRandomBot: function (desk) {
+          if (!desk || !this.deskHasBot(desk)) return layer.msg('当前没有可接管的 AI');
+          layer.load({ type: 3 });
+          this.client.emit('TAKEOVER_BOT', { deskId: desk.deskId });
+        },
+        setAiDifficulty: function (value) {
+          if (!this.canEditAiDifficulty) {
+            return layer.msg(this.aiDifficultyLocked ? '本局已开始，AI 难度已锁定' : '只有房主可以调整 AI 难度');
+          }
+          this.client.emit('SET_AI_DIFFICULTY', { difficulty: value });
+          window.FX && FX.beep('chip');
+        },
+        copyRoomCode: function (code) {
+          code = String(code || '');
+          if (!code) return;
+          var done = function () { layer.msg('房号已复制：' + code); };
+          var escapeHtml = function (text) {
+            return String(text).replace(/[&<>"']/g, function (ch) {
+              return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
+            });
+          };
+          var showManualCopy = function () {
+            layer.msg('复制失败，请手动复制房号：' + code);
+            layer.open({
+              type: 1,
+              title: '手动复制房号',
+              shadeClose: true,
+              area: ['min(320px, 90vw)', 'auto'],
+              content: '<div style="padding:18px;text-align:center;">' +
+                '<div style="margin-bottom:10px;color:#666;">复制失败，请手动复制房号：</div>' +
+                '<textarea readonly style="box-sizing:border-box;width:100%;min-height:52px;padding:12px;text-align:center;font-size:22px;font-weight:bold;letter-spacing:2px;resize:none;" onclick="this.select()">' + escapeHtml(code) + '</textarea>' +
+                '</div>',
+              success: function (layero) {
+                var field = layero && layero[0] ? layero[0].querySelector('textarea') : null;
+                if (field) {
+                  field.focus();
+                  field.select();
+                }
+              }
+            });
+          };
+          var fallbackCopy = function () {
+            var field = document.createElement('textarea');
+            field.value = code;
+            field.setAttribute('readonly', 'readonly');
+            field.style.position = 'fixed';
+            field.style.left = '-9999px';
+            field.style.top = '0';
+            document.body.appendChild(field);
+            field.focus();
+            field.select();
+            var ok = false;
+            try {
+              ok = document.execCommand('copy');
+            } catch (e) {
+              ok = false;
+            }
+            document.body.removeChild(field);
+            if (ok) {
+              done();
+            } else {
+              showManualCopy();
+            }
+          };
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(code).then(done).catch(fallbackCopy);
+          } else {
+            fallbackCopy();
+          }
+        },
+        openRules: function () {
+          var isGd = this.selectedGameType === 'guandan' || this.gameType === 'guandan';
+          var isMahjong = this.selectedGameType === 'mahjong' || this.gameType === 'mahjong';
+          var title = isMahjong ? '麻将规则' : (isGd ? '掼蛋规则' : '斗地主规则');
+          var html = isMahjong
+            ? '<div class="rules-panel"><h3>麻将</h3><p>四人 136 张牌，每人起手 13 张，庄家先摸牌后出牌。</p><p>轮到自己时摸一张并打出一张；可对他人刚打出的牌执行吃、碰、杠、胡或过。</p><p>本版支持基础四组面子加一对将，以及七对；自摸和放铳都会结算本局。</p></div>'
+            : (isGd
+            ? '<div class="rules-panel"><h3>掼蛋</h3><p>四人两副牌，0/2 与 1/3 为对家。从 2 开始升级，红桃级牌为逢人配。</p><p>第一类：单张、对子、三连对、三同张、二连三、三带二、五张顺子。不同第一类牌型不能互压，三带二只比三同张大小。</p><p>连续牌型中 A 可作最小，也可作 K+1；例如 A2345、23456、10JQKA、AA2233、QQKKAA 均按顺序比较。</p><p>第二类：四张及以上炸弹、五张同花顺、天王炸。第二类可压任意第一类；炸弹张数优先，张数相同比点数。同花顺可压五张及以下炸弹，六张及以上炸弹更大；天王炸最大。</p><p>头游队伍按名次升级：双下 +3，二三名 +2，其余 +1。</p></div>'
+              : '<div class="rules-panel"><h3>斗地主</h3><p>三人叫分抢地主，地主拿底牌，地主一方对抗两名农民。</p><p>支持单/对/三带/顺子/连对/飞机/四带二/炸弹/王炸，炸弹和王炸翻倍。</p><p>房内可召唤 AI 对手，也可以使用智囊推荐出牌。</p></div>');
+          layer.open({
+            type: 1,
+            title: title,
+            shadeClose: true,
+            area: ['min(420px, 92vw)', 'auto'],
+            content: html
+          });
+        },
+        createRoom: function (isPrivate) {
+          layer.load({ type: 3 });
+          this.client.emit('CREATE_ROOM', { gameType: this.selectedGameType, isPrivate: !!isPrivate });
+        },
+        joinRoomByCode: function () {
+          if (!this.roomCodeInput) return layer.msg('请输入房号');
+          layer.load({ type: 3 });
+          this.client.emit('JOIN_ROOM', { roomCode: this.roomCodeInput });
+        },
+        getDesk: function (deskId) {
+          for (var i = 0, len = this.desks.length; i < len; i++) {
+            var desk = this.desks[i];
+            if (desk.deskId === deskId) {
+              return desk;
+            }
+          }
+          return null;
+        },
+        getPos: function (deskId, posId) {
+          var desk = this.getDesk(deskId);
+          if (desk) {
+            for (var i = 0, len = desk.positions.length; i < len; i++) {
+              var pos = desk.positions[i];
+              if (pos.posId === posId) {
+                return pos;
+              }
+            }
+          }
+          return null;
+        },
+        callScore: function (score) {
+          this.posState.self.callScore = score;
+          this.roomState.ctxPos = '';
+          this.client.emit('CALL_SCORE', { score: score });
+          if (window.FX) FX.beep('chip');
+        },
+        updateCtxInfo: function (data) {
+          var ctx = data;
+          var direction = this.getDirectionByPosId(ctx.ctxPos);
+          ctx.ctxPos = direction;
+          this.roomState.ctxPos = ctx.ctxPos;
+          this.roomState.ctxScore = ctx.ctxScore;
+          this.roomState.timeout = ctx.timeout;
+          if (ctx.calledScores) {
+            for (var key in ctx.calledScores) {
+              if (ctx.calledScores.hasOwnProperty(key)) {
+                var posId = Number(key);
+                var direct = this.getDirectionByPosId(posId);
+                this.posState[direct].callScore = ctx.calledScores[key];
+              }
+            }
+          }
+          this.startTimer(function () {
+            if (this.roomState.ctxPos == 'self') {
+              this.callScore(0);
+            }
+          });
+        },
+        startTimer: function () {
+          var timer = null;
+          return function (fn) {
+            var self = this;
+            if (timer) {
+              clearInterval(timer);
+              timer = null;
+              if (!fn) {
+                return;
+              }
+            }
+            timer = setInterval(function () {
+              self.roomState.timeout--;
+              if (self.roomState.timeout > 0 && self.roomState.timeout <= 5
+                && self.roomState.ctxPos === 'self' && !self.isSpec) {
+                window.FX && FX.beep('tick');
+              }
+              if (self.roomState.timeout <= 0) {
+                clearInterval(timer);
+                timer = null;
+                self.roomState.timeout = 0;
+                fn && fn.call(self);
+              }
+            }, 1000)
+
+          }
+        }(),
+        updateHouseStatus: function (deskId, posId, state) {
+          var pos = this.getPos(deskId, posId);
+          if (pos) {
+            pos.state = state;
+          }
+        },
+        //通过posId获取是哪个方向的坐位
+        getDirectionByPosId: function (posId) {
+          posId = Number(posId);
+          if (this.gameType === 'guandan' || this.gameType === 'mahjong') {
+            var pivot4 = this.isSpec ? 0 : Number(this.posId);
+            var mapping4 = {
+              0: { 0: 'self', 1: 'right', 2: 'top', 3: 'left' },
+              1: { 1: 'self', 2: 'right', 3: 'top', 0: 'left' },
+              2: { 2: 'self', 3: 'right', 0: 'top', 1: 'left' },
+              3: { 3: 'self', 0: 'right', 1: 'top', 2: 'left' }
+            };
+            return mapping4[pivot4] && mapping4[pivot4][posId];
+          }
+          // 斗地主观战者视角固定为：0->self(下), 1->right(右), 2->left(左)
+          var pivot = this.isSpec ? 0 : this.posId;
+          var mapping = {
+            0: {
+              0: 'self',
+              1: 'right',
+              2: 'left',
+              3: 'top',
+            },
+            1: {
+              1: 'self',
+              2: 'right',
+              0: 'left',
+              3: 'top',
+            },
+            2: {
+              2: 'self',
+              0: 'right',
+              1: 'left',
+              3: 'top',
+            }
+
+          }
+          return mapping[pivot] && mapping[pivot][posId];
+        },
+        playerPhotoStyle: function (player) {
+          var url = player && player.avatarUrl;
+          if (!url || player.isBot) return {};
+          return { backgroundImage: 'url("' + String(url).replace(/"/g, '\\"') + '")' };
+        },
+        cardPixelWidth: function () {
+          var w = window.innerWidth || this.viewportWidth || 1280;
+          var h = window.innerHeight || 720;
+          if (w <= 900 && h <= 480 && w > h) return 46;
+          if (w <= 640) return 54;
+          if (w <= 1024) return 70;
+          return 90;
+        },
+        handMaxWidth: function (zone) {
+          var w = window.innerWidth || this.viewportWidth || 1280;
+          var h = window.innerHeight || 720;
+          var compactLandscape = w <= 900 && h <= 480 && w > h;
+          if (compactLandscape) {
+            if (zone === 'self') return Math.max(260, w - 40);
+            if (zone === 'side') return Math.max(150, Math.min(180, Math.floor(w * 0.26)));
+            if (zone === 'top') return Math.max(120, Math.min(260, w - 260));
+            if (zone === 'ctxSelf') return Math.max(160, Math.min(260, Math.floor(w * 0.34)));
+            if (zone === 'ctxSide') return Math.max(140, Math.min(220, Math.floor(w * 0.28)));
+            if (zone === 'ctxTop') return Math.max(150, Math.min(240, Math.floor(w * 0.32)));
+            if (zone === 'kitty') return 130;
+          }
+          if (zone === 'self') return Math.max(260, w - (w <= 640 ? 64 : (w <= 768 ? 16 : 172)));
+          if (zone === 'side') return Math.max(180, Math.min(w <= 768 ? 190 : (w <= 1024 ? 190 : 280), Math.floor(w * 0.24)));
+          if (zone === 'top') return Math.max(260, Math.min(w <= 1024 ? 420 : 620, w - 360));
+          if (zone === 'ctxSelf') return Math.max(220, Math.min(w <= 768 ? w - 32 : 460, Math.floor(w * 0.42)));
+          if (zone === 'ctxSide') return Math.max(180, Math.min(w <= 1024 ? 280 : 360, Math.floor(w * 0.28)));
+          if (zone === 'ctxTop') return Math.max(220, Math.min(w <= 1024 ? 340 : 460, Math.floor(w * 0.38)));
+          if (zone === 'kitty') return 220;
+          return Math.max(260, Math.floor(w * 0.5));
+        },
+        handRowCount: function (cards, zone) {
+          var count = (cards && cards.length) || 0;
+          if (count <= 1 || (zone !== 'side' && zone !== 'top')) return 1;
+          var cardW = this.cardPixelWidth();
+          var maxW = this.handMaxWidth(zone);
+          var natural = 20;
+          return cardW + natural * (count - 1) > maxW ? 2 : 1;
+        },
+        handItemsPerRow: function (cards, zone) {
+          var count = (cards && cards.length) || 0;
+          return Math.max(1, Math.ceil(count / this.handRowCount(cards, zone)));
+        },
+        handRowOffset: function () {
+          return Math.max(26, Math.round(this.cardPixelHeight() * 0.34));
+        },
+        handGap: function (cards, zone) {
+          var count = (cards && cards.length) || 0;
+          if (count <= 1) return 0;
+          var cardW = this.cardPixelWidth();
+          var maxW = this.handMaxWidth(zone);
+          var isCtx = zone && zone.indexOf('ctx') === 0;
+          var natural = zone === 'kitty' ? 26 : (isCtx ? Math.max(24, Math.round(cardW * 0.38)) : 20);
+          var layoutCount = this.handItemsPerRow(cards, zone);
+          var gap = layoutCount <= 1 ? 0 : Math.floor((maxW - cardW) / (layoutCount - 1));
+          if (zone === 'self') {
+            gap = Math.max(8, Math.min(natural, gap));
+          } else {
+            var minGap = (zone === 'side' && (window.innerWidth || this.viewportWidth || 1280) <= 1024) ? 3 : (isCtx ? Math.max(16, Math.round(cardW * 0.24)) : 5);
+            gap = layoutCount <= 1 ? 0 : Math.max(minGap, Math.min(natural, gap));
+          }
+          return gap;
+        },
+        handWidth: function (cards, zone) {
+          var count = (cards && cards.length) || 0;
+          if (!count) return this.cardPixelWidth();
+          var layoutCount = this.handItemsPerRow(cards, zone);
+          return Math.ceil(this.cardPixelWidth() + this.handGap(cards, zone) * (layoutCount - 1));
+        },
+        handGroupStyle: function (cards, zone) {
+          var style = { width: this.handWidth(cards, zone) + 'px' };
+          if (this.handRowCount(cards, zone) > 1) {
+            style.height = (this.cardPixelHeight() + this.handRowOffset()) + 'px';
+          }
+          if (zone === 'ctxTop' && this.handRowCount(this.posState.top.cards, 'top') > 1) {
+            style.top = (this.tableTopSafePx() + this.cardPixelHeight() + this.handRowOffset() + 10) + 'px';
+          }
+          return style;
+        },
+        opponentCardStyle: function (cards, zone, index) {
+          var perRow = this.handItemsPerRow(cards, zone);
+          var row = this.handRowCount(cards, zone) > 1 ? Math.floor(index / perRow) : 0;
+          return {
+            left: (index % perRow) * this.handGap(cards, zone) + 'px',
+            top: row ? this.handRowOffset() + 'px' : 0,
+            zIndex: index + 1
+          };
+        },
+        tableTopSafePx: function () {
+          var w = window.innerWidth || this.viewportWidth || 1280;
+          var h = window.innerHeight || 720;
+          if (w <= 900 && h <= 480 && w > h) return 54;
+          if (w <= 480) return 146;
+          if (w <= 768) return 150;
+          if (w <= 1024) return 106;
+          return 86;
+        },
+        cardPixelHeight: function () {
+          return Math.round(this.cardPixelWidth() * 4 / 3);
+        },
+        updatePosStatus: function (posId, state, name, isBot, avatarUrl) {
+          var direct = this.getDirectionByPosId(posId);
+          if (!direct) return;
+          this.posState[direct].state = state;
+          if (name !== undefined && name !== null) {
+            this.posState[direct].name = name || '游客';
+          }
+          if (avatarUrl !== undefined && avatarUrl !== null) {
+            this.posState[direct].avatarUrl = avatarUrl || '';
+          }
+          // state 为 0 时清掉 isBot；否则按传入值更新（缺省保持原值）
+          if (state === 0) {
+            this.posState[direct].isBot = false;
+            this.posState[direct].avatarUrl = '';
+          } else if (typeof isBot === 'boolean') {
+            this.posState[direct].isBot = isBot;
+          }
+          this.posState[direct].isDizhu = false;
+          this.startTimer(false);
+
+        },
+        sitDown: function (deskId, pos) {
+          if (!pos) return;
+          if (pos.isBot) return this.takeoverRandomBot({ deskId: deskId, botCount: 1 });
+          if (pos.state === 0) {
+            layer.load({ type: 3 });
+            this.client.emit('SITDOWN', { deskId: deskId, posId: pos.posId });
+          }
+        },
+        exitRoom: function () {
+          // 主动离开与网络断线不同：主动退出后不再自动回到原桌。
+          this.clearRoomResume();
+          if (this.isSpec) {
+            this.client.emit('UNSPECTATE');
+          } else {
+            this.client.emit('UNSITDOWN');
+          }
+          layer.load({ type: 3 });
+        },
+        resetRoomStatus: function () {
+          this.clearRoomResume();
+          this.clearPauseCountdown();
+          this.where = 1;
+          this.posId = '';
+          this.deskId = '';
+          this.roomCode = '';
+          this.roomOwnerName = '';
+          this.aiDifficulty = 'normal';
+          this.isSpec = false;
+          this.gameType = 'doudizhu';
+          this.posState.self.state = 0;
+          this.roomState.state = 0;
+          this.applyPauseState(null);
+          this.roomState.ctxCard = { len: 0, key: '', type: '', ctxPos: '' };
+          this.posState.left.callScore = -1;
+          this.posState.right.callScore = -1;
+          this.posState.top.callScore = -1;
+          this.posState.self.callScore = -1;
+          this.posState.left.cards = [];
+          this.posState.right.cards = [];
+          this.posState.top.cards = [];
+          this.posState.self.cards = [];
+          this.posState.kitty.cards = [];
+          this.posState.left.ctxCards = [];
+          this.posState.right.ctxCards = [];
+          this.posState.top.ctxCards = [];
+          this.posState.self.ctxCards = [];
+          this.posState.left.isBot = false;
+          this.posState.right.isBot = false;
+          this.posState.top.isBot = false;
+          this.posState.self.isBot = false;
+          this.posState.left.avatarUrl = '';
+          this.posState.right.avatarUrl = '';
+          this.posState.top.avatarUrl = '';
+          this.posState.self.avatarUrl = (this.myUser && this.myUser.avatarUrl) || '';
+          this.scoreBoard = {};
+          this.scoreSeen = [];
+          this.lastRoundDelta = null;
+          this.guandanScore = { team0: 0, team1: 0 };
+          this.guandanLastOrder = [];
+          this.mahjong = {
+            wallCount: 0,
+            action: '',
+            ctxPos: '',
+            handCounts: { 0: 0, 1: 0, 2: 0, 3: 0 },
+            discards: { self: [], left: [], right: [], top: [] },
+            melds: { self: [], left: [], right: [], top: [] },
+            claimActions: [],
+            lastDiscard: null,
+            selectedTile: null,
+          };
+        },
+        bumpScore: function (name, delta) {
+          if (!name) return;
+          if (this.scoreSeen.indexOf(name) === -1) this.scoreSeen.push(name);
+          this.$set(this.scoreBoard, name, (this.scoreBoard[name] || 0) + delta);
+        },
+        getSelectdCards: function () {
+          return this.posState.self.cards.filter(function (card) {
+            return card.selected;
+          });
+        },
+        getCardIndex: function (pos, card) {
+          var cards = this.posState[pos].cards;
+          for (var i = 0, len = cards.length; i < len; i++) {
+            var item = cards[i];
+            if (card.value === item.value && card.type === item.type
+              && (card.deck == null || item.deck == null || Number(card.deck || 0) === Number(item.deck || 0))) {
+              return i;
+            }
+          }
+          return -1;
+        },
+        removeCards: function (pos, cards) {
+          cards.forEach(function (card) {
+            var index = this.getCardIndex(pos, card);
+            if (index !== -1) {
+              this.posState[pos].cards.splice(index, 1);
+            }
+          }.bind(this));
+        },
+
+
+        playCards: function (cards) {
+          if (this.roomState.state !== 2) {
+            return;
+          }
+          if (this.roomState.ctxPos !== 'self') {
+            return //layer.msg('未到出牌时间');
+          }
+
+          var cards = this.getSelectdCards();
+          if (this.gameType === 'doudizhu') {
+            var ret = validate(cards);
+            if (!ret.status) {
+              return layer.msg('你的牌不符合规则');
+            }
+          }
+
+          this.client.emit('PLAY_CARD', cards);
+        },
+        //不出
+        passCards: function () {
+          this.client.emit('PLAY_CARD', [])
+        },
+        autoPlayCards: function () {
+          if (this.roomState.ctxPos === 'self') {
+            var lastInfo = {
+              len: this.roomState.ctxCard.len,
+              key: this.roomState.ctxCard.key,
+              type: this.roomState.ctxCard.type,
+              ctxPos: this.roomState.ctxCard.ctxPos
+            };
+            if (this.gameType === 'guandan') {
+              var gdCards = [];
+              if (window.SmartAI) {
+                gdCards = SmartAI.guandan.suggest(this.posState.self.cards, lastInfo, this.buildCardAiOptions());
+              } else if (window.GuandanSuggest) {
+                gdCards = GuandanSuggest.suggest(this.posState.self.cards, lastInfo, this.buildCardAiOptions());
+              }
+              if (!gdCards.length && !this.roomState.ctxCard.len) gdCards = [this.posState.self.cards[0]];
+              this.client.emit('PLAY_CARD', gdCards);
+              return;
+            }
+            var cards = [];
+            if (window.SmartAI) cards = SmartAI.doudizhu.suggest(this.posState.self.cards, lastInfo, this.buildCardAiOptions());
+            else if (!lastInfo.len || lastInfo.ctxPos === 'self') cards = [this.posState.self.cards[0]];
+            this.client.emit('PLAY_CARD', cards);
+          }
+        },
+        prepare: function () {
+          layer.load({ type: 3 });
+          this.client.emit('PREPARE');
+        },
+        dragStart: function (e) {
+          e.preventDefault();
+        },
+        // 鼠标按下：开始拖拽多选；首张牌即刻翻面，并决定本次拖拽是"选中"还是"取消"
+        dragSelectStart: function (card, e) {
+          if (this.isSpec) return;
+          var target = !card.selected;
+          this._dragSelectMode = target;
+          this._dragSelectVisited = Object.create(null);
+          this._dragSelectVisited[card.value + '_' + card.type] = true;
+          card.selected = target;
+          if (window.FX) FX.beep('chip');
+        },
+        // 鼠标进入：若在拖拽中且尚未访问过此牌，则按当前 mode 设置
+        dragSelectOver: function (card) {
+          if (this.isSpec) return;
+          if (this._dragSelectMode == null) return;
+          var key = card.value + '_' + card.type;
+          if (this._dragSelectVisited[key]) return;
+          this._dragSelectVisited[key] = true;
+          if (card.selected !== this._dragSelectMode) {
+            card.selected = this._dragSelectMode;
+            if (window.FX) FX.beep('chip');
+          }
+        },
+        // 触屏：移动手指扫过多张牌
+        dragSelectTouchMove: function (e) {
+          if (this.isSpec) return;
+          if (this._dragSelectMode == null) return;
+          var t = e.touches && e.touches[0];
+          if (!t) return;
+          var el = document.elementFromPoint(t.clientX, t.clientY);
+          if (!el || !el.classList || !el.classList.contains('card')) return;
+            var key = el.getAttribute('data-card-key');
+          if (!key || this._dragSelectVisited[key]) return;
+          var parts = key.split('_');
+          var val = Number(parts[0]), typ = Number(parts[1]), deck = parts.length > 2 ? Number(parts[2]) : null;
+          var card = this.posState.self.cards.find(function (c) {
+            return c.value === val && c.type === typ && (deck == null || Number(c.deck || 0) === deck);
+          });
+          if (card) this.dragSelectOver(card);
+        },
+        dragSelectEnd: function () {
+          this._dragSelectMode = null;
+          this._dragSelectVisited = null;
+        },
+        selectCard: function (card) {
+          if (this.isSpec) return;
+          card.selected = !card.selected;
+          if (window.FX) FX.beep('chip');
+        },
+        initCards: function (cards) {
+          cards.forEach(function (cardGroup, index) {
+            cardGroup.cards.forEach(function (card) {
+              card.selected = false;
+            });
+            var posId = cardGroup.id;
+            if (this.gameType === 'doudizhu' && posId === 3) {
+              this.posState.kitty.cards = cardGroup.cards;
+              return;
+            }
+            var redirection = this.getDirectionByPosId(posId);
+            this.posState[redirection].cards = cardGroup.cards;
+          }.bind(this));
+        },
+        mahjongTileLabel: function (tile) {
+          if (!tile) return '';
+          var meta = MAHJONG_TILES[Number(tile.value)];
+          return tile.label || (meta && meta.label) || '牌';
+        },
+        mahjongTileClass: function (tile) {
+          var meta = tile && MAHJONG_TILES[Number(tile.value)];
+          return 'mahjong-tile-' + ((tile && tile.suit) || (meta && meta.suit) || 'honor');
+        },
+        mahjongHandCount: function (direct) {
+          if (!direct) return 0;
+          var pid = this.posIdForDirection(direct);
+          return Number(this.mahjong.handCounts[pid] || 0);
+        },
+        mahjongBackCount: function (direct) {
+          return Math.min(14, Math.max(0, this.mahjongHandCount(direct)));
+        },
+        mahjongWindForDirection: function (direct) {
+          return ['东', '南', '西', '北'][this.posIdForDirection(direct)] || '东';
+        },
+        isMahjongLastDiscard: function (direct, index) {
+          if (!this.mahjong.lastDiscard) return false;
+          var lastDirect = this.getDirectionByPosId(this.mahjong.lastDiscard.posId);
+          return lastDirect === direct && index === this.mahjong.discards[direct].length - 1;
+        },
+        posIdForDirection: function (direct) {
+          var pivot = this.isSpec ? 0 : Number(this.posId);
+          var map4 = {
+            0: { self: 0, right: 1, top: 2, left: 3 },
+            1: { self: 1, right: 2, top: 3, left: 0 },
+            2: { self: 2, right: 3, top: 0, left: 1 },
+            3: { self: 3, right: 0, top: 1, left: 2 }
+          };
+          return map4[pivot] && map4[pivot][direct] != null ? map4[pivot][direct] : 0;
+        },
+        initMahjongState: function (data) {
+          data = data || {};
+          this.mahjong.wallCount = Number(data.wallCount || 0);
+          this.mahjong.action = data.action || 'discard';
+          this.mahjong.ctxPos = data.ctxPos == null ? '' : data.ctxPos;
+          this.mahjong.handCounts = data.handCounts || { 0: 0, 1: 0, 2: 0, 3: 0 };
+          this.mahjong.claimActions = data.canActions || [];
+          this.mahjong.lastDiscard = data.lastDiscard || null;
+          var makeGroups = function (source, fallback) {
+            var groups = { self: [], left: [], right: [], top: [] };
+            for (var pid = 0; pid < 4; pid++) {
+              var direct = this.getDirectionByPosId(pid);
+              if (direct && source && source[pid]) groups[direct] = source[pid];
+            }
+            return groups;
+          }.bind(this);
+          this.mahjong.discards = makeGroups(data.discards);
+          this.mahjong.melds = makeGroups(data.melds);
+          this.mahjong.selectedTile = null;
+          this.mahjong.advice = null;
+        },
+        handleMahjongState: function (data) {
+          if (!data) return;
+          if (data.meld && data.meld.posId != null) {
+            var meldDirect = this.getDirectionByPosId(data.meld.posId);
+            if (meldDirect && this.posState[meldDirect] && data.meld.taken) {
+              this.removeCards(meldDirect, data.meld.taken);
+            }
+            if (window.FX) FX.beep('mahjong-' + (data.meld.type === 'angang' ? 'gang' : data.meld.type));
+          }
+          if (data.drawCard && Number(data.drawFor) === Number(this.posId) && !this.isSpec) {
+            data.drawCard.selected = false;
+            this.posState.self.cards.push(data.drawCard);
+            this.posState.self.cards.sort(function (a, b) { return Number(a.value) - Number(b.value); });
+          }
+          if (data.drawFor != null && window.FX) FX.beep('mahjong-draw');
+          this.initMahjongState(data);
+          this.roomState.state = 2;
+          this.roomState.ctxPos = this.getDirectionByPosId(data.ctxPos);
+          this.roomState.timeout = Number(data.timeout || 30);
+          if (data.action === 'claim') this.roomState.ctxPos = this.getDirectionByPosId(data.ctxPos);
+          this.startTimer(function () {
+            if (this.isSpec || this.gameType !== 'mahjong') return;
+            if (this.mahjong.claimActions.indexOf('pass') > -1) {
+              this.mahjongAction('pass');
+            } else if (this.mahjong.claimActions.indexOf('hu') > -1) {
+              this.mahjongAction('hu');
+            } else if (this.roomState.ctxPos === 'self' && this.mahjong.action === 'discard' && this.posState.self.cards.length) {
+              this.client.emit('MAHJONG_ACTION', { action: 'discard', card: this.posState.self.cards[this.posState.self.cards.length - 1] });
+            }
+          });
+        },
+        selectMahjongTile: function (tile) {
+          if (this.isSpec || this.gameType !== 'mahjong' || this.roomState.ctxPos !== 'self' || this.mahjong.action !== 'discard') return;
+          this.posState.self.cards.forEach(function (card) { card.selected = false; });
+          tile.selected = true;
+          this.mahjong.selectedTile = tile;
+          this.mahjong.advice = null;
+          if (window.FX) FX.beep('mahjong-select');
+        },
+        mahjongAction: function (action) {
+          if (this.isSpec || !action) return;
+          this.client.emit('MAHJONG_ACTION', { action: action });
+          this.mahjong.claimActions = [];
+          this.mahjong.advice = null;
+        },
+        mahjongDiscard: function () {
+          if (this.isSpec || !this.mahjong.selectedTile) return;
+          this.client.emit('MAHJONG_ACTION', { action: 'discard', card: this.mahjong.selectedTile });
+          this.mahjong.selectedTile = null;
+          this.mahjong.advice = null;
+          this.posState.self.cards.forEach(function (card) { card.selected = false; });
+        },
+        applySpectateSnapshot: function (snap) {
+          if (!snap) return;
+          if (snap.gameType) this.gameType = snap.gameType;
+          if (snap.aiDifficulty) this.aiDifficulty = snap.aiDifficulty;
+          if (snap.levelLabel) this.guandanLevelLabel = snap.levelLabel;
+          if (snap.levelRank) this.guandanLevelRank = snap.levelRank;
+          // 1) 手牌（仅渲染左/右位置，self 在观战模式不显示）
+          if (snap.cards) this.initCards(snap.cards);
+          if (snap.gameType === 'mahjong' && snap.mahjong) {
+            this.initMahjongState(snap.mahjong);
+            this.roomState.ctxPos = this.getDirectionByPosId(snap.mahjong.ctxPos);
+            this.roomState.state = 2;
+            this.roomState.timeout = Number(snap.timeout || 30);
+            if (!this.roomState.paused) this.startTimer(this.isSpec ? false : this.autoPlayCards.bind(this));
+            return;
+          }
+          // 2) 叫分历史
+          if (snap.callScores) {
+            Object.keys(snap.callScores).forEach(function (pid) {
+              var direct = this.getDirectionByPosId(Number(pid));
+              if (direct && this.posState[direct]) {
+                var s = snap.callScores[pid];
+                this.posState[direct].callScore = (s == null || s < 0) ? -1 : s;
+              }
+            }.bind(this));
+          }
+          // 3) 当前回合 & 状态
+          this.roomState.state = snap.status;
+          if (snap.ctxPosId !== '' && snap.ctxPosId != null) {
+            this.roomState.ctxPos = this.getDirectionByPosId(snap.ctxPosId);
+          }
+          if (snap.ctxScore) this.roomState.ctxScore = snap.ctxScore;
+          // 4) 地主已定 → 露底牌、标记地主
+          if (snap.status >= 2 && snap.dizhuPosId != null && snap.dizhuPosId !== '') {
+            var ddir = this.getDirectionByPosId(snap.dizhuPosId);
+            if (ddir && this.posState[ddir]) this.posState[ddir].isDizhu = true;
+            this.posState.kitty.cards = (snap.topCards || []).slice(0);
+          }
+          // 5) 上家牌信息（保证后续 CTX_PLAY_CHANGE 跟牌逻辑正确）
+          if (snap.lastCardInfo) {
+            this.roomState.ctxCard.len = snap.lastCardInfo.len || 0;
+            this.roomState.ctxCard.key = snap.lastCardInfo.key || '';
+            this.roomState.ctxCard.type = snap.lastCardInfo.type || '';
+            if (snap.lastCardInfo.posId !== '' && snap.lastCardInfo.posId != null) {
+              this.roomState.ctxCard.ctxPos = this.getDirectionByPosId(snap.lastCardInfo.posId);
+            }
+          }
+          this.roomState.timeout = Number(snap.timeout || (this.gameType === 'guandan' ? 45 : (this.roomState.state === 2 ? 30 : 15)));
+          if (!this.roomState.paused) this.startTimer(this.isSpec ? false : this.autoPlayCards.bind(this));
+        },
+
+        sendMessage: function (e) {
+          var el = this.$refs.msgInput;
+          var msg = (el && el.value || '').trim();
+          if (msg) {
+            this.client.emit('USER_MESSAGE', msg);
+          }
+          if (el) { el.value = ''; }
+          if (this.$refs.msgInput) {
+            this.$refs.msgInput.focus();
+          }
+        },
+        quickJoin: function () {
+          layer.load({ type: 3 });
+          this.client.emit('QUICK_JOIN', { gameType: this.selectedGameType });
+        },
+        // 大厅：统计某桌已落座人数
+        deskBusyCount: function (desk) {
+          var n = 0;
+          (desk.positions || []).forEach(function (p) { if (p.state > 0) n++; });
+          return n;
+        },
+        // 召唤 AI 对手
+        addBots: function () {
+          if (this.isSpec) return;
+          this.client.emit('ADD_BOTS');
+          window.FX && FX.beep('chip');
+        },
+        // 请走 AI
+        removeBots: function () {
+          if (this.isSpec) return;
+          this.client.emit('REMOVE_BOTS');
+          window.FX && FX.beep('chip');
+        },
+        // 观战
+        spectate: function (deskId) {
+          layer.load({ type: 3 });
+          this.client.emit('SPECTATE', { deskId: deskId });
+        },
+        // 静音切换
+        toggleMute: function () {
+          this.muted = !this.muted;
+          if (window.FX) FX.setMuted(this.muted);
+          else {
+            // FX 未就绪时延后应用
+            var self = this;
+            setTimeout(function () { window.FX && FX.setMuted(self.muted); }, 50);
+          }
+        },
+        buildCardAiOptions: function () {
+          var options = { seenCards: this.aiSeenCards.slice(0) };
+          if (this.gameType === 'guandan') {
+            options.levelRank = this.guandanLevelRank || this.rankFromLabel(this.guandanLevelLabel);
+            options.levelLabel = this.guandanLevelLabel;
+            options.lastIsPartner = this.roomState.ctxCard.ctxPos === 'top';
+            options.teammateCardCount = this.posState.top.cards.length;
+            options.opponentMinCardCount = Math.min(this.posState.left.cards.length || 99, this.posState.right.cards.length || 99);
+            return options;
+          }
+
+          var selfIsLandlord = !!this.posState.self.isDizhu;
+          var otherDirections = ['left', 'right'];
+          var opponents = otherDirections.filter(function (direct) {
+            return !!this.posState[direct].isDizhu !== selfIsLandlord;
+          }.bind(this));
+          var partners = otherDirections.filter(function (direct) {
+            return !!this.posState[direct].isDizhu === selfIsLandlord;
+          }.bind(this));
+          options.role = selfIsLandlord ? 'landlord' : 'farmer';
+          options.lastIsPartner = !selfIsLandlord && partners.indexOf(this.roomState.ctxCard.ctxPos) > -1;
+          options.partnerCardCount = partners.length ? this.posState[partners[0]].cards.length : 99;
+          options.opponentMinCardCount = opponents.length ? Math.min.apply(Math, opponents.map(function (direct) {
+            return this.posState[direct].cards.length;
+          }.bind(this))) : 99;
+          return options;
+        },
+        mahjongAiOptions: function () {
+          return {
+            openMelds: (this.mahjong.melds.self || []).length,
+            discards: this.mahjong.discards,
+            melds: this.mahjong.melds,
+            wallCount: this.mahjong.wallCount,
+            selfPos: 'self'
+          };
+        },
+        mahjongSuggest: function () {
+          if (this.isSpec || this.gameType !== 'mahjong' || !window.MahjongAI) return;
+          var advice;
+          if (this.mahjong.action === 'claim' && this.mahjong.claimActions.length && this.mahjong.lastDiscard) {
+            // 吃碰杠胡属于操作按钮，不由智囊代点，避免把 AI 决策和玩家操作混在一起。
+            this.mahjong.advice = null;
+            return;
+          }
+          if (this.roomState.ctxPos !== 'self' || this.mahjong.action !== 'discard') {
+            return;
+          }
+          advice = MahjongAI.suggestDiscard(this.posState.self.cards, this.mahjongAiOptions());
+          if (!advice.card) return;
+          var selected = this.posState.self.cards.find(function (tile) {
+            return Number(tile.value) === Number(advice.card.value);
+          });
+          if (!selected) return;
+          this.posState.self.cards.forEach(function (tile) { tile.selected = false; });
+          selected.selected = true;
+          this.mahjong.selectedTile = selected;
+          this.mahjong.advice = null;
+          window.FX && FX.beep('mahjong-select');
+        },
+        isCardAdvicePlayable: function (cards, lastInfo) {
+          if (!cards || !cards.length) return true;
+          if (this.gameType === 'doudizhu') {
+            var ret = validate(cards);
+            if (!ret.status) return false;
+            if (!lastInfo || !Number(lastInfo.len) || lastInfo.ctxPos === 'self') return true;
+            if (lastInfo.type === 'KING') return false;
+            for (var i = 0; i < ret.types.length; i++) {
+              var item = ret.types[i];
+              if (item.type === 'KING') return true;
+              if (lastInfo.type === 'AAAA' && item.type === 'AAAA' && Number(item.key) > Number(lastInfo.key)) return true;
+              if (lastInfo.type !== 'AAAA' && item.type === 'AAAA') return true;
+              if (item.type === lastInfo.type && ret.len === Number(lastInfo.len) && Number(item.key) > Number(lastInfo.key)) return true;
+            }
+            return false;
+          }
+          if (this.gameType === 'guandan' && window.GuandanSuggest && window.GuandanSuggest.analyze) {
+            var options = this.buildCardAiOptions();
+            var analyzed = window.GuandanSuggest.analyze(cards, options.levelRank);
+            if (!analyzed || !analyzed.status) return false;
+            if (!lastInfo || !Number(lastInfo.len) || lastInfo.ctxPos === 'self') return true;
+            var last = {
+              len: Number(lastInfo.len),
+              key: Number(lastInfo.key) || 0,
+              type: lastInfo.type || '',
+              bomb: !!lastInfo.bomb || ['BOMB', 'STRAIGHT_FLUSH', 'JOKER_BOMB'].indexOf(lastInfo.type) > -1,
+              bombPower: Number(lastInfo.bombPower) || (lastInfo.type === 'JOKER_BOMB' ? 100 : (lastInfo.type === 'STRAIGHT_FLUSH' ? 5.5 : (lastInfo.type === 'BOMB' ? Number(lastInfo.len) : 0)))
+            };
+            return window.GuandanSuggest.canBeat(analyzed, last);
+          }
+          return true;
+        },
+        // 智囊只负责自动勾选合法推荐牌；真正出牌仍由玩家手动点击“出牌”。
+        aiSuggest: function () {
+          if (this.isSpec) return;
+          if (this.roomState.state !== 2 || this.roomState.ctxPos !== 'self') {
+            return;
+          }
+          var lastInfo = {
+            len: this.roomState.ctxCard.len,
+            key: this.roomState.ctxCard.key,
+            type: this.roomState.ctxCard.type,
+            ctxPos: this.roomState.ctxCard.ctxPos
+          };
+          var detail = null;
+          if (this.gameType === 'guandan') {
+            if (window.SmartAI) detail = SmartAI.guandan.suggestDetailed(this.posState.self.cards, lastInfo, this.buildCardAiOptions());
+            else if (window.GuandanSuggest) detail = { cards: GuandanSuggest.suggest(this.posState.self.cards, lastInfo, this.buildCardAiOptions()), reason: '按当前牌型推荐' };
+          } else {
+            if (window.SmartAI) detail = SmartAI.doudizhu.suggestDetailed(this.posState.self.cards, lastInfo, this.buildCardAiOptions());
+            else if (window.AISuggest) detail = { cards: AISuggest.suggest(this.posState.self.cards, lastInfo), reason: '按当前牌型推荐' };
+          }
+          if (!detail) return;
+          var picks = detail.cards || [];
+          if (!picks || !picks.length) {
+            window.FX && FX.beep('tick');
+            return;
+          }
+          // 只解析并校验建议，确认合法后才自动勾选实体牌；不自动提交出牌。
+          var normalizedPicks = picks.map(function (pk) {
+            return { value: Number(pk.value), type: Number(pk.type) || 0, deck: pk.deck };
+          });
+          if (!this.isCardAdvicePlayable(normalizedPicks, lastInfo)) {
+            return;
+          }
+          var resolved = [];
+          var usedIndexes = {};
+          normalizedPicks.forEach(function (pk) {
+            for (var i = 0; i < this.posState.self.cards.length; i++) {
+              var c = this.posState.self.cards[i];
+              var deckOk = pk.deck == null || c.deck == null || Number(c.deck || 0) === Number(pk.deck || 0);
+              if (!usedIndexes[i] && Number(c.value) === pk.value && Number(c.type) === pk.type && deckOk) {
+                resolved.push(c);
+                usedIndexes[i] = true;
+                break;
+              }
+            }
+          }.bind(this));
+          if (resolved.length !== normalizedPicks.length) return;
+          this.posState.self.cards.forEach(function (c) { c.selected = false; });
+          resolved.forEach(function (c) { c.selected = true; });
+          window.FX && FX.beep('chip');
+          return;
+        }
+      },
+      computed: {
+        mahjongTurnText: function () {
+          if (this.mahjong.action === 'claim' && this.mahjong.claimActions.length) return '有牌可操作';
+          if (this.mahjong.action === 'claim') return '等待其他玩家响应';
+          var direct = this.getDirectionByPosId(this.mahjong.ctxPos);
+          return direct === 'self' ? '轮到你出牌' : (this.getNameByPosId(this.mahjong.ctxPos) + ' 摸牌');
+        },
+        pauseSeconds: function () {
+          return Math.max(0, Math.ceil(Number(this.roomState.pauseRemainingMs || 0) / 1000));
+        },
+        isRoomOwner: function () {
+          var currentName = (this.myUser && this.myUser.username) || (!this.isSpec && this.posState.self.name) || '';
+          return !!currentName && !!this.roomOwnerName && currentName === this.roomOwnerName;
+        },
+        aiDifficultyLocked: function () {
+          return this.roomState.state > 0 && this.roomState.state < 3;
+        },
+        canEditAiDifficulty: function () {
+          return !this.isSpec && this.isRoomOwner && !this.aiDifficultyLocked;
+        },
+        canCallPauseAI: function () {
+          if (this.isSpec || !this.roomState.paused || !this.roomOwnerName) return false;
+          return this.posState.self.name === this.roomOwnerName || (this.myUser && this.myUser.username === this.roomOwnerName);
+        },
+        topPlayerStyle: function () {
+          if (this.gameType !== 'guandan') return {};
+          var w = window.innerWidth || this.viewportWidth || 1280;
+          if (w <= 768) return {};
+          var topHandW = this.handWidth(this.posState.top.cards, 'top');
+          var avatarW = w <= 1024 ? 88 : 116;
+          var gap = w <= 1024 ? 10 : 18;
+          var left = Math.max(206, Math.round((w - topHandW) / 2 - avatarW - gap));
+          var top = this.tableTopSafePx() + Math.max(0, Math.round((this.cardPixelHeight() - 92) / 2));
+          return {
+            left: left + 'px',
+            top: top + 'px',
+            transform: w <= 1024 ? 'scale(0.78)' : 'none'
+          };
+        },
+        filteredRooms: function () {
+          return (this.desks || []).filter(function (room) {
+            return !this.selectedGameType || room.gameType === this.selectedGameType;
+          }.bind(this));
+        },
+        lobbyStats: function () {
+          var rooms = this.filteredRooms || [];
+          var players = 0;
+          var playing = 0;
+          rooms.forEach(function (room) {
+            players += this.deskBusyCount(room);
+            if (room.state > 1) playing++;
+          }.bind(this));
+          return { open: rooms.length, players: players, playing: playing };
+        },
+        currentRoomPlayers: function () {
+          var dirs = ['self', 'left', 'right', 'top'];
+          var n = 0;
+          dirs.forEach(function (direct) {
+            if (this.posState[direct] && this.posState[direct].state > 0) n++;
+          }.bind(this));
+          return n;
+        },
+        guandanTeams: function () {
+          var team0 = [0, 2].map(function (pid) { return this.getNameByPosId(pid); }.bind(this)).join(' / ');
+          var team1 = [1, 3].map(function (pid) { return this.getNameByPosId(pid); }.bind(this)).join(' / ');
+          return [
+            { name: '甲队', members: team0, score: this.guandanScore.team0 || 0 },
+            { name: '乙队', members: team1, score: this.guandanScore.team1 || 0 }
+          ];
+        },
+        // 是否还有空位（仅当玩家自己已入座时计算）
+        hasEmptySeat: function () {
+          if (this.isSpec) return false;
+          if (this.posState.self.state === 0) return false;
+          return (this.posState.left.state === 0) || (this.posState.right.state === 0)
+            || ((this.gameType === 'guandan' || this.gameType === 'mahjong') && this.posState.top.state === 0);
+        },
+        // 是否有 AI 在场
+        hasBotSeat: function () {
+          return this.posState.left.isBot || this.posState.right.isBot || this.posState.top.isBot;
+        },
+        // 记分板列表（按出现顺序）
+        scoreList: function () {
+          return this.scoreSeen.map(function (name) {
+            return { name: name, total: this.scoreBoard[name] || 0 };
+          }.bind(this));
+        }
+      }
+    })
+
+  </script>
+</body>
+
+</html>

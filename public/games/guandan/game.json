@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 2,
+  "id": "guandan",
+  "order": 13,
+  "discovery": {
+    "audiences": [
+      "single",
+      "multi"
+    ],
+    "popularRank": 13
+  },
+  "theme": {
+    "accent": "#cc9b42",
+    "dark": "#153f38"
+  },
+  "presentation": {
+    "title": "掼蛋",
+    "originalTitle": "CardRoomPro · Guandan",
+    "mark": "棋牌",
+    "category": "四人组队纸牌",
+    "tagline": "和对家打配合，用一手好牌争先出完。",
+    "description": "四人两副牌、固定对家和红桃级牌逢人配。开公开房或私密房邀请朋友，人数不足时召唤 AI 补齐座位。",
+    "tags": [
+      "棋牌",
+      "掼蛋",
+      "组队",
+      "好友联机"
+    ],
+    "play": {
+      "modes": "好友房间 / AI 补位 / 观战",
+      "players": "1–4 人参与，4 个座位",
+      "controls": "鼠标点击选择与操作",
+      "inputs": [
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "房间号邀请、公开房与实时观战",
+      "固定对家、级牌升级与逢人配",
+      "AI 陪练、出牌建议与断线恢复"
+    ],
+    "art": {
+      "cover": "/games/guandan/cover.svg",
+      "hero": "/games/guandan/cover.svg"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "hybrid",
+    "technology": "Vue 2 · Socket.IO · Node.js",
+    "license": "MIT；依赖组件许可见 THIRD_PARTY_NOTICES.md",
+    "sourceUrl": "https://github.com/TypeThe0ry/CardRoomPro",
+    "localization": "中文界面；保留原作玩法，接入自建服务运行时配置。",
+    "fit": "静态游戏页面与纯数据后端分离；和麻将共用 CARD_ROOM_SERVICE_URL。",
+    "highlights": [
+      "房间号邀请、公开房与实时观战",
+      "固定对家、级牌升级与逢人配",
+      "AI 陪练、出牌建议与断线恢复"
+    ],
+    "cautions": [
+      "包括 AI 陪练在内均需要牌房后端",
+      "采用访客与内存模式，重启不保留战绩和牌局",
+      "规则以本运行版本为准，并非所有地方掼蛋变体"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/guandan/index.html"
+    }
+  },
+  "capabilities": [
+    "audio",
+    "multiplayer",
+    "fullscreen",
+    "storage"
+  ],
+  "permissions": [
+    "fullscreen",
+    "autoplay"
+  ]
+}

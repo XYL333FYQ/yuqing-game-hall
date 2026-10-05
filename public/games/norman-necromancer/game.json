@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 2,
+  "id": "norman-necromancer",
+  "order": 26,
+  "discovery": {
+    "audiences": [
+      "single"
+    ],
+    "popularRank": 26
+  },
+  "theme": {
+    "accent": "#b587c3",
+    "dark": "#252a29"
+  },
+  "presentation": {
+    "title": "亡灵法师诺曼",
+    "originalTitle": "Norman the Necromancer",
+    "mark": "冒险",
+    "category": "亡灵冒险",
+    "tagline": "带着亡灵伙伴，穿过危机四伏的旅程。",
+    "description": "在横版竞技场抵挡敌人，施放法术，把倒下的敌人复活成亡灵伙伴。每关结束可用灵魂强化能力，组合出不同战斗流派。",
+    "tags": [
+      "冒险",
+      "动作",
+      "像素",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "WASD / 方向键移动，鼠标瞄准，左键施法，空格复活亡灵。",
+      "inputs": [
+        "keyboard",
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "带着亡灵伙伴，穿过危机四伏的旅程。",
+      "复活伙伴协助作战，每关结束可以选择新的法术与仪式。"
+    ],
+    "art": {
+      "cover": "/games/norman-necromancer/cover.png",
+      "hero": "/games/norman-necromancer/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "浏览器独立游戏运行包",
+    "license": "Unlicense",
+    "sourceUrl": "https://github.com/danprince/js13k-2022",
+    "localization": "中文菜单、操作提示和主要规则；保留原作署名。",
+    "fit": "独立运行包与 JSON 清单；无需新增 VPS 服务。",
+    "highlights": [
+      "带着亡灵伙伴，穿过危机四伏的旅程。"
+    ],
+    "cautions": [
+      "单人游戏，无需房间服务器；如有本地存档，不会自动跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/norman-necromancer/index.html"
+    }
+  },
+  "capabilities": [
+    "audio",
+    "fullscreen"
+  ],
+  "permissions": [
+    "fullscreen",
+    "autoplay"
+  ]
+}

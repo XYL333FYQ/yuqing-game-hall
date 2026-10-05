@@ -67,10 +67,10 @@ corepack pnpm server:fruit:dev
 ### 1) 部署静态大厅（Cloudflare Pages）
 
 由 `.github/workflows/deploy-cloudflare.yml` 自动完成。它会在部署**之前**
-把下面三个公开地址同步到 Pages 项目的运行时环境配置，再执行
+把下面五个公开地址同步到 Pages 项目的运行时环境配置，再执行
 `wrangler pages deploy dist --project-name=yuqing-game-hall`。
 
-同步是「先读、合并、再写」：只新增/覆盖这三个键，你在 Cloudflare 上手动加过的
+同步是「先读、合并、再写」：只新增/覆盖这五个键，你在 Cloudflare 上手动加过的
 其它变量会原样保留。想本地手动部署也可以用 `corepack pnpm deploy:cloudflare`，
 但那样不会同步运行时变量。
 
@@ -106,6 +106,8 @@ corepack pnpm server:config:test          # .env 生成与 Cloudflare 同步逻�
 
 ---
 
+新增棋牌及换 VPS 的操作说明：[BOARD_GAMES.md](BOARD_GAMES.md)。
+
 ## 部署配置清单
 
 ### A. GitHub Variables（Settings → Secrets and variables → Actions → Variables）
@@ -125,8 +127,10 @@ corepack pnpm server:config:test          # .env 生成与 Cloudflare 同步逻�
 | `FRUIT_PARTY_SERVICE_URL` | 果切房间服务公开地址 | `https://rooms.example.com` |
 | `SANCTUARY_RELAY_URL` | 庇护所中继公开地址 | `wss://sanctuary.example.com/socket` |
 | `WEBRTC_SERVICE_URL` | 自建 PeerJS 信令 + STUN/TURN 入口，**必须是不带路径的主机根地址** | `https://rtc.example.com` |
+| `CARD_ROOM_SERVICE_URL` | 掼蛋 / 麻将房间，独立 HTTPS 主机根地址 | `https://cards.example.com` |
+| `GOBANG_SERVICE_URL` | 五子棋房间 WebSocket | `wss://gobang.example.com/socket` |
 
-后三项留空是合法的：代表该服务还没部署，Actions 会把 Cloudflare 上对应变量清空，
+后五项服务地址留空是合法的：代表该服务还没部署，Actions 会把 Cloudflare 上对应变量清空，
 游戏会显示「联机服务未配置」。这是明确的降级状态，不是残缺服务。
 
 ### B. GitHub Secrets（同一页面的 Secrets）
@@ -148,7 +152,7 @@ corepack pnpm server:config:test          # .env 生成与 Cloudflare 同步逻�
 1. **DNS**：`rtc.example.com` → VPS IP；`turn.example.com` → VPS IP。
    两条都必须**关闭 Cloudflare 代理（灰云）**：TURN 不走 HTTP，WebSocket 也不希望被改写路径。
 2. **防火墙**：放行 `3478/tcp`、`3478/udp`、`49160–49200/udp`（443 用于 Nginx，应已有）。
-3. **HTTPS 证书**：为三个后端主机各申请一份（`nginx.example.conf` 里有示例路径）。
+3. **HTTPS 证书**：为五个后端主机各申请一份（`nginx.example.conf` 里有示例路径）。
 4. **Nginx**：按 `server-games/nginx.example.conf` 配置；其中 `rtc.example.com` 必须占用整站根路径。
 5. **Cloudflare Pages 项目**：项目名与 `PAGES_PROJECT`（默认 `yuqing-game-hall`）一致；
    如果项目还不存在，同步步骤会跳过并给出警告，`wrangler` 那步会自己报错。
@@ -170,13 +174,13 @@ Account 级别的 **Cloudflare Pages: Edit**。
 
 - Cloudflare Pages 只托管静态文件，不提供你的自定义 WebSocket 房间后端，也不跑信令；
 - 联机游戏请使用独立 VPS 服务，并通过 `https://` / `wss://` 给前端访问；
-- **WebRTC 游戏（孤堡尸潮、像素竞技场）只连雨晴自建的 PeerJS 信令 / STUN / TURN**。配置缺失时会明确提示“联机服务未配置”，不会偷偷回退到公共 PeerJS 服务，否则无法判断自建服务是否真的在工作；
+- **WebRTC 游戏（孤堡尸潮、像素竞技场、斗地主）只连雨晴自建的 PeerJS 信令 / STUN / TURN**。配置缺失时会明确提示“联机服务未配置”，不会偷偷回退到公共 PeerJS 服务，否则无法判断自建服务是否真的在工作；
 - TURN 凭据是 gateway 现场签发的短期临时凭据，永久密钥只存在于 VPS 的 `.env` 里；
 - 本地开发允许连接 `127.0.0.1`，但生产环境缺省配置会直接报错，避免误连静态站点。
 
 ### Cloudflare Pages 运行时变量
 
-这三个公开地址**不要**在 Cloudflare 后台手动维护：在 GitHub Variables 里设置
+这五个公开地址**不要**在 Cloudflare 后台手动维护：在 GitHub Variables 里设置
 （见上面的部署配置清单 A），`deploy-cloudflare.yml` 会在每次部署前自动同步过去。
 
 如果你确实想临时覆盖某个值，可以在 Pages 项目的 Settings → Environment variables 里改，
@@ -192,7 +196,7 @@ Account 级别的 **Cloudflare Pages: Edit**。
 # 可选：先更新果切浏览器运行包
 corepack pnpm build:fruit-party
 
-# 类型、Manifest、静态入口、边界与文本编码检查（含三个 VPS 服务的语法检查）
+# 类型、Manifest、静态入口、边界与文本编码检查（含五个 VPS 服务的语法检查）
 corepack pnpm check
 
 # 平台/游戏逻辑测试 + 果切服务测试 + 庇护所中继协议 smoke test
@@ -276,3 +280,8 @@ writeFileSync(file, text, { encoding: "utf8" });
 
 第三方运行包、上游归档与许可文件请分别遵循仓库中的审计与声明文档（如 `SOURCE_AUDIT.md`、`THIRD_PARTY_NOTICES.md` 等）。
 请勿因为“代码能跑”就默认拥有再分发或商用授权。
+
+
+## 新增中文游戏
+
+本批接入 20 款经营、动作、卡牌、解谜与塔防游戏；大厅展示 34 款游戏（项目有 35 份清单，含一个原有不可用条目）。清单、来源、玩法与部署说明见 [NEW_GAMES.md](NEW_GAMES.md)。这 20 款都是独立静态运行包，不需要新增 VPS 后端，主要菜单和关键规则提供中文。

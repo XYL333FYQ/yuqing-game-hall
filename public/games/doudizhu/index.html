@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>斗地主 · 好友牌局</title>
+<meta name="description" content="Dou Dizhu (Fight the Landlord) — play online with friends, peer-to-peer, no signup.">
+<link rel="icon" href="icons/icon-192.png">
+<meta name="theme-color" content="#123f27">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="斗地主">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="toast-wrap"></div>
+
+<!-- ===================== HOME ===================== -->
+<section id="screen-home" class="screen active">
+  <header class="home-head">
+    <h1 id="t-title">斗地主 Online</h1>
+    <p id="t-subtitle" class="muted"></p>
+    <div class="head-btns">
+      <button id="btn-bgm" class="ghost small">🎵</button>
+      <button id="btn-snd" class="ghost small">🔊</button>
+      <button id="btn-lang" class="ghost small">EN</button>
+      <button id="btn-help" class="ghost small"></button>
+    </div>
+  </header>
+
+  <div class="panel">
+    <label class="field-label" id="t-name"></label>
+    <input id="inp-name" maxlength="12" autocomplete="off">
+
+    <label class="field-label" id="t-mode"></label>
+    <div class="mode-grid">
+      <label class="mode-card"><input type="radio" name="mode" value="classic" checked>
+        <span class="mc-title" id="t-mclassic"></span><span class="mc-desc" id="t-mclassic-d"></span></label>
+      <label class="mode-card"><input type="radio" name="mode" value="duel">
+        <span class="mc-title" id="t-mduel"></span><span class="mc-desc" id="t-mduel-d"></span></label>
+      <label class="mode-card hidden"><input type="radio" name="mode" value="team">
+        <span class="mc-title" id="t-mteam"></span><span class="mc-desc" id="t-mteam-d"></span></label>
+    </div>
+
+    <label class="field-label" id="t-options"></label>
+    <div class="opt-grid">
+      <label class="opt"><input type="checkbox" id="opt-laizi">
+        <span><b id="t-olaizi"></b><i id="t-olaizi-d"></i></span></label>
+      <label class="opt"><input type="checkbox" id="opt-noshuffle">
+        <span><b id="t-onoshuffle"></b><i id="t-onoshuffle-d"></i></span></label>
+      <label class="opt"><input type="checkbox" id="opt-doubling" checked>
+        <span><b id="t-odoubling"></b><i id="t-odoubling-d"></i></span></label>
+      <label class="opt opt-base"><span><b id="t-obase"></b></span>
+        <select id="sel-base"><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option></select></label>
+    </div>
+
+    <div class="big-btns">
+      <button id="btn-create" class="primary"><b id="t-bcreate"></b><i id="t-bcreate-d"></i></button>
+      <button id="btn-practice"><b id="t-bpractice"></b><i id="t-bpractice-d"></i></button>
+    </div>
+  </div>
+
+  <div class="panel join-panel">
+    <label class="field-label" id="t-join"></label>
+    <div class="join-row">
+      <input id="inp-code" maxlength="4" autocomplete="off" autocapitalize="characters">
+      <button id="btn-join" class="primary"></button>
+    </div>
+    <button id="btn-diag" class="ghost small diag-btn"></button>
+    <div id="diag-out"></div>
+  </div>
+</section>
+
+<!-- ===================== ROOM (waiting) ===================== -->
+<section id="screen-room" class="screen">
+  <div class="panel room-panel">
+    <p class="muted" id="t-rcode"></p>
+    <div class="code-row"><span id="room-code" class="code"></span><button id="btn-copy" class="ghost small"></button></div>
+    <p class="muted" id="room-status"></p>
+    <div id="room-players"></div>
+    <div class="big-btns">
+      <button id="btn-start" class="primary"></button>
+      <button id="btn-leave-room"></button>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== GAME ===================== -->
+<section id="screen-game" class="screen">
+  <div id="table">
+    <div id="table-top">
+      <button id="btn-exit-game" class="ghost small">←</button>
+      <div id="center-info"></div>
+      <div class="top-right-btns">
+        <button id="btn-bgm2" class="ghost small">🎵</button>
+        <button id="btn-snd2" class="ghost small">🔊</button>
+        <button id="btn-lang2" class="ghost small">EN</button>
+        <button id="btn-help2" class="ghost small">?</button>
+      </div>
+    </div>
+    <div id="opp-row">
+      <div id="opp-left" class="opp-zone"></div>
+      <div id="table-mid"></div>
+      <div id="opp-right" class="opp-zone"></div>
+    </div>
+    <div id="my-zone">
+      <div id="my-lastplay"></div>
+      <div id="actions"></div>
+      <div id="my-hand"></div>
+      <div id="my-bar">
+        <div id="my-info"></div>
+        <div id="chat-bar"><button id="btn-chat" class="ghost small">💬</button></div>
+      </div>
+    </div>
+  </div>
+  <div id="chat-pop" class="hidden"></div>
+  <div id="settle-overlay" class="hidden"></div>
+</section>
+
+<!-- ===================== HELP ===================== -->
+<div id="help-modal" class="hidden">
+  <div class="help-box">
+    <div class="help-head"><h2 id="t-help-title"></h2><button id="btn-help-close" class="ghost small">✕</button></div>
+    <div id="help-body"></div>
+  </div>
+</div>
+
+<script src="../_shared/peerjs.min.js"></script>
+<script src="../_shared/yuqing-netdiag.js"></script>
+<script src="../_shared/yuqing-webrtc.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/sound.js"></script>
+<script src="js/music.js"></script>
+<script src="js/cards.js"></script>
+<script src="js/moves.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/game.js"></script>
+<script src="js/net.js"></script>
+<script src="js/ui.js"></script>
+
+</body>
+</html>

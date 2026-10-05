@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 2,
+  "id": "bounce-back",
+  "order": 24,
+  "discovery": {
+    "audiences": [
+      "single"
+    ],
+    "popularRank": 24
+  },
+  "theme": {
+    "accent": "#bd875c",
+    "dark": "#252a29"
+  },
+  "presentation": {
+    "title": "回旋镖勇者",
+    "originalTitle": "Bounce Back",
+    "mark": "动作",
+    "category": "随机地牢动作",
+    "tagline": "投出回旋镖、冲刺闪避，打穿十层荒野。",
+    "description": "随机地图里搜集宝石、购买道具，挑战不同敌人和最终首领。回旋镖要飞回来，走位和投掷时机同样重要。",
+    "tags": [
+      "动作",
+      "随机地图",
+      "成长",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "WASD 移动，鼠标瞄准，左键投掷，空格冲刺。",
+      "inputs": [
+        "keyboard",
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "投出回旋镖、冲刺闪避，打穿十层荒野。",
+      "冲刺可以躲避伤害，死亡后宝石仍保留，可继续买装备。"
+    ],
+    "art": {
+      "cover": "/games/bounce-back/cover.png",
+      "hero": "/games/bounce-back/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "浏览器独立游戏运行包",
+    "license": "GPL-2.0-or-later",
+    "sourceUrl": "https://github.com/js13kGames/bounce-back",
+    "localization": "中文菜单、操作提示和主要规则；保留原作署名。",
+    "fit": "独立运行包与 JSON 清单；无需新增 VPS 服务。",
+    "highlights": [
+      "投出回旋镖、冲刺闪避，打穿十层荒野。"
+    ],
+    "cautions": [
+      "单人游戏，无需房间服务器；如有本地存档，不会自动跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/bounce-back/index.html"
+    }
+  },
+  "capabilities": [
+    "audio",
+    "fullscreen"
+  ],
+  "permissions": [
+    "fullscreen",
+    "autoplay"
+  ]
+}

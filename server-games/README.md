@@ -26,6 +26,14 @@ GitHub Variables / Secrets
   → 健康检查 + 协议 smoke test
 ```
 
+## 后端镜像版本与回滚
+
+每次正常部署都会将五个后端镜像标记为当前 Git 提交的完整 SHA，并让 VPS 使用这些不可变标签，避免 `latest` 在失败或回滚时指向不确定版本。通过健康检查和协议验收后，工作流把成功版本写入 VPS 的 `.deployed-version`，并清理旧镜像；VPS 与 GHCR 都保留当前版本和上一成功版本。
+
+如需回滚，在 GitHub Actions 手动运行 **Deploy VPS Backends**：`image_sha` 留空会构建并部署工作流当前提交；填入一个 40 位小写提交 SHA，则直接拉取该已发布版本，不重建镜像。只能回滚到仍保留在 GHCR 中的版本；自动清理后通常可选当前版和上一版。
+
+GHCR 清理使用工作流的 `GITHUB_TOKEN`。仓库应保持对这些由该工作流发布的容器包有管理权限；若 GitHub 拒绝删除旧版本，部署仍会保持成功，但 Actions 会把 GHCR 清理步骤标为警告，旧包需要在 GitHub Packages 页面手动清理。VPS 端清理仅针对本项目五个后端镜像，不会清理 coturn、其他 Docker 镜像或卷。
+
 **不要手动编辑 `/opt/yuqing-game-hall/server-games/.env`**：下一次部署就会被覆盖。
 要改配置就去改 GitHub 上的 Variables / Secrets，然后到 Actions 页面 Run workflow
 （改配置不会触发 push 事件）。
@@ -58,6 +66,8 @@ GitHub Variables / Secrets
 | `fruit-party/` | 权威房间、比赛规则、比分和重连 | HTTP + WebSocket |
 | `sanctuarys-end/` | 只转发在线位置与聊天，不处理战斗和资源 | WebSocket |
 | `webrtc-gateway/` | PeerJS 信令、签发短期 TURN 凭据、`/health` | HTTP + WebSocket |
+| `card-room/` | 掼蛋 / 四人麻将，访客、AI、观战及房间规则 | HTTP + Socket.IO |
+| `gobang/` | 五子棋房间、回合与胜负校验 | WebSocket |
 | （compose 中的 `coturn`） | 自建 STUN + TURN，浏览器拿到的凭据由 gateway 签发 | STUN/TURN |
 
 本地手动调试（正式部署走 GitHub Actions，见上一节）：
@@ -69,7 +79,7 @@ docker compose up -d --build
 docker compose ps
 ```
 
-以上命令在 `server-games/` 目录执行；Docker 构建上下文仍是仓库根目录，因为果切服务会打包 `games/fruit-party/src/shared/` 中的共享比赛协议。三个服务的端口都只绑定到 VPS 的 `127.0.0.1`，公网通过 `nginx.example.conf` 的 HTTPS/WSS 反向代理访问；只有 coturn 直接对外暴露 `3478/tcp+udp` 与中继端口段。`.env` 中的 `ALLOWED_ORIGINS` 必须是 Cloudflare 游戏厅的完整来源，例如 `https://games.example.com`。
+以上命令在 `server-games/` 目录执行；Docker 构建上下文仍是仓库根目录，因为果切服务会打包 `games/fruit-party/src/shared/` 中的共享比赛协议。五个服务的端口都只绑定到 VPS 的 `127.0.0.1`，公网通过 `nginx.example.conf` 的 HTTPS/WSS 反向代理访问；只有 coturn 直接对外暴露 `3478/tcp+udp` 与中继端口段。`.env` 中的 `ALLOWED_ORIGINS` 必须是 Cloudflare 游戏厅的完整来源，例如 `https://games.example.com`。
 
 ## WebRTC 基础设施
 
@@ -138,3 +148,15 @@ WEBRTC_GATEWAY_URL=http://127.0.0.1:9000 WEBRTC_GATEWAY_ORIGIN=https://games.exa
 3. 用 `openssl rand -hex 32` 生成 `TURN_SHARED_SECRET` 并写入 `.env`；
 4. 在 Cloudflare Pages 设置 `WEBRTC_SERVICE_URL`；
 5. 用上面的 smoke test 与 `?debug=network` 面板做一次跨网络验收。
+
+## 新增棋牌
+
+部署、好友 / 单人玩法、固定上游版本及换 VPS 操作见 [BOARD_GAMES.md](../BOARD_GAMES.md)。新增牌房 8002 和五子棋 8792 只监听 VPS 回环地址，使用独立 HTTPS/WSS 反向代理。前端新增 `CARD_ROOM_SERVICE_URL` 与 `GOBANG_SERVICE_URL`，仍由 GitHub Variables 管理。牌房为访客内存模式，重启会清空战绩及房间。
+
+```bash
+pnpm --dir server-games/card-room test
+pnpm --dir server-games/gobang test
+# 对已部署服务执行相同双客户端协议验收：
+CARD_ROOM_URL=https://cards.example.com BOARD_ORIGIN=https://games.example.com pnpm --dir server-games/card-room test:smoke
+GOBANG_URL=wss://gobang.example.com/socket BOARD_ORIGIN=https://games.example.com pnpm --dir server-games/gobang test
+```

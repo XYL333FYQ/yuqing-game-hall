@@ -1,0 +1,75 @@
+<!doctype html>
+
+<html lang="zh-CN">
+
+<head><meta charset="utf-8"><script src="../_shared/game-chinese.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <title>可汗卡牌地牢</title>
+  <script type="module" crossorigin src="./assets/index-CTW5kLos.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-DBtvtHOZ.css">
+</head>
+
+<body>
+  <div id="board">
+    <div id="menubuttons">
+      <button id="music" class="pixel-border stopped">Music</button>
+      <button id="sfx" class="pixel-border">SFX</button>
+      <button id="tutorial" class="pixel-border hide">Help/Info</button>
+    </div>
+    <div id="deckdisplay" class="hide"></div>
+    <button id="confirmcard" disabled class="pixel-border hide">Confirm Card</button>
+    <div id="tutorialtext">
+      <button id="gotit" class="pixel-border hide">Ok, got it!</button>
+      <div id="overviewtext">目标：点击手牌，对敌人发动攻击，或给自己增加防御。先选卡牌，再点击目标出牌。体力耗尽后结束回合。<br><br>留意敌人的意图：下一回合它们可能攻击、防御或使用能力。每过一关，可以获得一张新卡或一种天赋。击败最后的西方之王即可通关。<br><br>防御 D：抵挡对应数值的伤害，持续一回合。<br>狂怒 E：攻击伤害增加 25%，持续指定回合数。<br>虚弱 W：攻击伤害降低 25%，防御增量降低 50%，持续指定回合数。<br><br>把鼠标放在状态和敌人意图图标上，可查看具体效果。</div>
+    </div>
+    <div id="overlay"></div>
+    <div id="context" class="hide">
+      <div id="message" class="pixel-border hide">
+        <div id="content">
+        </div>
+        <button class="pixel-border" id="context-close">Continue ...</button>
+      </div>
+    </div>
+    <div id="ground"></div>
+    <div id="title">
+      <h1>KHAN</h1>
+      <section id="menu">
+        <!-- <button id="continue" class="pixel-border">continue</button> -->
+        <button id="new" class="pixel-border">new game</button>
+        <div id="difficulty-wrapper" class="pixel-border">
+        Difficulty
+        <br/><br/>
+        <select id="difficulty">
+          <option value="1">Normal</option>
+          <option value="2">Challenging - Enemy Damage &amp; Defense Gain +50%</option>
+          <option value="3">Really Hard - Enemy Life, Damage &amp; Defense Gain +50%</option>
+          <option value="4">Maybe Impossible - Enemy Life, Attack, Defense Gain +100%</option>
+          <option value="5">Probably Impossible - Enemy Life, Attack, Defense Gain +150%</option>
+        </select>
+      </div>
+      </section>
+    </div>
+    <div id="game" class="hide">
+      <h2>
+        <div id="stage">Stage: 1 / 8</div>
+        <div id="round">Round: 1</div>
+        <div id="alert"></div>
+      </h2>
+      <div id="enemy">
+      </div>
+      <div id="player">
+        <button id="endturn" class="pixel-border">End Turn</button>
+        <button id="viewdeck" class="pixel-border">View Deck</button>
+      </div>
+      <div id="deck-done">
+        <div id="deck">Draw: 0</div>
+        <div id="stamina">Stamina: 0</div>
+        <div id="done">Discard: 0</div>
+      </div>
+      <div id="card-holder">
+      </div>
+    </div>
+  </div>
+<script src="../_shared/game-help.js" data-title="可汗卡牌地牢" data-controls="选择手牌后点击敌人或自己出牌；结束回合后等待敌人行动。升级时选择卡牌并确认。" data-tip="先看敌人下一回合的行动；防御与削弱能帮助你活到终点。"></script></body>
+</html>

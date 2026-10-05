@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 2,
+  "id": "gridland",
+  "order": 17,
+  "discovery": {
+    "audiences": [
+      "single"
+    ],
+    "popularRank": 17
+  },
+  "theme": {
+    "accent": "#769b69",
+    "dark": "#252a29"
+  },
+  "presentation": {
+    "title": "格子大陆",
+    "originalTitle": "Gridland",
+    "mark": "生存",
+    "category": "消除生存",
+    "tagline": "白天盖房，夜晚迎战，消除决定你的命运。",
+    "description": "白天交换图块收集资源、建设据点；入夜后同样的棋盘变成战场，要同时考虑武器、护甲与怪物。",
+    "tags": [
+      "生存",
+      "经营",
+      "消除",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "鼠标拖动相邻图块交换，连成三个或更多。",
+      "inputs": [
+        "keyboard",
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "白天盖房，夜晚迎战，消除决定你的命运。",
+      "白天可以慢慢规划，夜晚要留意敌人和生命。"
+    ],
+    "art": {
+      "cover": "/games/gridland/cover.png",
+      "hero": "/games/gridland/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "浏览器独立游戏运行包",
+    "license": "MPL-2.0",
+    "sourceUrl": "https://github.com/doublespeakgames/gridland",
+    "localization": "中文菜单、操作提示和主要规则；保留原作署名。",
+    "fit": "独立运行包与 JSON 清单；无需新增 VPS 服务。",
+    "highlights": [
+      "白天盖房，夜晚迎战，消除决定你的命运。"
+    ],
+    "cautions": [
+      "单人游戏，无需房间服务器；如有本地存档，不会自动跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/gridland/index.html"
+    }
+  },
+  "capabilities": [
+    "audio",
+    "fullscreen"
+  ],
+  "permissions": [
+    "fullscreen",
+    "autoplay"
+  ]
+}

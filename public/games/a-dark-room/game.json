@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 2,
+  "id": "a-dark-room",
+  "order": 16,
+  "discovery": {
+    "audiences": [
+      "single"
+    ],
+    "popularRank": 16
+  },
+  "theme": {
+    "accent": "#b67b45",
+    "dark": "#252a29"
+  },
+  "presentation": {
+    "title": "小黑屋",
+    "originalTitle": "A Dark Room",
+    "mark": "生存",
+    "category": "生存经营",
+    "tagline": "从一簇火开始，慢慢揭开荒野的秘密。",
+    "description": "先点亮火堆，收集木材、扩建村落，再带上装备探索荒野。故事和新玩法随着发展逐步展开。",
+    "tags": [
+      "生存",
+      "经营",
+      "冒险",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "鼠标点击按钮；探索时用方向键或 WASD。",
+      "inputs": [
+        "keyboard",
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "从一簇火开始，慢慢揭开荒野的秘密。",
+      "前期不要急着外出，先让村落稳定生产。"
+    ],
+    "art": {
+      "cover": "/games/a-dark-room/cover.png",
+      "hero": "/games/a-dark-room/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "浏览器独立游戏运行包",
+    "license": "MPL-2.0",
+    "sourceUrl": "https://github.com/doublespeakgames/adarkroom",
+    "localization": "中文菜单、操作提示和主要规则；保留原作署名。",
+    "fit": "独立运行包与 JSON 清单；无需新增 VPS 服务。",
+    "highlights": [
+      "从一簇火开始，慢慢揭开荒野的秘密。"
+    ],
+    "cautions": [
+      "单人游戏，无需房间服务器；如有本地存档，不会自动跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/a-dark-room/index.html"
+    }
+  },
+  "capabilities": [
+    "audio",
+    "fullscreen"
+  ],
+  "permissions": [
+    "fullscreen",
+    "autoplay"
+  ]
+}

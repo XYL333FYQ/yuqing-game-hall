@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 2,
+  "id": "super-castle",
+  "order": 25,
+  "discovery": {
+    "audiences": [
+      "single"
+    ],
+    "popularRank": 25
+  },
+  "theme": {
+    "accent": "#cb765a",
+    "dark": "#252a29"
+  },
+  "presentation": {
+    "title": "积木城堡",
+    "originalTitle": "Super Castle Game",
+    "mark": "动作",
+    "category": "积木解谜",
+    "tagline": "移动彩色积木，把零散方块组合成城堡。",
+    "description": "在立体棋盘上推动整组积木，把分散的方块连成完整城堡。不同方向与形状带来精巧关卡，支持重试和选关。",
+    "tags": [
+      "益智",
+      "解谜",
+      "建造",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "方向键或 WASD 移动；R 重试；可点击画面操作。",
+      "inputs": [
+        "keyboard",
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "移动彩色积木，把零散方块组合成城堡。",
+      "先观察同色积木的位置，移动的是整组方块。"
+    ],
+    "art": {
+      "cover": "/games/super-castle/cover.png",
+      "hero": "/games/super-castle/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "浏览器独立游戏运行包",
+    "license": "GPL-3.0-only",
+    "sourceUrl": "https://github.com/js13kGames/super-castle-game",
+    "localization": "中文菜单、操作提示和主要规则；保留原作署名。",
+    "fit": "独立运行包与 JSON 清单；无需新增 VPS 服务。",
+    "highlights": [
+      "移动彩色积木，把零散方块组合成城堡。"
+    ],
+    "cautions": [
+      "单人游戏，无需房间服务器；如有本地存档，不会自动跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/super-castle/index.html"
+    }
+  },
+  "capabilities": [
+    "audio",
+    "fullscreen"
+  ],
+  "permissions": [
+    "fullscreen",
+    "autoplay"
+  ]
+}

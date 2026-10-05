@@ -6,6 +6,7 @@
 //   CLOUDFLARE_ACCOUNT_ID
 //   PAGES_PROJECT              默认 yuqing-game-hall
 //   FRUIT_PARTY_SERVICE_URL / SANCTUARY_RELAY_URL / WEBRTC_SERVICE_URL
+//   CARD_ROOM_SERVICE_URL / GOBANG_SERVICE_URL
 //
 // 为什么需要这一步：Cloudflare Pages 的运行时变量是在**部署时**快照进该次部署的，
 // 所以必须在 `wrangler pages deploy` 之前同步，改动才会对本次部署生效。
@@ -13,7 +14,7 @@
 // 安全约定：
 //   - 项目 GET 的返回体里可能含有 secret 类型的值，因此**从不打印整个响应**，
 //     只打印被同步的键名；
-//   - 同步采用「先读、合并、再写」：只会新增/覆盖我们负责的三个键，
+//   - 同步采用「先读、合并、再写」：只会新增/覆盖我们负责的五个键，
 //     其它已有变量（包括用户手动加的）原样保留。
 import { realpathSync } from "node:fs";
 import { pathToFileURL } from "node:url";
@@ -22,6 +23,8 @@ export const MANAGED_KEYS = Object.freeze([
   "FRUIT_PARTY_SERVICE_URL",
   "SANCTUARY_RELAY_URL",
   "WEBRTC_SERVICE_URL",
+  "CARD_ROOM_SERVICE_URL",
+  "GOBANG_SERVICE_URL",
 ]);
 
 // 每个键允许的协议与是否允许带路径
@@ -31,6 +34,8 @@ const KEY_RULES = Object.freeze({
   SANCTUARY_RELAY_URL: { protocols: ["ws:", "wss:"], allowPath: true, label: "ws(s)" },
   // gateway 必须独占主机根路径：PeerJS 客户端会拼成 `<path>peerjs/id`
   WEBRTC_SERVICE_URL: { protocols: ["http:", "https:"], allowPath: false, label: "http(s)（不能带路径）" },
+  CARD_ROOM_SERVICE_URL: { protocols: ["http:", "https:"], allowPath: false, label: "http(s)（不能带路径）" },
+  GOBANG_SERVICE_URL: { protocols: ["ws:", "wss:"], allowPath: true, label: "ws(s)" },
 });
 
 function reject(message) {

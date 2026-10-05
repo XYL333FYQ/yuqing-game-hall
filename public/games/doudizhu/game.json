@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 2,
+  "id": "doudizhu",
+  "order": 12,
+  "discovery": {
+    "audiences": [
+      "single",
+      "duo",
+      "multi"
+    ],
+    "popularRank": 12
+  },
+  "theme": {
+    "accent": "#b84e38",
+    "dark": "#173b2b"
+  },
+  "presentation": {
+    "title": "斗地主",
+    "originalTitle": "Dou Dizhu Online",
+    "mark": "棋牌",
+    "category": "好友纸牌对战",
+    "tagline": "叫地主、打配合，约朋友开一桌。",
+    "description": "经典三人斗地主与二人对决，支持癞子和不洗牌玩法。邀请朋友用房间码加入，也可以让 AI 陪你单机练习。",
+    "tags": [
+      "棋牌",
+      "斗地主",
+      "好友联机",
+      "单人"
+    ],
+    "play": {
+      "modes": "经典三人 / 二人对决 / 癞子 / 不洗牌",
+      "players": "1–3 人",
+      "controls": "鼠标点击选择与操作",
+      "inputs": [
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "用房间码邀请一到两位朋友",
+      "空位由 AI 补齐，也可离线练习",
+      "出牌提示、快捷聊天与合成音效"
+    ],
+    "art": {
+      "cover": "/games/doudizhu/cover.svg",
+      "hero": "/games/doudizhu/cover.svg"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "hybrid",
+    "technology": "原生 JavaScript · PeerJS · WebRTC",
+    "license": "MIT；依赖组件许可见 THIRD_PARTY_NOTICES.md",
+    "sourceUrl": "https://github.com/DavidWang1231/doudizhu-online",
+    "localization": "中文界面；保留原作玩法，接入自建服务运行时配置。",
+    "fit": "复用现有自建 PeerJS/STUN/TURN；牌局由房主浏览器裁决，无专用游戏后端。",
+    "highlights": [
+      "用房间码邀请一到两位朋友",
+      "空位由 AI 补齐，也可离线练习",
+      "出牌提示、快捷聊天与合成音效"
+    ],
+    "cautions": [
+      "好友联机需配置 WEBRTC_SERVICE_URL",
+      "房主退出会结束好友牌局",
+      "仅用于好友休闲对局，不提供竞技反作弊保证"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/doudizhu/index.html"
+    }
+  },
+  "capabilities": [
+    "audio",
+    "multiplayer",
+    "fullscreen",
+    "storage"
+  ],
+  "permissions": [
+    "fullscreen",
+    "autoplay"
+  ]
+}

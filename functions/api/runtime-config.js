@@ -12,6 +12,8 @@ export function onRequestGet({ env }) {
       // 雨晴自建 WebRTC 基础设施（PeerJS 信令 + STUN + TURN）的公开入口。
       // 游戏只读取这个地址，不把 VPS 域名或 IP 写进源码。
       webrtcServiceUrl: publicServiceUrl(env.WEBRTC_SERVICE_URL, ["http:", "https:"]),
+      cardRoomServiceUrl: publicServiceUrl(env.CARD_ROOM_SERVICE_URL, ["http:", "https:"]),
+      gobangServiceUrl: publicServiceUrl(env.GOBANG_SERVICE_URL, ["ws:", "wss:"]),
     }, { headers: JSON_HEADERS });
   } catch (error) {
     console.error("Invalid public runtime configuration", error);

@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 2,
+  "id": "infernal-throne",
+  "order": 20,
+  "discovery": {
+    "audiences": [
+      "single"
+    ],
+    "popularRank": 20
+  },
+  "theme": {
+    "accent": "#cd6544",
+    "dark": "#252a29"
+  },
+  "presentation": {
+    "title": "夺回地狱王座",
+    "originalTitle": "Infernal Throne",
+    "mark": "动作",
+    "category": "探索闯关",
+    "tagline": "找回失去的力量，重返地狱王座。",
+    "description": "探索互相连通的地下世界，打败敌人、找回能力，解锁之前到不了的区域。地图与能力成长让路线逐渐展开。",
+    "tags": [
+      "动作",
+      "探索",
+      "冒险",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "方向键移动，Z 跳跃，X 攻击，C / V 使用能力，M 地图。",
+      "inputs": [
+        "keyboard",
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "找回失去的力量，重返地狱王座。",
+      "新能力也能帮助探索旧区域；不确定方向时查看地图。"
+    ],
+    "art": {
+      "cover": "/games/infernal-throne/cover.png",
+      "hero": "/games/infernal-throne/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "浏览器独立游戏运行包",
+    "license": "MIT",
+    "sourceUrl": "https://github.com/arikwex/infernal-sigil",
+    "localization": "中文菜单、操作提示和主要规则；保留原作署名。",
+    "fit": "独立运行包与 JSON 清单；无需新增 VPS 服务。",
+    "highlights": [
+      "找回失去的力量，重返地狱王座。"
+    ],
+    "cautions": [
+      "单人游戏，无需房间服务器；如有本地存档，不会自动跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/infernal-throne/index.html"
+    }
+  },
+  "capabilities": [
+    "audio",
+    "fullscreen"
+  ],
+  "permissions": [
+    "fullscreen",
+    "autoplay"
+  ]
+}

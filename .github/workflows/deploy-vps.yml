@@ -22,6 +22,12 @@ on:
       - ".dockerignore"
       - ".github/workflows/deploy-vps.yml"
   workflow_dispatch:
+    inputs:
+      image_sha:
+        description: "留空部署当前提交；填 40 位提交号可回滚到已保留的镜像版本"
+        required: false
+        type: string
+        default: ""
 
 concurrency:
   group: vps-production
@@ -49,14 +55,33 @@ jobs:
         with:
           version: "11.24.0"
 
+      # 正常部署构建当前提交；手动填写 image_sha 时只拉取既有镜像，用于回滚。
       - name: Prepare image names
         id: vars
         shell: bash
+        env:
+          IMAGE_SHA_INPUT: ${{ inputs.image_sha }}
         run: |
+          if [[ -n "$IMAGE_SHA_INPUT" ]]; then
+            if [[ ! "$IMAGE_SHA_INPUT" =~ ^[0-9a-f]{40}$ ]]; then
+              echo "::error::image_sha 必须是 40 位小写 Git 提交号。"
+              exit 1
+            fi
+            image_sha="$IMAGE_SHA_INPUT"
+            echo "rollback=true" >> "$GITHUB_OUTPUT"
+          else
+            image_sha="$GITHUB_SHA"
+            echo "rollback=false" >> "$GITHUB_OUTPUT"
+          fi
+
           repo_lc="${GITHUB_REPOSITORY,,}"
-          echo "fruit_image=ghcr.io/${repo_lc}-fruit-party:latest" >> "$GITHUB_OUTPUT"
-          echo "sanctuary_image=ghcr.io/${repo_lc}-sanctuary-relay:latest" >> "$GITHUB_OUTPUT"
-          echo "webrtc_image=ghcr.io/${repo_lc}-webrtc-gateway:latest" >> "$GITHUB_OUTPUT"
+          echo "image_sha=${image_sha}" >> "$GITHUB_OUTPUT"
+          echo "image_prefix=ghcr.io/${repo_lc}" >> "$GITHUB_OUTPUT"
+          echo "fruit_image=ghcr.io/${repo_lc}-fruit-party:${image_sha}" >> "$GITHUB_OUTPUT"
+          echo "sanctuary_image=ghcr.io/${repo_lc}-sanctuary-relay:${image_sha}" >> "$GITHUB_OUTPUT"
+          echo "webrtc_image=ghcr.io/${repo_lc}-webrtc-gateway:${image_sha}" >> "$GITHUB_OUTPUT"
+          echo "card_image=ghcr.io/${repo_lc}-card-room:${image_sha}" >> "$GITHUB_OUTPUT"
+          echo "gobang_image=ghcr.io/${repo_lc}-gobang:${image_sha}" >> "$GITHUB_OUTPUT"
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -66,9 +91,11 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Docker Buildx
+        if: steps.vars.outputs.rollback != 'true'
         uses: docker/setup-buildx-action@v3
 
       - name: Build and push Fruit Party server
+        if: steps.vars.outputs.rollback != 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -79,6 +106,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=fruit-party
 
       - name: Build and push Sanctuary relay
+        if: steps.vars.outputs.rollback != 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -89,6 +117,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=sanctuary-relay
 
       - name: Build and push WebRTC gateway
+        if: steps.vars.outputs.rollback != 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -97,6 +126,28 @@ jobs:
           tags: ${{ steps.vars.outputs.webrtc_image }}
           cache-from: type=gha,scope=webrtc-gateway
           cache-to: type=gha,mode=max,scope=webrtc-gateway
+
+      - name: Build and push Card room
+        if: steps.vars.outputs.rollback != 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: server-games/card-room/Dockerfile
+          push: true
+          tags: ${{ steps.vars.outputs.card_image }}
+          cache-from: type=gha,scope=card-room
+          cache-to: type=gha,mode=max,scope=card-room
+
+      - name: Build and push Gobang
+        if: steps.vars.outputs.rollback != 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: server-games/gobang/Dockerfile
+          push: true
+          tags: ${{ steps.vars.outputs.gobang_image }}
+          cache-from: type=gha,scope=gobang
+          cache-to: type=gha,mode=max,scope=gobang
 
       # ------------------------------------------------------------------
       # 生成生产 .env
@@ -159,6 +210,7 @@ jobs:
 
           ssh "$target" "mkdir -p '${remote_dir}'"
           scp server-games/docker-compose.prod.yml "${target}:${remote_dir}/docker-compose.prod.yml.incoming"
+          scp server-games/scripts/prune-deployed-images.sh "${target}:${remote_dir}/prune-deployed-images.sh.incoming"
           scp "$ENV_FILE" "${target}:${remote_dir}/.env.incoming"
 
           ssh "$target" "
@@ -167,6 +219,8 @@ jobs:
             chmod 600 .env.incoming
             mv -f .env.incoming .env
             mv -f docker-compose.prod.yml.incoming docker-compose.prod.yml
+            mv -f prune-deployed-images.sh.incoming prune-deployed-images.sh
+            chmod 700 prune-deployed-images.sh
           "
 
           # 校验落盘结果与本地生成的一致（能同时验证传输完整性与原子替换是否生效）
@@ -189,13 +243,31 @@ jobs:
             ssh "${VPS_USER}@${VPS_HOST}" \
             "docker login ghcr.io -u '${GHCR_USERNAME}' --password-stdin"
 
+      - name: Read previous deployed version
+        id: previous
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        shell: bash
+        run: |
+          previous_sha="$(ssh "${VPS_USER}@${VPS_HOST}" \
+            "cat /opt/yuqing-game-hall/server-games/.deployed-version 2>/dev/null || true" | tr -d '\r\n')"
+          if [[ -n "$previous_sha" && ! "$previous_sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::warning::VPS 上的 .deployed-version 无效，将只保留本次版本。"
+            previous_sha=""
+          fi
+          echo "previous_sha=${previous_sha}" >> "$GITHUB_OUTPUT"
+
       - name: Pull and restart backends
+        id: deploy
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           FRUIT_IMAGE: ${{ steps.vars.outputs.fruit_image }}
           SANCTUARY_IMAGE: ${{ steps.vars.outputs.sanctuary_image }}
           WEBRTC_IMAGE: ${{ steps.vars.outputs.webrtc_image }}
+          CARD_IMAGE: ${{ steps.vars.outputs.card_image }}
+          GOBANG_IMAGE: ${{ steps.vars.outputs.gobang_image }}
         shell: bash
         run: |
           ssh "${VPS_USER}@${VPS_HOST}" \
@@ -203,12 +275,15 @@ jobs:
              FRUIT_PARTY_IMAGE='${FRUIT_IMAGE}' \
              SANCTUARY_RELAY_IMAGE='${SANCTUARY_IMAGE}' \
              WEBRTC_GATEWAY_IMAGE='${WEBRTC_IMAGE}' \
+             CARD_ROOM_IMAGE='${CARD_IMAGE}' \
+             GOBANG_IMAGE='${GOBANG_IMAGE}' \
              docker compose --env-file .env -f docker-compose.prod.yml pull && \
              FRUIT_PARTY_IMAGE='${FRUIT_IMAGE}' \
              SANCTUARY_RELAY_IMAGE='${SANCTUARY_IMAGE}' \
              WEBRTC_GATEWAY_IMAGE='${WEBRTC_IMAGE}' \
-             docker compose --env-file .env -f docker-compose.prod.yml up -d --remove-orphans && \
-             docker image prune -f"
+             CARD_ROOM_IMAGE='${CARD_IMAGE}' \
+             GOBANG_IMAGE='${GOBANG_IMAGE}' \
+             docker compose --env-file .env -f docker-compose.prod.yml up -d --remove-orphans"
 
       - name: Verify backend health
         env:
@@ -219,20 +294,24 @@ jobs:
           ssh "${VPS_USER}@${VPS_HOST}" \
             "curl --fail --retry 10 --retry-delay 3 --retry-connrefused http://127.0.0.1:8790/api/health && \
              curl --fail --retry 10 --retry-delay 3 --retry-connrefused http://127.0.0.1:8787/health && \
-             curl --fail --retry 10 --retry-delay 3 --retry-connrefused http://127.0.0.1:9000/health"
+             curl --fail --retry 10 --retry-delay 3 --retry-connrefused http://127.0.0.1:9000/health && \
+             curl --fail --retry 10 --retry-delay 3 --retry-connrefused http://127.0.0.1:8002/health && \
+             curl --fail --retry 10 --retry-delay 3 --retry-connrefused http://127.0.0.1:8792/health"
 
       - name: Verify container health states
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
-          # 必须与 “Pull and restart backends” 传入完全相同的三个镜像变量。
-          # docker-compose.prod.yml 里三个镜像用的是 ${VAR:?} 必填语法，
+          # 必须与 “Pull and restart backends” 传入完全相同的五个镜像变量。
+          # docker-compose.prod.yml 里五个镜像用的是 ${VAR:?} 必填语法，
           # compose 在「解析配置」阶段就会校验，缺一个就直接报错退出——
           # 所以本步骤内每一次 docker compose 调用（含循环里的 ps 和最后的 ps）
           # 都必须能读到它们。
           FRUIT_IMAGE: ${{ steps.vars.outputs.fruit_image }}
           SANCTUARY_IMAGE: ${{ steps.vars.outputs.sanctuary_image }}
           WEBRTC_IMAGE: ${{ steps.vars.outputs.webrtc_image }}
+          CARD_IMAGE: ${{ steps.vars.outputs.card_image }}
+          GOBANG_IMAGE: ${{ steps.vars.outputs.gobang_image }}
         shell: bash
         run: |
           # “进程活着”不等于“服务可用”：这里额外要求 compose 自己的健康检查通过。
@@ -244,6 +323,8 @@ jobs:
              export FRUIT_PARTY_IMAGE='${FRUIT_IMAGE}' && \
              export SANCTUARY_RELAY_IMAGE='${SANCTUARY_IMAGE}' && \
              export WEBRTC_GATEWAY_IMAGE='${WEBRTC_IMAGE}' && \
+             export CARD_ROOM_IMAGE='${CARD_IMAGE}' && \
+             export GOBANG_IMAGE='${GOBANG_IMAGE}' && \
              for i in \$(seq 1 20); do \
                status=\$(docker compose --env-file .env -f docker-compose.prod.yml ps --format '{{.Service}}={{.Health}}' | sort); \
                if ! echo \"\$status\" | grep -qvE '=(healthy|running)\$'; then echo \"\$status\"; exit 0; fi; \
@@ -253,15 +334,20 @@ jobs:
 
       - name: Install backend test dependencies
         run: |
-          # 只装协议 smoke test 需要的两个工作区，不拖上整个前端依赖树。
+          # 只装协议 smoke test 需要的后端工作区，不拖上整个前端依赖树。
           pnpm install --frozen-lockfile \
             --filter @yuqing/sanctuary-relay \
-            --filter @yuqing/webrtc-gateway
+            --filter @yuqing/webrtc-gateway \
+            --filter @yuqing/card-room \
+            --filter @yuqing/gobang-server
 
       - name: Test the .env generator
         run: |
           # 生成逻辑本身也要有测试：配置有问题时必须失败并说清是哪一项。
           node --test server-games/scripts/generate-env.test.mjs
+
+      - name: Test image retention rules
+        run: node --test server-games/scripts/image-retention.test.mjs
 
       - name: Read the allowed browser Origin from the VPS
         id: allowed
@@ -290,8 +376,10 @@ jobs:
           ssh -f -N -o ExitOnForwardFailure=yes \
             -L 18787:127.0.0.1:8787 \
             -L 19000:127.0.0.1:9000 \
+            -L 18002:127.0.0.1:8002 \
+            -L 18792:127.0.0.1:8792 \
             "${VPS_USER}@${VPS_HOST}"
-          for port in 18787 19000; do
+          for port in 18787 19000 18002 18792; do
             for i in $(seq 1 15); do
               if (echo > "/dev/tcp/127.0.0.1/${port}") >/dev/null 2>&1; then break; fi
               sleep 1
@@ -314,6 +402,18 @@ jobs:
           # /health、/rtc-config（自建 STUN + 短期 TURN 凭据）、/peerjs/id 与 Origin 拒绝。
           pnpm --dir server-games/webrtc-gateway test:smoke
 
+      - name: Protocol smoke test — Card room
+        env:
+          CARD_ROOM_URL: http://127.0.0.1:18002
+          BOARD_ORIGIN: ${{ steps.allowed.outputs.origin }}
+        run: pnpm --dir server-games/card-room test:smoke
+
+      - name: Protocol smoke test — Gobang
+        env:
+          GOBANG_URL: ws://127.0.0.1:18792/socket
+          BOARD_ORIGIN: ${{ steps.allowed.outputs.origin }}
+        run: pnpm --dir server-games/gobang test
+
       - name: Check public STUN/TURN reachability
         continue-on-error: true
         env:
@@ -333,6 +433,44 @@ jobs:
           fi
           if ! node server-games/scripts/check-turn.mjs "$turn_ip" "${turn_port:-3478}"; then
             echo "::warning::自建 STUN/TURN 从公网不可达：请确认 DNS 指向 $turn_ip，并在 VPS 防火墙放行 UDP/TCP 3478 与中继端口段。"
+          fi
+
+      - name: Record deployed version
+        if: success()
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          IMAGE_SHA: ${{ steps.vars.outputs.image_sha }}
+        shell: bash
+        run: |
+          ssh "${VPS_USER}@${VPS_HOST}" \
+            "printf '%s\\n' '${IMAGE_SHA}' > /opt/yuqing-game-hall/server-games/.deployed-version.incoming && \
+             mv -f /opt/yuqing-game-hall/server-games/.deployed-version.incoming /opt/yuqing-game-hall/server-games/.deployed-version"
+
+      - name: Keep current and previous backend images
+        if: always() && steps.deploy.outcome == 'success'
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          IMAGE_PREFIX: ${{ steps.vars.outputs.image_prefix }}
+          IMAGE_SHA: ${{ steps.vars.outputs.image_sha }}
+          PREVIOUS_SHA: ${{ steps.previous.outputs.previous_sha }}
+        shell: bash
+        run: |
+          ssh "${VPS_USER}@${VPS_HOST}" \
+            "bash /opt/yuqing-game-hall/server-games/prune-deployed-images.sh \
+              '${IMAGE_PREFIX}' '${IMAGE_SHA}' '${PREVIOUS_SHA}'"
+
+      - name: Keep current and previous GHCR versions
+        if: always() && steps.deploy.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE_SHA: ${{ steps.vars.outputs.image_sha }}
+          PREVIOUS_SHA: ${{ steps.previous.outputs.previous_sha }}
+        run: |
+          if ! bash server-games/scripts/prune-ghcr-versions.sh \
+            "$IMAGE_SHA" "$PREVIOUS_SHA"; then
+            echo "::warning::GHCR 旧版本未能自动清理；VPS 部署已完成，请检查容器包权限并手动清理旧版本。"
           fi
 
       # 放在最后：它必须在上传步骤之后执行，否则会把还没上传的 .env 删掉。

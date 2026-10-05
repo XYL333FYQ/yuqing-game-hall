@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 2,
+  "id": "elematter",
+  "order": 30,
+  "discovery": {
+    "audiences": [
+      "single"
+    ],
+    "popularRank": 30
+  },
+  "theme": {
+    "accent": "#caa461",
+    "dark": "#252a29"
+  },
+  "presentation": {
+    "title": "元素防线",
+    "originalTitle": "Elematter",
+    "mark": "塔防",
+    "category": "塔防策略",
+    "tagline": "用有限资源筑起防线，守住一波又一波敌人。",
+    "description": "在入侵路线附近布局和强化防御，平衡收入与火力。随着敌人变强，旧的布阵也需要调整。",
+    "tags": [
+      "塔防",
+      "策略",
+      "防守",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "鼠标选择位置放置防御；根据界面提示升级和开始波次。",
+      "inputs": [
+        "keyboard",
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "用有限资源筑起防线，守住一波又一波敌人。",
+      "先覆盖路线的关键位置，升级往往比一味铺满更有效。"
+    ],
+    "art": {
+      "cover": "/games/elematter/cover.png",
+      "hero": "/games/elematter/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "浏览器独立游戏运行包",
+    "license": "MIT",
+    "sourceUrl": "https://github.com/jackrugile/elematter-js13k",
+    "localization": "中文菜单、操作提示和主要规则；保留原作署名。",
+    "fit": "独立运行包与 JSON 清单；无需新增 VPS 服务。",
+    "highlights": [
+      "用有限资源筑起防线，守住一波又一波敌人。"
+    ],
+    "cautions": [
+      "单人游戏，无需房间服务器；如有本地存档，不会自动跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/elematter/index.html"
+    }
+  },
+  "capabilities": [
+    "audio",
+    "fullscreen"
+  ],
+  "permissions": [
+    "fullscreen",
+    "autoplay"
+  ]
+}

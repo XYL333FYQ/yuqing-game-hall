@@ -1,0 +1,907 @@
+#context {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  background-color: rgba(0, 0, 0, .75);
+  opacity: 0;
+  transition: all 1s;
+  z-index: 1000;
+}
+
+#context.show {
+  opacity: 1;
+}
+
+#context.hide, #message.hide {
+  display: block;
+  z-index: -1;
+  opacity: 0;
+}
+
+#message {
+  color: #000;
+  position: absolute;
+  left: 10%;
+  top: 20%;
+  right: 10%;
+  bottom: 20%;
+  padding: 50px 50px;
+  background-color: #c0ae92;
+  font-size: 2.75rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+#context-close {
+  font-size: 3rem;
+}
+/* @keyframes pulse-intent {
+  0% {
+    transform: scale(-.33, .33);}
+  50% {
+    transform: scale(-.35, .35);
+  }
+  100% {
+    transform: scale(-.33, .33);}
+} */
+
+@keyframes changed {
+  0% {
+    transform: scale(1);
+  }
+
+  30% {
+    transform: scale(1);
+  }
+
+  70% {
+    transform: scale(1.5);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes bumpUp {
+  0% {
+    top: 0px;
+  }
+
+  10% {
+    top: 10px;
+  }
+
+  20% {
+    top: -20px;
+  }
+
+  100% {
+    top: 0px;
+  }
+}
+
+@keyframes bumpLeft {
+  0% {
+    left: 0px;
+  }
+
+  10% {
+    left: -50px;
+  }
+
+  100% {
+    left: 0px;
+  }
+}
+
+@keyframes bumpRight {
+  0% {
+    left: 0px;
+  }
+
+  10% {
+    left: 50px;
+  }
+
+  100% {
+    left: 0px;
+  }
+}
+
+@keyframes dead {
+  0% {
+    opacity: 100%;
+  }
+
+  50% {
+    opacity: 0%;
+    width: 13px;
+  }
+
+  100% {
+    width: 0px;
+    opacity: 0%;
+  }
+}
+
+#enemy {
+  position: absolute;
+  top: 36%;
+  left: 0px;
+  width: 60%;
+  display: flex;
+  justify-content: space-evenly;
+}
+
+#player {
+  position: absolute;
+  top: 36%;
+  left: 50%;
+  width: 50%;
+  display: flex;
+  justify-content: space-evenly;
+}
+
+.sprite-wrapper {
+  display: flex;
+  transform: scale(8, 8);
+  width: 13px;
+  height: 13px;
+  justify-content: center;
+  position: relative;
+  animation-duration: 1s;
+  animation-iteration-count: 1;
+}
+
+.sprite-wrapper.enemy {
+  transform: scale(-8, 8);
+}
+
+.sprite-wrapper.mounted {
+  width: 26px;
+}
+
+.sprite {
+  width: 13px;
+  height: 13px;
+  position: absolute;
+  z-index: 5;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.mounted .horse {
+  width: 26px;
+  height: 13px;
+  z-index: 4;
+}
+
+.mounted .sprite:not(.horse) {
+  top: -7px;
+  left: 7px;
+}
+
+.khan {
+  background: url('s.png') -52px 0;
+}
+
+.horse {
+  background: url('s.png') -65px 0;
+}
+
+.king {
+  background: url('s.png') 0 0;
+}
+
+.archer {
+  background: url('s.png') -13px 0;
+}
+
+.knight {
+  background: url('s.png') -26px 0;
+}
+
+.dervish {
+  background: url('s.png') -39px 0;
+}
+
+.snake {
+  background: url('s.png') 0px -13px;
+}
+
+.rok {
+  background: url('s.png') -13px -13px;
+}
+
+.wolf {
+  background: url('s.png') -26px -13px;
+}
+
+.bear1 {
+  background: url('s.png') -39px -13px;
+}
+
+.bear2 {
+  background: url('s.png') -52px -13px;
+}
+
+.intent {
+  width: 8px;
+  height: 13px;
+  transform: scale(-.33, .33);
+  position: relative;
+  top: -10px;
+  left: 1px;
+  /* animation-name: pulse-intent;
+  animation-duration: 1s;
+  animation-iteration-count: infinite; */
+}
+
+.assault {
+  background: url('s.png') -65px -13px;
+}
+
+.assault:hover:before, .defense:hover:before, .ability:hover:before {
+
+  font-size: .5rem;
+  position: absolute;
+  display: block;
+  top: -10px;
+  width: 150px;
+}
+
+.assault:hover:before {
+  content: "Planning to attack you!";
+}
+
+.assault-value {
+  display: block;
+  position: relative;
+  left: 8px;
+  top: -3px;
+}
+
+.intent:not(.assault) .assault-value {
+  display: none;
+}
+
+.defense:hover:before {
+  content: "Planning to defend itself!";
+}
+
+.defense {
+  background: url('s.png') -73px -13px;
+}
+
+.ability:hover:before {
+  content: "Planning something unpleasant!";
+}
+
+.ability {
+  background: url('s.png') -81px -13px;
+}
+
+.hp, .affects {
+  position: absolute;
+  border: 1px black solid;
+  min-width: 90px;
+  width: 90px;
+  height: 5px;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  bottom: -6px;
+  transform: scale(.25, .25);
+  z-index: 2;
+  text-shadow: 0px 0px 5px #000;
+  transition: all .25s;
+}
+
+.affects {
+  bottom: -10px;
+  border: none;
+  font-size: .75rem;
+}
+
+.affects div.changed {
+  animation-name: changed;
+  animation-duration: 1s;
+}
+
+.affects div {
+  text-shadow: 0px 0px 0px 0px #fff;
+  transition: all .5s;
+  margin: 0 5px;
+}
+
+.affects div:hover:before {
+  position: absolute;
+  top: 10px;
+  width: 160px;
+  text-align: left;
+}
+
+.affects div.armor:hover:before {
+  position: absolute;
+  top: 0px;
+  left: -40px;
+  width: 250%;
+}
+
+.stats .number {
+  position: relative;
+  z-index: 2;
+}
+
+.stats .fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+  background: red;
+  z-index: 1;
+  transition: width .5s;
+}
+
+.stats .fill.armored {
+  background: lightskyblue;
+}
+
+.armor {
+  position: absolute;
+  left: -15px;
+  top: -35px;
+}
+
+.armor:hover:before {
+  content: 'Defend: block X attack damage';
+  top: 20px;
+  width: 200%;
+}
+
+.weak:hover:before {
+  content: 'Weaken: Do 25% less damage and gain 50% less defence for X turns';
+}
+
+.enrage:hover:before {
+  content: 'Enrage: do 50% more damage for X turns';
+}
+
+/* .falter:hover:before {
+  content: 'Falter: do 25% less damage for X turns';
+} */
+
+.enemy .stats {
+  transform: scale(-.25, .25);
+}
+
+.targeting.targeted {
+  box-shadow: 0px 0px 12px 10px #c0ae92;
+  width: 0;
+  height: 0;
+  margin-top: 6px;
+}
+@keyframes pulse {
+    0% {
+        opacity: 100%;
+    }
+    50% {
+        opacity: 75%;
+    }
+    100% {
+        opacity: 100%;
+    }
+}
+
+* {
+    touch-action: manipulation;
+    user-select: none;
+    touch-action: none;
+}
+
+/* Get rid of any margins, set background black, use flexbox to center */
+html, body {
+    margin: 0;
+    background-color: #000;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    font-size: 14px;
+    font-family: luminari, Georgia;
+    image-rendering: pixelated;
+}
+
+.hide {
+    display: none;
+}
+
+button {
+    font-family: luminari, Georgia;
+    border: none;
+    background: none;
+    color: #000;
+    display: inline;
+    font-size: 8rem;
+    align-self: flex-start;
+    margin: 0 auto;
+    padding: 0 50px;
+    opacity: 1;
+}
+
+button:disabled {
+    opacity: .75;
+}
+
+button:hover:not(:disabled) {
+    text-shadow: 0 0 10px #fff;
+}
+
+button:active:not(:disabled) {
+    text-shadow: 0 0 10px #999;
+}
+
+#endturn {
+    position: absolute;
+    font-size: 2rem;
+    right: 25px;
+    top: 60px;
+}
+
+#viewdeck {
+    position: absolute;
+    font-size: 1.25rem;
+    right: 25px;
+    top: 200px;
+}
+
+#menu {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+}
+
+#difficulty-wrapper {
+    padding: 0 10px;
+    font-size: 2rem;
+    color: #000;
+}
+
+#difficulty {
+    background-color: #c0ae92;
+    font-family: inherit;
+    color: #000;
+    text-align: center;
+    min-width: 300px;
+    font-size: 2rem;
+}
+
+#title {
+    z-index: 2;
+}
+
+#board {
+    width: 1600px;
+    height: 900px;
+    outline: 0;
+    position: relative;
+    display: flex;
+    touch-action: manipulation;
+    user-select: none;
+    background: url('b.png');
+    background-repeat: repeat;
+    background-size: 66%;
+    overflow: hidden;
+}
+
+#menubuttons {
+    position: absolute;
+    left: 10px;
+    top: 20px;
+    z-index: 20000;
+}
+
+#menubuttons button {
+    font-size: 1.5rem;
+    padding: 0 5px;
+    margin: 0 5px;
+}
+
+#menubuttons button.stopped {
+    text-shadow: 0 0 4px red;
+}
+
+button#gotit {
+    position: absolute;
+    left: 50%;
+    top: 75%;
+    transform: translate(-50%, -50%);
+    font-size: 3rem;
+    z-index: 20000;
+}
+
+#overlay {
+    left: 0;
+    right: 0;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 10000;
+    box-shadow: inset 0px 0px 100px 50px #000;
+    pointer-events: none;
+}
+
+#game {
+    position: relative;
+    width: 100%;
+}
+#game h2 {
+    width: 100%;
+    text-align: center;
+}
+
+#stage {
+    font-size: 2.5rem;
+}
+
+#round {
+    font-size: 1.5rem;
+}
+
+#alert {
+    margin-top: 20px;
+    font-size: 3rem;
+    animation-name: pulse;
+    animation-duration: 1s;
+    animation-iteration-count: infinite;
+}
+
+#playing {
+    display: none;
+}
+
+#ground {
+    background-color: #503e32;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60%;
+    background: url('g.png');
+    background-repeat: repeat;
+    background-size: 50%;
+}
+#title {
+  text-align: center;
+  width: 100%;
+}
+
+h1 {
+  font-size: 10rem;
+  margin: 0 0 .67em;
+}
+
+#continue {
+  /* display: none; */
+}
+@keyframes flash {
+  0% {background-color: #fff;}
+  50% {background-color: red;}
+  100% {background-color: #fff;}
+}
+
+.flash {
+  animation-name: flash;
+  animation-duration: .25s;
+}
+
+#confirmcard {
+  position: absolute;
+  font-size: 2rem;
+  top: 45%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  opacity: 1;
+}
+
+#confirmcard.hide {
+  display: none;
+}
+
+#confirmcard:disabled {
+  opacity: .75;
+}
+
+#deckdisplay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, .75);
+  padding: 50px 100px 50px;
+  z-index: 100;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  z-index: 20001;
+  overflow: hidden;
+}
+
+#deckdisplay.hide {
+  display: none;
+}
+
+#deck-done {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 30%;
+  height: 10%;
+  display: flex;
+  text-align: center;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 0 50px;
+  font-size: 2rem;
+}
+
+#card-holder {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0px;
+  height: 30%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.card {
+  width: 190px;
+  min-width: 190px;
+  height: 285px;
+  max-height: 285px;
+  margin: 0 -15px 0;
+  display: flex;
+  font-family: monospace;
+  justify-content: flex-start;
+  align-items: center;
+  flex-direction: column;
+  color: #000;
+  transform: scale(.75);
+  transition: all .25s;
+  z-index: 10;
+  position: relative;
+  touch-action: none;
+  padding: 0 10px;
+  bottom: 0px;
+}
+
+.card.innate:not(:last-child) {
+  margin-left: 190px;
+}
+
+#deckdisplay .card.innate {
+  margin: 0 -15px 0;
+}
+
+.card:hover {
+  z-index: 100;
+  bottom: 60px;
+  transform: scale(1.25);
+  z-index: 20;
+}
+
+.card.selected {
+  z-index: 100;
+  bottom: 85px;
+  transform: scale(1.3);
+  z-index: 15;
+}
+
+.card div {
+  margin: 0 0 5px;
+}
+
+.detail {
+  flex-grow: 1;
+}
+
+.flavor {
+  font-style: italic;
+  font-size: .9rem;
+}
+
+.title, .body {
+  width: calc(100% - 20px);
+  padding: 10px;
+  border: 1px #000 solid;
+  background-color: #d8cab3;
+}
+
+.title {
+  text-transform: uppercase;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  font-size: 1.66rem;
+  margin-bottom: 10px;
+  font-weight: bold;
+  height: 45px;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  font-size: 1.25rem;
+  flex-grow: 1;
+}
+
+.top, .bottom {
+  width: 80%;
+  height: 35%;
+  border: 1px white solid;
+  text-align: center;
+  padding: 1%;
+}
+
+.cost {
+  font-size: 2.5rem;
+  font-weight: bold;
+  position: absolute;
+  left: -20px;
+  top: -30px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 25px;
+  background-color: #d8cab3;
+  /* box-shadow: 0px 0px 0px 1px #000; */
+  box-shadow:
+    inset 0px 0px 0px 2px #000, 
+    inset 0px 0px 0px 4px #fff;
+  
+}
+
+:root {
+	--pixel-bg: #c0ae92;
+	/* ↑ Inner background color */
+	
+	--pixel-border: black;
+	/* ↑ Inner border color */
+	
+	--pixel-border-2: white;
+	/* ↑ Middle border color */
+	
+	--pixel-border-3: var(--pixel-border);
+	/* ↑ Outer border color */
+	
+	--pixel: .125rem;
+	/* ↑ Pixel size */
+}
+
+.pixel-border {
+background: var(--pixel-bg);
+box-shadow:
+  
+/* Inner Background Color */
+  0 calc(var(--pixel) * -3) 0 calc(var(--pixel) * -1) var(--pixel-bg),
+  0 calc(var(--pixel) * 3) 0 calc(var(--pixel) * -1) var(--pixel-bg),
+  0 calc(var(--pixel) * -6) 0 calc(var(--pixel) * -2) var(--pixel-bg),
+  0 calc(var(--pixel) * 6) 0 calc(var(--pixel) * -2) var(--pixel-bg),
+  0 calc(var(--pixel) * -9) 0 calc(var(--pixel) * -4) var(--pixel-bg),
+  0 calc(var(--pixel) * 9) 0 calc(var(--pixel) * -4) var(--pixel-bg),
+  0 calc(var(--pixel) * -12) 0 calc(var(--pixel) * -6) var(--pixel-bg),
+  0 calc(var(--pixel) * 12) 0 calc(var(--pixel) * -6) var(--pixel-bg),
+  
+/* Pixel Border Layer 1 */
+  calc(var(--pixel) * -1) 0 0 0 var(--pixel-border),
+  var(--pixel) 0 0 0 var(--pixel-border),
+  0 calc(var(--pixel) * -2) 0 0 var(--pixel-border),
+  0 calc(var(--pixel) * 2) 0 0 var(--pixel-border),
+  0 calc(var(--pixel) * -5) 0 calc(var(--pixel) * -1) var(--pixel-border),
+  0 calc(var(--pixel) * 5) 0 calc(var(--pixel) * -1) var(--pixel-border),
+  0 calc(var(--pixel) * -7) 0 calc(var(--pixel) * -2) var(--pixel-border),
+  0 calc(var(--pixel) * 7) 0 calc(var(--pixel) * -2) var(--pixel-border),
+  0 calc(var(--pixel) * -10) 0 calc(var(--pixel) * -4) var(--pixel-border),
+  0 calc(var(--pixel) * 10) 0 calc(var(--pixel) * -4) var(--pixel-border),
+  0 calc(var(--pixel) * -13) 0 calc(var(--pixel) * -6) var(--pixel-border),
+  0 calc(var(--pixel) * 13) 0 calc(var(--pixel) * -6) var(--pixel-border),
+  
+/* Pixel Border Layer 2 */
+  calc(var(--pixel) * -2) 0 0 0 var(--pixel-border-2),
+  calc(var(--pixel) * 2) 0 0 0 var(--pixel-border-2),
+  0 calc(var(--pixel) * -1) 0 var(--pixel) var(--pixel-border-2), 
+  0 var(--pixel) 0 var(--pixel) var(--pixel-border-2),
+  0 calc(var(--pixel) * -4) 0 0 var(--pixel-border-2),
+  0 calc(var(--pixel) * 4) 0 0 var(--pixel-border-2),
+  0 calc(var(--pixel) * -6) 0 calc(var(--pixel) * -1) var(--pixel-border-2),
+  0 calc(var(--pixel) * 6) 0 calc(var(--pixel) * -1) var(--pixel-border-2),
+  0 calc(var(--pixel) * -8) 0 calc(var(--pixel) * -2) var(--pixel-border-2),
+  0 calc(var(--pixel) * 8) 0 calc(var(--pixel) * -2) var(--pixel-border-2),
+  0 calc(var(--pixel) * -11) 0 calc(var(--pixel) * -4) var(--pixel-border-2),
+  0 calc(var(--pixel) * 11) 0 calc(var(--pixel) * -4) var(--pixel-border-2),
+  0 calc(var(--pixel) * -14) 0 calc(var(--pixel) * -6) var(--pixel-border-2),
+  0 calc(var(--pixel) * 14) 0 calc(var(--pixel) * -6) var(--pixel-border-2),
+  
+/* Border Layer 3: --pixel-border-3 */
+  calc(var(--pixel) * -3) 0 0 0 var(--pixel-border-3),
+  calc(var(--pixel) * 3) 0 0 0 var(--pixel-border-3),
+  0 0 0 calc(var(--pixel) * 2) var(--pixel-border-3),
+  0 calc(var(--pixel) * -3) 0 var(--pixel) var(--pixel-border-3),
+  0 calc(var(--pixel) * 3) 0 var(--pixel) var(--pixel-border-3),
+  0 calc(var(--pixel) * -5) 0 0 var(--pixel-border-3),
+  0 calc(var(--pixel) * 5) 0 0 var(--pixel-border-3),
+  0 calc(var(--pixel) * -7) 0 calc(var(--pixel) * -1) var(--pixel-border-3),
+  0 calc(var(--pixel) * 7) 0 calc(var(--pixel) * -1) var(--pixel-border-3),
+  0 calc(var(--pixel) * -9) 0 calc(var(--pixel) * -2) var(--pixel-border-3), 
+  0 calc(var(--pixel) * 9) 0 calc(var(--pixel) * -2) var(--pixel-border-3),
+  0 calc(var(--pixel) * -12) 0 calc(var(--pixel) * -4) var(--pixel-border-3), 
+  0 calc(var(--pixel) * 12) 0 calc(var(--pixel) * -4) var(--pixel-border-3),
+  0 calc(var(--pixel) * -15) 0 calc(var(--pixel) * -6) var(--pixel-border-3), 
+  0 calc(var(--pixel) * 15) 0 calc(var(--pixel) * -6) var(--pixel-border-3);
+}
+.tutorial {
+  opacity: 1 !important;
+}
+
+.tutorial #deck:before,
+.tutorial #done:before,
+.tutorial #tutorialtext {
+  font-size: 2rem;
+  position: absolute;
+  z-index: 15000;
+}
+
+/* .tutorial #deck:before {
+  content: 'Draw Pile: Click to show the cards.';
+  top: -20px;
+}
+
+.tutorial #done:before {
+  content: 'Done Pile: Click to show the cards.';
+  top: -20px;
+  right: 50px;
+} */
+
+#tutorialtext {
+  display: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+}
+
+.tutorial #tutorialtext {
+  display: block;
+}
+
+#overviewtext {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  top: 5%;
+}

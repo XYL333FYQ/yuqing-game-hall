@@ -54,6 +54,40 @@ services:
       retries: 3
       start_period: 10s
 
+  card-room:
+    image: "${CARD_ROOM_IMAGE:?Set CARD_ROOM_IMAGE}"
+    restart: unless-stopped
+    environment:
+      HOST: 0.0.0.0
+      PORT: "8002"
+      NODE_ENV: production
+      ALLOWED_ORIGINS: "${ALLOWED_ORIGINS:?Set ALLOWED_ORIGINS in server-games/.env}"
+    ports:
+      - "127.0.0.1:8002:8002"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8002/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  gobang:
+    image: "${GOBANG_IMAGE:?Set GOBANG_IMAGE}"
+    restart: unless-stopped
+    environment:
+      HOST: 0.0.0.0
+      PORT: "8792"
+      NODE_ENV: production
+      ALLOWED_ORIGINS: "${ALLOWED_ORIGINS:?Set ALLOWED_ORIGINS in server-games/.env}"
+    ports:
+      - "127.0.0.1:8792:8792"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8792/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
   coturn:
     image: "${COTURN_IMAGE:-coturn/coturn:4.6.3}"
     restart: unless-stopped
