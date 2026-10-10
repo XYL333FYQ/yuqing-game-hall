@@ -14,6 +14,27 @@ permissions:
   contents: read
 
 jobs:
+  # 不绑定 Environment，故读取的只会是仓库（及组织）级变量/机密。
+  # 只检查是否为空，绝不输出凭据内容；防止旧香港地址被意外恢复。
+  verify-legacy-cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Assert legacy repository-level deployment credentials are absent
+        shell: bash
+        env:
+          LEGACY_VPS_HOST: ${{ secrets.VPS_HOST }}
+          LEGACY_VPS_USER: ${{ secrets.VPS_USER }}
+          LEGACY_VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          LEGACY_TURN_EXTERNAL_IP: ${{ vars.TURN_EXTERNAL_IP }}
+        run: |
+          set -euo pipefail
+          if [[ -n "$LEGACY_VPS_HOST" || -n "$LEGACY_VPS_USER" || -n "$LEGACY_VPS_SSH_KEY" || -n "$LEGACY_TURN_EXTERNAL_IP" ]]; then
+            echo "::error::仓库或组织级旧 VPS 凭据/旧 TURN_EXTERNAL_IP 仍可见；请只保留 malaysia Environment 的专属条目。"
+            exit 1
+          fi
+          echo "✓ 旧香港部署凭据及 TURN_EXTERNAL_IP 在仓库/组织级作用域均已不可见"
+
   public-multiplayer:
     runs-on: ubuntu-latest
     environment: malaysia
