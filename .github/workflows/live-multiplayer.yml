@@ -16,6 +16,7 @@ permissions:
 jobs:
   public-multiplayer:
     runs-on: ubuntu-latest
+    environment: malaysia
     timeout-minutes: 12
     steps:
       - name: Checkout repository tests
@@ -36,6 +37,84 @@ jobs:
             --filter @yuqing/webrtc-gateway \
             --filter @yuqing/card-room \
             --filter @yuqing/gobang-server
+
+      # 只验证 GitHub 配置是否存在、地址是否正确；绝不打印 Secret 内容。
+      - name: Audit effective Malaysia Secrets and shared Variables
+        shell: bash
+        env:
+          DEPLOY_TARGET_GUARD: ${{ vars.DEPLOY_TARGET_GUARD }}
+          MALAYSIA_PUBLIC_IP: ${{ vars.MALAYSIA_PUBLIC_IP }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_READ_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
+          TURN_SHARED_SECRET: ${{ secrets.TURN_SHARED_SECRET }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ALLOWED_ORIGINS: ${{ vars.ALLOWED_ORIGINS }}
+          TURN_PUBLIC_HOST: ${{ vars.TURN_PUBLIC_HOST }}
+          TURN_REALM: ${{ vars.TURN_REALM }}
+          TURN_EXTERNAL_IP: ${{ vars.TURN_EXTERNAL_IP }}
+          TURN_PORT: ${{ vars.TURN_PORT }}
+          TURN_MIN_PORT: ${{ vars.TURN_MIN_PORT }}
+          TURN_MAX_PORT: ${{ vars.TURN_MAX_PORT }}
+          TURN_CREDENTIAL_TTL_SECONDS: ${{ vars.TURN_CREDENTIAL_TTL_SECONDS }}
+          FRUIT_PARTY_SERVICE_URL: ${{ vars.FRUIT_PARTY_SERVICE_URL }}
+          SANCTUARY_RELAY_URL: ${{ vars.SANCTUARY_RELAY_URL }}
+          WEBRTC_SERVICE_URL: ${{ vars.WEBRTC_SERVICE_URL }}
+          CARD_ROOM_SERVICE_URL: ${{ vars.CARD_ROOM_SERVICE_URL }}
+          GOBANG_SERVICE_URL: ${{ vars.GOBANG_SERVICE_URL }}
+        run: |
+          node --input-type=module <<'NODE'
+          const e = process.env;
+          const requiredSecrets = [
+            "VPS_HOST", "VPS_USER", "VPS_SSH_KEY", "GHCR_USERNAME",
+            "GHCR_READ_TOKEN", "TURN_SHARED_SECRET", "CLOUDFLARE_API_TOKEN",
+            "CLOUDFLARE_ACCOUNT_ID",
+          ];
+          for (const key of requiredSecrets) {
+            if (!e[key]) throw new Error(`缺少 Secret：${key}`);
+          }
+          if (e.DEPLOY_TARGET_GUARD !== "malaysia" ||
+              e.MALAYSIA_PUBLIC_IP !== "85.211.247.254" ||
+              e.VPS_HOST !== e.MALAYSIA_PUBLIC_IP ||
+              e.TURN_EXTERNAL_IP !== e.MALAYSIA_PUBLIC_IP ||
+              e.VPS_USER !== "azureuser") {
+            throw new Error("Malaysia 环境的专属部署变量不一致");
+          }
+          if (!e.ALLOWED_ORIGINS?.split(",").includes("https://game.xyllovefyq.cc.cd")) {
+            throw new Error("ALLOWED_ORIGINS 未包含正式游戏厅来源");
+          }
+          if (e.TURN_PUBLIC_HOST !== "turn.xyllovefyq.cc.cd" ||
+              e.TURN_REALM !== "turn.xyllovefyq.cc.cd" ||
+              e.TURN_PORT !== "3478" ||
+              e.TURN_MIN_PORT !== "49160" ||
+              e.TURN_MAX_PORT !== "49200" ||
+              !Number.isInteger(Number(e.TURN_CREDENTIAL_TTL_SECONDS)) ||
+              Number(e.TURN_CREDENTIAL_TTL_SECONDS) < 300) {
+            throw new Error("TURN 共享变量与已部署的公网配置不一致");
+          }
+          const frontendServices = {
+            FRUIT_PARTY_SERVICE_URL: "rooms.xyllovefyq.cc.cd",
+            SANCTUARY_RELAY_URL: "sanctuary.xyllovefyq.cc.cd",
+            WEBRTC_SERVICE_URL: "rtc.xyllovefyq.cc.cd",
+            CARD_ROOM_SERVICE_URL: "cards.xyllovefyq.cc.cd",
+            GOBANG_SERVICE_URL: "gobang.xyllovefyq.cc.cd",
+          };
+          for (const [key, host] of Object.entries(frontendServices)) {
+            const value = e[key];
+            if (!value) throw new Error(`缺少前端服务变量：${key}`);
+            let url;
+            try { url = new URL(value); }
+            catch { throw new Error(`前端变量 URL 格式不正确：${key}`); }
+            if (url.hostname !== host || !["https:", "wss:"].includes(url.protocol)) {
+              throw new Error(`前端变量仍未使用正式 HTTPS/WSS 域名：${key}`);
+            }
+            console.log(`✓ ${key} 指向正确的正式域名`);
+          }
+          console.log("✓ Malaysia 环境机密存在且主机匹配；共享 TURN 参数正确");
+          NODE
 
       - name: Public dual-client Sanctuary and Fruit Party
         run: node --test .github/scripts/live-public-multiplayer.mjs
