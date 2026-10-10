@@ -14,13 +14,15 @@ on:
     branches: [main]
     paths:
       - "server-games/**"
+      # 文档修改不需要重启正在进行的香港对局。
+      - "!server-games/README.md"
       - "games/fruit-party/src/shared/**"
       - "public/games/littlejs-arcade/**"
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - ".dockerignore"
-      - ".github/workflows/deploy-vps.yml"
+      # 修改部署工作流本身也不应自动重启线上服务器。
   workflow_dispatch:
     inputs:
       deploy_target:
