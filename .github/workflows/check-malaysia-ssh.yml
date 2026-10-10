@@ -1,0 +1,66 @@
+name: Check Malaysia SSH
+
+# 只验证 GitHub Actions -> Azure SSH 连接、部署目录与 Docker 权限。
+# 不构建/推送镜像，不改容器，不改 DNS，不触发香港部署。
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-malaysia:
+    name: Verify Malaysia SSH access
+    runs-on: ubuntu-latest
+    environment: malaysia
+    timeout-minutes: 5
+    steps:
+      - name: Validate Malaysia-only configuration
+        shell: bash
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          MALAYSIA_PUBLIC_IP: ${{ vars.MALAYSIA_PUBLIC_IP }}
+          DEPLOY_TARGET_GUARD: ${{ vars.DEPLOY_TARGET_GUARD }}
+          TURN_EXTERNAL_IP: ${{ vars.TURN_EXTERNAL_IP }}
+        run: |
+          set -euo pipefail
+          if [[ "$DEPLOY_TARGET_GUARD" != "malaysia" || -z "$MALAYSIA_PUBLIC_IP" ]]; then
+            echo "::error::malaysia 环境缺少部署标识或 Azure IP。"
+            exit 1
+          fi
+          if [[ "$VPS_HOST" != "$MALAYSIA_PUBLIC_IP" || "$TURN_EXTERNAL_IP" != "$MALAYSIA_PUBLIC_IP" ]]; then
+            echo "::error::VPS_HOST、TURN_EXTERNAL_IP 与马来西亚环境 IP 不匹配。"
+            exit 1
+          fi
+          if [[ -z "$VPS_USER" || -z "$VPS_SSH_KEY" ]]; then
+            echo "::error::malaysia 环境缺少 VPS_USER 或 VPS_SSH_KEY。"
+            exit 1
+          fi
+          echo "马来西亚部署配置匹配，通过。"
+
+      - name: Test SSH and Docker without changing the server
+        shell: bash
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p "$HOME/.ssh"
+          key_file="$(mktemp "$HOME/.ssh/yuqing-check-XXXXXX")"
+          trap 'rm -f "$key_file"' EXIT
+          printf '%s\n' "$VPS_SSH_KEY" > "$key_file"
+
+          # 初次连通检查仅将 SSH host key 写入本次 runner 临时 known_hosts。
+          # 正式使用前，需把该指纹与 Azure 机器本地的 host key 指纹核对。
+          ssh-keyscan -T 10 -t ed25519 "$VPS_HOST" > "$HOME/.ssh/known_hosts"
+          test -s "$HOME/.ssh/known_hosts"
+          ssh-keygen -lf "$HOME/.ssh/known_hosts"
+
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=12 \
+            -i "$key_file" "${VPS_USER}@${VPS_HOST}" \
+            'set -eu; printf "remote_user="; whoami; printf "hostname="; hostname; docker compose version; test -w /opt/yuqing-game-hall/server-games && echo "deploy_directory_writable=yes"; docker ps --format "{{.Names}} {{.Status}}"'
+          echo "SSH、Docker 与部署目录权限检查通过。"
