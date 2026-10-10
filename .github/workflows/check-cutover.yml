@@ -1,0 +1,76 @@
+name: Verify Yuqing DNS Cutover
+
+# 临时迁移验收：只读检查 DNS、HTTPS/WebSocket 和 STUN，
+# 不修改 DNS、服务器或 Docker。
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/check-cutover.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-cutover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Verify public DNS against two independent resolvers
+        env:
+          EXPECTED_IP: "85.211.247.254"
+        shell: bash
+        run: |
+          set -euo pipefail
+          for host in rooms sanctuary rtc cards gobang turn; do
+            fqdn="${host}.xyllovefyq.cc.cd"
+            for resolver in 1.1.1.1 8.8.8.8; do
+              records=$(dig +time=4 +tries=2 +short A "${fqdn}" @"${resolver}" | grep -E '^[0-9]+(\.[0-9]+){3}$' || true)
+              echo "${fqdn} @${resolver}: ${records:-NO_A_RECORD}"
+              if [[ "$(printf '%s\n' "$records" | grep -Fx "$EXPECTED_IP" || true)" != "$EXPECTED_IP" ]] || [[ "$(printf '%s\n' "$records" | grep -E '^[0-9]+(\.[0-9]+){3}$' | sort -u)" != "$EXPECTED_IP" ]]; then
+                echo "::error::${fqdn} 在 ${resolver} 尚未完全解析到 ${EXPECTED_IP}"
+                exit 1
+              fi
+            done
+          done
+
+      - name: Test public HTTPS and correct destination
+        shell: bash
+        env:
+          EXPECTED_IP: "85.211.247.254"
+        run: |
+          set -euo pipefail
+          for item in "rooms:/api/health" "rtc:/health" "cards:/health" "gobang:/health" "sanctuary:/health"; do
+            name="${item%%:*}"
+            path="${item#*:}"
+            host="${name}.xyllovefyq.cc.cd"
+            result=$(curl --noproxy '*' --retry 2 --retry-delay 2 --connect-timeout 8 --max-time 20 --silent --show-error --output /dev/null --write-out '%{http_code} %{remote_ip} %{ssl_verify_result}' "https://${host}${path}")
+            echo "${host}${path} => ${result}"
+            [[ "$result" == "200 ${EXPECTED_IP} 0" ]] || { echo "::error::${host} 健康检查或公网 IP 异常"; exit 1; }
+          done
+
+      - name: Test public Sanctuary WebSocket upgrade
+        shell: bash
+        run: |
+          set -euo pipefail
+          headers=$(mktemp)
+          trap 'rm -f "$headers"' EXIT
+          # WebSocket 101 成功后连接保持开启，curl 的超时本身不代表失败。
+          curl --noproxy '*' --http1.1 --silent --show-error --max-time 5 \
+            -H 'Origin: https://game.xyllovefyq.cc.cd' \
+            -H 'Connection: Upgrade' \
+            -H 'Upgrade: websocket' \
+            -H 'Sec-WebSocket-Version: 13' \
+            -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' \
+            -D "$headers" -o /dev/null \
+            'https://sanctuary.xyllovefyq.cc.cd/socket' || true
+          head -n 1 "$headers"
+          grep -qiE '^HTTP/1\.1 101[[:space:]]' "$headers" || { echo "::error::Sanctuary WebSocket 未返回 101"; exit 1; }
+
+      - name: Check public STUN endpoint
+        uses: actions/checkout@v6
+      - name: Verify TURN/STUN 3478 UDP
+        shell: bash
+        run: |
+          node server-games/scripts/check-turn.mjs turn.xyllovefyq.cc.cd 3478
