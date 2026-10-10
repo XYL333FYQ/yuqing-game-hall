@@ -26,23 +26,24 @@ GitHub Variables / Secrets
   → 健康检查 + 协议 smoke test
 ```
 
-## 马来西亚生产部署与香港回退配置
+## 马来西亚单一生产部署
 
-现有 `.github/workflows/deploy-vps.yml` 支持手动选择 `hongkong` 或 `malaysia`。
-自 2026-10-10 正式 DNS 切换并完成公网检查后，`main` 的后端代码推送默认部署到 `malaysia` 环境（Azure）。
-GitHub Actions 手动运行可以选择 `malaysia`（默认）或 `hongkong`（回退旧 VPS，使用仓库级 Secrets / Variables）；保留香港运行态至实际多人联机验收结束。
+2026-10-10 已完成六条正式 DNS 切换、公网 HTTPS/WebSocket/STUN 检查及双客户端公网联机验收。
+`.github/workflows/deploy-vps.yml` 的 push 和手动运行均固定使用 `malaysia` GitHub Environment（Azure），不再提供即将到期的香港 VPS 目标。回滚通过手动运行并填写 `image_sha`，回滚的是 Azure 上的旧版本镜像而非回香港。
+**不要再将 GitHub 仓库级 VPS_HOST / VPS_USER / VPS_SSH_KEY 作为实际生产部署凭据**，现在应使用 `malaysia` 环境内的同名 Secrets。
 
-**malaysia 环境必须独立配置：**
+**malaysia 环境必须配置：**
 
 - 环境 Secrets：`VPS_HOST`（Azure 公网 IP）、`VPS_USER`（例如 `azureuser`）、`VPS_SSH_KEY`（此用户对应私钥）。
 - 环境 Variables：`DEPLOY_TARGET_GUARD=malaysia`、`MALAYSIA_PUBLIC_IP`（Azure 公网 IP）、`TURN_EXTERNAL_IP`（同一 IP）。
-- 其余已有配置在不覆写时继续读取仓库级变量与密钥，例如 GHCR 登录资料、`ALLOWED_ORIGINS`。测试环境如果要使用独立 TURN 域名，可在 malaysia 环境覆写 `TURN_PUBLIC_HOST`、`TURN_REALM`；同时确保 DNS、Azure NSG 和 coturn 外网映射匹配。
+- 其余仍共用仓库级 Secrets / Variables：例如 GHCR 镜像拉取、Cloudflare Pages 部署、`ALLOWED_ORIGINS`、`TURN_PUBLIC_HOST`、`TURN_REALM`。不要误删这些共享项；正式 `turn.xyllovefyq.cc.cd` 已指向 Azure。
 
-若未设置上述专属配置，工作流会在构建镜像与 SSH 之前拒绝 `malaysia` 部署，防止回退到旧香港服务器。
-`VPS_USER` 需要具有 Docker 权限，并事先获得目标服务器 `/opt/yuqing-game-hall/server-games` 目录的写权限。
-`malaysia` 环境已创建且已有专用 Secrets / Variables。工作流排除文档和工作流自身修改的 push 部署触发路径，因此配置更新不会单独重启游戏容器。后续涉及 `server-games` 源码的 push 默认部署 Azure，而不是香港。
+若上述专属配置缺失，工作流会在构建镜像与 SSH 之前拒绝部署，防止误读已废弃的仓库级香港凭据。
+`VPS_USER` 需要具有 Docker 权限，并且能够写入 `/opt/yuqing-game-hall/server-games`。
+工作流已排除文档和工作流自身修改触发的自动部署，所以单纯更新部署工作流不会重启线上容器。
 
-香港作为回退节点期间仍暂停 GHCR 全局旧镜像版本删除，以免删除旧节点回退所需版本；每台 VPS 自己的旧镜像清理仍保留。香港退役后再决定是否恢复 GHCR 旧镜像清理。
+确认其他工作流不依赖后，可删除仓库级旧 `VPS_HOST`、`VPS_USER`、`VPS_SSH_KEY` Secrets 及仓库级旧 `TURN_EXTERNAL_IP` Variable；**保留** `malaysia` 环境中的同名条目。Cloudflare Pages/GHCR/TURN 共享配置仍须保留。
+GHCR 全局旧镜像版本清理目前仍禁用，Azure VPS 本地旧镜像清理仍执行。后续在确认版本回滚策略后可重新启用。
 注意：独立环境并不自动安装 Nginx、管理 DNS/证书或配置 Azure NSG，这些仍需部署前配置并单独验收。
 
 ## 后端镜像版本与回滚
@@ -51,7 +52,7 @@ GitHub Actions 手动运行可以选择 `malaysia`（默认）或 `hongkong`（�
 
 如需回滚，在 GitHub Actions 手动运行 **Deploy VPS Backends**：`image_sha` 留空会构建并部署工作流当前提交；填入一个 40 位小写提交 SHA，则直接拉取该已发布版本，不重建镜像。只能回滚到仍保留在 GHCR 中的版本；自动清理后通常可选当前版和上一版。
 
-仓库中的 GHCR 全局旧版本清理目前在香港回退节点保留期间禁用，避免误删回退所需版本。启用后应通过 `GITHUB_TOKEN` 管理相关容器包版本，并核实保留策略；VPS 端镜像清理仅针对本项目五个后端镜像，不会清理 coturn、其他 Docker 镜像或卷。
+仓库中的 GHCR 全局旧版本清理目前禁用，避免在确认回滚策略前删除需要的镜像。后续如启用，请检查 `GITHUB_TOKEN` 权限和保留策略；VPS 本地镜像清理仅针对本项目五个后端镜像，不会清理 coturn、其他 Docker 镜像或卷。
 
 **不要手动编辑 `/opt/yuqing-game-hall/server-games/.env`**：下一次部署就会被覆盖。
 要改配置就去改 GitHub 上的 Variables / Secrets，然后到 Actions 页面 Run workflow
