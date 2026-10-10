@@ -26,13 +26,13 @@ on:
   workflow_dispatch:
     inputs:
       deploy_target:
-        description: "部署目标：香港沿用现有仓库配置；马来西亚读取 malaysia 环境配置"
+        description: "部署目标：默认马来西亚（main 自动部署）；香港作为手动回退目标"
         required: true
         type: choice
         options:
           - hongkong
           - malaysia
-        default: hongkong
+        default: malaysia
       image_sha:
         description: "留空部署当前提交；填 40 位提交号可回滚到已保留的镜像版本"
         required: false
@@ -40,7 +40,7 @@ on:
         default: ""
 
 concurrency:
-  group: vps-${{ github.event_name == 'workflow_dispatch' && inputs.deploy_target || 'hongkong' }}
+  group: vps-${{ github.event_name == 'workflow_dispatch' && inputs.deploy_target || 'malaysia' }}
   cancel-in-progress: false
 
 permissions:
@@ -50,16 +50,16 @@ permissions:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    # push 默认继续部署香港；仅手动选择 malaysia 才使用独立环境配置。
+    # 迁移完成：main 的后端变更默认部署 Malaysia；手动选择 hongkong 可回退旧机。
     # GitHub 同名环境 Secret/Variable 优先于仓库级配置；malaysia 有额外防误部署校验。
     environment:
-      name: ${{ github.event_name == 'workflow_dispatch' && inputs.deploy_target == 'malaysia' && 'malaysia' || 'hongkong' }}
+      name: ${{ github.event_name == 'workflow_dispatch' && inputs.deploy_target == 'hongkong' && 'hongkong' || 'malaysia' }}
 
     steps:
       - name: Verify selected deployment environment
         shell: bash
         env:
-          DEPLOY_TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.deploy_target || 'hongkong' }}
+          DEPLOY_TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.deploy_target || 'malaysia' }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
