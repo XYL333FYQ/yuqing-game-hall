@@ -26,11 +26,11 @@ GitHub Variables / Secrets
   → 健康检查 + 协议 smoke test
 ```
 
-## 双服务器迁移期间的 GitHub Actions 配置
+## 马来西亚生产部署与香港回退配置
 
 现有 `.github/workflows/deploy-vps.yml` 支持手动选择 `hongkong` 或 `malaysia`。
-`main` 的后端代码推送仍默认部署到 `hongkong`（仓库级 Secrets / Variables）。
-在正式切换前请保持香港环境在线；只有到 GitHub Actions 手动选择 `malaysia` 才会部署到新服务器。
+自 2026-10-10 正式 DNS 切换并完成公网检查后，`main` 的后端代码推送默认部署到 `malaysia` 环境（Azure）。
+GitHub Actions 手动运行可以选择 `malaysia`（默认）或 `hongkong`（回退旧 VPS，使用仓库级 Secrets / Variables）；保留香港运行态至实际多人联机验收结束。
 
 **malaysia 环境必须独立配置：**
 
@@ -40,10 +40,9 @@ GitHub Variables / Secrets
 
 若未设置上述专属配置，工作流会在构建镜像与 SSH 之前拒绝 `malaysia` 部署，防止回退到旧香港服务器。
 `VPS_USER` 需要具有 Docker 权限，并事先获得目标服务器 `/opt/yuqing-game-hall/server-games` 目录的写权限。
-**仅创建环境并不会部署；合并含本工作流的 PR 后才可从主分支手动运行新选项。**
-工作流现已排除文档与工作流自身修改的 push 自动部署触发路径，因此只合并本 PR 不应重启香港容器。后续涉及其他 server-games 源码的 push 仍按现有规则自动部署香港，正式切换后要再调整默认部署目标。
+`malaysia` 环境已创建且已有专用 Secrets / Variables。工作流排除文档和工作流自身修改的 push 部署触发路径，因此配置更新不会单独重启游戏容器。后续涉及 `server-games` 源码的 push 默认部署 Azure，而不是香港。
 
-迁移期间暂停了 GHCR 的全局旧镜像版本删除，以免香港与马来西亚互相删掉所需镜像；每台 VPS 自己的旧镜像清理仍保留。香港退役并将自动部署目标改为马来西亚后，应该恢复 GHCR 清理策略。
+香港作为回退节点期间仍暂停 GHCR 全局旧镜像版本删除，以免删除旧节点回退所需版本；每台 VPS 自己的旧镜像清理仍保留。香港退役后再决定是否恢复 GHCR 旧镜像清理。
 注意：独立环境并不自动安装 Nginx、管理 DNS/证书或配置 Azure NSG，这些仍需部署前配置并单独验收。
 
 ## 后端镜像版本与回滚
@@ -52,7 +51,7 @@ GitHub Variables / Secrets
 
 如需回滚，在 GitHub Actions 手动运行 **Deploy VPS Backends**：`image_sha` 留空会构建并部署工作流当前提交；填入一个 40 位小写提交 SHA，则直接拉取该已发布版本，不重建镜像。只能回滚到仍保留在 GHCR 中的版本；自动清理后通常可选当前版和上一版。
 
-GHCR 清理使用工作流的 `GITHUB_TOKEN`。仓库应保持对这些由该工作流发布的容器包有管理权限；若 GitHub 拒绝删除旧版本，部署仍会保持成功，但 Actions 会把 GHCR 清理步骤标为警告，旧包需要在 GitHub Packages 页面手动清理。VPS 端清理仅针对本项目五个后端镜像，不会清理 coturn、其他 Docker 镜像或卷。
+仓库中的 GHCR 全局旧版本清理目前在香港回退节点保留期间禁用，避免误删回退所需版本。启用后应通过 `GITHUB_TOKEN` 管理相关容器包版本，并核实保留策略；VPS 端镜像清理仅针对本项目五个后端镜像，不会清理 coturn、其他 Docker 镜像或卷。
 
 **不要手动编辑 `/opt/yuqing-game-hall/server-games/.env`**：下一次部署就会被覆盖。
 要改配置就去改 GitHub 上的 Variables / Secrets，然后到 Actions 页面 Run workflow
