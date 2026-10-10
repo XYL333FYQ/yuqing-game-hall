@@ -26,6 +26,26 @@ GitHub Variables / Secrets
   → 健康检查 + 协议 smoke test
 ```
 
+## 双服务器迁移期间的 GitHub Actions 配置
+
+现有 `.github/workflows/deploy-vps.yml` 支持手动选择 `hongkong` 或 `malaysia`。
+`main` 的后端代码推送仍默认部署到 `hongkong`（仓库级 Secrets / Variables）。
+在正式切换前请保持香港环境在线；只有到 GitHub Actions 手动选择 `malaysia` 才会部署到新服务器。
+
+**malaysia 环境必须独立配置：**
+
+- 环境 Secrets：`VPS_HOST`（Azure 公网 IP）、`VPS_USER`（例如 `azureuser`）、`VPS_SSH_KEY`（此用户对应私钥）。
+- 环境 Variables：`DEPLOY_TARGET_GUARD=malaysia`、`MALAYSIA_PUBLIC_IP`（Azure 公网 IP）、`TURN_EXTERNAL_IP`（同一 IP）。
+- 其余已有配置在不覆写时继续读取仓库级变量与密钥，例如 GHCR 登录资料、`ALLOWED_ORIGINS`。测试环境如果要使用独立 TURN 域名，可在 malaysia 环境覆写 `TURN_PUBLIC_HOST`、`TURN_REALM`；同时确保 DNS、Azure NSG 和 coturn 外网映射匹配。
+
+若未设置上述专属配置，工作流会在构建镜像与 SSH 之前拒绝 `malaysia` 部署，防止回退到旧香港服务器。
+`VPS_USER` 需要具有 Docker 权限，并事先获得目标服务器 `/opt/yuqing-game-hall/server-games` 目录的写权限。
+**仅创建环境并不会部署；合并含本工作流的 PR 后才可从主分支手动运行新选项。**
+因为修改工作流本身会命中旧工作流的 push 触发路径，合并时可能对香港进行一次自动更新，需在合适的维护窗口合并。
+
+迁移期间暂停了 GHCR 的全局旧镜像版本删除，以免香港与马来西亚互相删掉所需镜像；每台 VPS 自己的旧镜像清理仍保留。香港退役并将自动部署目标改为马来西亚后，应该恢复 GHCR 清理策略。
+注意：独立环境并不自动安装 Nginx、管理 DNS/证书或配置 Azure NSG，这些仍需部署前配置并单独验收。
+
 ## 后端镜像版本与回滚
 
 每次正常部署都会将五个后端镜像标记为当前 Git 提交的完整 SHA，并让 VPS 使用这些不可变标签，避免 `latest` 在失败或回滚时指向不确定版本。通过健康检查和协议验收后，工作流把成功版本写入 VPS 的 `.deployed-version`，并清理旧镜像；VPS 与 GHCR 都保留当前版本和上一成功版本。
