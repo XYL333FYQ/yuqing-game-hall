@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 2,
+  "id": "connect-four",
+  "order": 52,
+  "discovery": {
+    "audiences": [
+      "duo"
+    ]
+  },
+  "theme": {
+    "accent": "#bf6f4d",
+    "dark": "#20292e"
+  },
+  "presentation": {
+    "title": "四子连线",
+    "originalTitle": "Connect Four",
+    "mark": "四连",
+    "category": "同屏双人策略",
+    "tagline": "棋子落下后无法收回，两个人在同一台设备上争取先连成四子。",
+    "description": "棋子落下后无法收回，两个人在同一台设备上争取先连成四子。需要同时进攻和封堵，完整胜负判定与重开，支持键盘操作。",
+    "tags": [
+      "棋类",
+      "本地双人",
+      "策略",
+      "中文"
+    ],
+    "play": {
+      "modes": "同屏双人",
+      "players": "2 人",
+      "controls": "两人轮流点击棋盘的一列投下棋子；也可以使用方向键和回车。",
+      "inputs": [
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "棋子落下后无法收回，两个人在同一台设备上争取先连成四子",
+      "横、竖、斜连成四子就获胜，留意对手同时制造两条威胁。"
+    ],
+    "art": {
+      "cover": "/games/connect-four/cover.png",
+      "hero": "/games/connect-four/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "独立 HTML / CSS / JavaScript 静态运行包",
+    "license": "MIT",
+    "sourceUrl": "https://github.com/bryanbraun/connect-four",
+    "localization": "中文游戏菜单、操作说明和主要反馈；保留原作署名。",
+    "fit": "通过 game.json 与 iframe 接入，无需新增服务器进程。",
+    "highlights": [
+      "同屏双人策略"
+    ],
+    "cautions": [
+      "双人在同一设备上轮流操作，无网络联机。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/connect-four/index.html"
+    }
+  },
+  "capabilities": [
+    "fullscreen",
+    "storage"
+  ],
+  "permissions": [
+    "fullscreen"
+  ]
+}

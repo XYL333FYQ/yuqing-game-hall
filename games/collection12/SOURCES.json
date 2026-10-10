@@ -1,0 +1,249 @@
+[
+  {
+    "id": "binary-puzzle",
+    "folder": "0hh1",
+    "repo": "florisluiten/0hh1",
+    "title": "双色逻辑",
+    "original": "0h h1",
+    "category": "双色推理",
+    "mark": "双色",
+    "accent": "#d05a61",
+    "license": "MIT; Apache-2.0 launcher",
+    "licenseFile": "LICENSE",
+    "controls": "点击格子在空白、红色、蓝色之间切换；撤销和提示在棋盘下方。",
+    "tip": "每行每列红蓝数量相等，不能连续出现三个同色，不能有重复的行或列。",
+    "description": "根据三条规则填满双色棋盘，不靠反应速度。提供四种棋盘大小、逐步教学、撤销和有理由的提示。",
+    "tags": [
+      "逻辑",
+      "解谜"
+    ],
+    "mobile": true,
+    "commit": "25910e580d6ea6bc1dfbfd29b2637e47844a96f9"
+  },
+  {
+    "id": "visible-dots",
+    "folder": "0hn0",
+    "repo": "Techdojo/0hn0",
+    "title": "视线谜阵",
+    "original": "0h n0",
+    "category": "数字视线推理",
+    "mark": "视线",
+    "accent": "#469ab0",
+    "license": "MIT; Apache-2.0 launcher",
+    "licenseFile": "LICENSE",
+    "controls": "点击格子在蓝点、红点、空白之间切换；眼睛按钮提供提示。",
+    "tip": "数字只计算同行同列能看见的其他蓝点，红点阻挡视线。",
+    "description": "让每个数字看到恰好数量的蓝点，用红点隔断多余视线。四种棋盘大小、互动教学与提示让规则逐步变成层层推理。",
+    "tags": [
+      "逻辑",
+      "解谜"
+    ],
+    "mobile": true,
+    "commit": "a207bafd92608eec7c112f31992050aad8de4c27"
+  },
+  {
+    "id": "mahjong-solitaire",
+    "folder": "mah",
+    "repo": "ffalt/mah",
+    "title": "麻将叠叠消",
+    "original": "Mah",
+    "category": "立体配对消除",
+    "mark": "配对",
+    "accent": "#5f9478",
+    "license": "MIT; tile art public domain and CC-BY-SA-4.0",
+    "licenseFile": "LICENSE",
+    "controls": "点击两张相同的自由牌消除；上方可选布局、提示、撤销和重新开始。",
+    "tip": "没有牌盖住且左右至少一侧空着，才是可消除的自由牌。",
+    "description": "从多层麻将牌阵中寻找可移除的相同牌，逐步拆掉整座牌山。多种布局、可解牌局、提示与撤销，适合慢慢规划消除顺序。",
+    "tags": [
+      "消除",
+      "策略"
+    ],
+    "mobile": true,
+    "commit": "1e0187c3d9505831175cbfcc5d66f8fc9560d014"
+  },
+  {
+    "id": "sudoku",
+    "folder": "sudoku-react",
+    "repo": "andreynering/sudoku",
+    "title": "九宫数独",
+    "original": "Sudoku",
+    "category": "九宫数字推理",
+    "mark": "数独",
+    "accent": "#658bb5",
+    "license": "MIT; bundled dependencies retain notices",
+    "licenseFile": "LICENSE",
+    "controls": "选择难度后点击空格输入 1–9；删除数字可重新填写。",
+    "tip": "每行、每列和每个九宫格的 1–9 都不能重复，红色提示表示冲突。",
+    "description": "在九行九列的棋盘里填入数字，检查行、列和宫格的限制。三档题库、冲突提示、计时和自动保存，随时继续未完成的棋盘。",
+    "tags": [
+      "益智",
+      "推理"
+    ],
+    "mobile": true,
+    "commit": "f8a58fcdcf15d1594850a3021d74f17795b0a4bf"
+  },
+  {
+    "id": "klondike",
+    "folder": "solitaire",
+    "repo": "rjanjic/js-solitaire",
+    "title": "经典纸牌接龙",
+    "original": "JavaScript Solitaire",
+    "category": "单人纸牌策略",
+    "mark": "接龙",
+    "accent": "#598d78",
+    "license": "MIT",
+    "licenseFile": "LICENSE",
+    "controls": "点击牌堆翻三张牌；拖动一张牌或整组牌，点击正面牌可自动寻找收牌区。",
+    "tip": "下方按红黑交替递减排列，上方收牌区按同花色从 A 到 K 收齐。",
+    "description": "七列经典纸牌接龙，用翻牌、挪动整组牌和空列整理隐藏牌。四个收牌区都按花色收齐才算通关，保留原作完整发牌与拖动玩法。",
+    "tags": [
+      "纸牌",
+      "策略"
+    ],
+    "commit": "f67a187afd2cff31ed8d04929d544fa2f032f457"
+  },
+  {
+    "id": "nonograms",
+    "folder": "nonograms",
+    "repo": "jodua/nonograms",
+    "title": "数织画谜",
+    "original": "Nonograms",
+    "category": "数字绘图推理",
+    "mark": "数织",
+    "accent": "#7189b5",
+    "license": "MIT; dependencies see licenses",
+    "licenseFile": "LICENSE",
+    "controls": "选择关卡，左键填格、右键标记空格；可检查答案与重玩。",
+    "tip": "行列数字表示连续色块的长度，不同色块之间至少留一格。",
+    "description": "用行列旁的数字线索推理出隐藏图画，兼顾横纵两套限制。提供不同大小的关卡、错误检查、计时，以及导入导出关卡。",
+    "tags": [
+      "解谜",
+      "绘图"
+    ],
+    "commit": "b71ca9c8d8a7c1568d64c32b8162613d92a22712"
+  },
+  {
+    "id": "connect-four",
+    "folder": "connect-four",
+    "repo": "bryanbraun/connect-four",
+    "title": "四子连线",
+    "original": "Connect Four",
+    "category": "同屏双人策略",
+    "mark": "四连",
+    "accent": "#bf6f4d",
+    "license": "MIT",
+    "licenseFile": "LICENSE",
+    "controls": "两人轮流点击棋盘的一列投下棋子；也可以使用方向键和回车。",
+    "tip": "横、竖、斜连成四子就获胜，留意对手同时制造两条威胁。",
+    "description": "棋子落下后无法收回，两个人在同一台设备上争取先连成四子。需要同时进攻和封堵，完整胜负判定与重开，支持键盘操作。",
+    "tags": [
+      "棋类",
+      "本地双人",
+      "策略"
+    ],
+    "duo": true,
+    "commit": "ee62db41dc9b32a5e5ebf20b876809c9c3e0db6b"
+  },
+  {
+    "id": "international-chess",
+    "folder": "chess",
+    "repo": "kbjorklu/chess",
+    "title": "国际象棋",
+    "original": "JavaScript Chess",
+    "category": "人机棋类对弈",
+    "mark": "象棋",
+    "accent": "#aa8d62",
+    "license": "MIT; jQuery and jQuery UI MIT",
+    "licenseFile": "LICENSE",
+    "controls": "拖动棋子走子，也可点击右侧合法走法；右侧可以悔棋和让电脑代走。",
+    "tip": "你执白先走；保护国王，悬停棋子可查看允许的目标格。",
+    "description": "与本地电脑对手下国际象棋，支持王车易位、吃过路兵和升变。合法走法提示、悔棋与电脑代走便于练习布局和攻防。",
+    "tags": [
+      "棋类",
+      "策略"
+    ],
+    "commit": "61c19eaa8afbb54a73870c2be883023b06a455bc"
+  },
+  {
+    "id": "battleship",
+    "folder": "battleship",
+    "repo": "Shahir-47/Battleship",
+    "title": "舰队猎手",
+    "original": "Battleship",
+    "category": "人机海战推理",
+    "mark": "海战",
+    "accent": "#577f9b",
+    "license": "MIT; normalize.css MIT",
+    "licenseFile": "LICENSE",
+    "controls": "先在自己的棋盘摆放五艘舰船，可点旋转；随后点击敌方格子开火。",
+    "tip": "击中后沿横竖方向追击；电脑同样会利用命中信息寻找你的舰船。",
+    "description": "把五艘船藏进海图，再与电脑轮流射击寻找对方舰队。船位隐藏、命中追踪与击沉胜负，让每次开火都需要排除和推理。",
+    "tags": [
+      "策略",
+      "推理"
+    ],
+    "commit": "7d38710ba34253d59d5d882f53ace682c23cce3b"
+  },
+  {
+    "id": "snake-classic",
+    "folder": "snake-classic",
+    "repo": "patorjk/JavaScript-Snake",
+    "title": "贪吃蛇挑战",
+    "original": "JavaScript Snake",
+    "category": "路线与反应",
+    "mark": "贪吃蛇",
+    "accent": "#7b9853",
+    "license": "MIT",
+    "licenseFile": "LICENSE",
+    "controls": "方向键控制移动，空格暂停；开始前可切换速度与外观。",
+    "tip": "随着蛇身变长，提前规划回转路线，别把自己围进死路。",
+    "description": "吃食物增长蛇身，在越来越挤的棋盘里维持安全路线。五档速度、加速挑战与多种外观，挑战持续增长的得分。",
+    "tags": [
+      "街机",
+      "反应"
+    ],
+    "commit": "7c80eddde2de6af669e6ae5133ba8ae60a8d7fb9"
+  },
+  {
+    "id": "color-lines",
+    "folder": "color-lines",
+    "repo": "arnisritins/Color-Lines",
+    "title": "五彩连珠",
+    "original": "Color Lines",
+    "category": "路线消除策略",
+    "mark": "连珠",
+    "accent": "#8d75b0",
+    "license": "MIT",
+    "licenseFile": "LICENSE",
+    "controls": "点击彩球，再点击能通过空格抵达的位置；同色连成五个或更多即可消除。",
+    "tip": "没有消除时会增加三颗球，先用上方预告规划空间。",
+    "description": "在九乘九棋盘中移动彩球，把同色球连成横、竖或斜线消除。路线必须畅通，新球预告、连珠得分和本地纪录让整理空间成为核心挑战。",
+    "tags": [
+      "消除",
+      "策略"
+    ],
+    "commit": "a51ce95e0144c473253bc985c3d113c12e227bfc"
+  },
+  {
+    "id": "tower-building",
+    "folder": "tower-game",
+    "repo": "iamkun/tower_game",
+    "title": "摩天楼建造",
+    "original": "Tower Building",
+    "category": "时机叠塔",
+    "mark": "叠塔",
+    "accent": "#d17c58",
+    "license": "MIT; Zepto MIT",
+    "licenseFile": "LICENSE",
+    "controls": "点击开始，再点击屏幕放下摆动的楼层；掉落三次后结束，可重新挑战。",
+    "tip": "等待楼层对齐再松手，连续完美落点会增加连击得分。",
+    "description": "从摇晃的吊钩上放下楼层，把高楼一层层垒起来。落点越整齐得分越高，三次失误机会与连续完美奖励，越高越考验时机。",
+    "tags": [
+      "街机",
+      "反应"
+    ],
+    "mobile": true,
+    "commit": "c6fa84afe179b661fa71cf7cc8788d0c47ca2875"
+  }
+]

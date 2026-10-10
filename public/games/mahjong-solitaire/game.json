@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 2,
+  "id": "mahjong-solitaire",
+  "order": 48,
+  "discovery": {
+    "audiences": [
+      "single"
+    ]
+  },
+  "theme": {
+    "accent": "#5f9478",
+    "dark": "#20292e"
+  },
+  "presentation": {
+    "title": "麻将叠叠消",
+    "originalTitle": "Mah",
+    "mark": "配对",
+    "category": "立体配对消除",
+    "tagline": "从多层麻将牌阵中寻找可移除的相同牌，逐步拆掉整座牌山。",
+    "description": "从多层麻将牌阵中寻找可移除的相同牌，逐步拆掉整座牌山。多种布局、可解牌局、提示与撤销，适合慢慢规划消除顺序。",
+    "tags": [
+      "消除",
+      "策略",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "点击两张相同的自由牌消除；上方可选布局、提示、撤销和重新开始。",
+      "inputs": [
+        "mouse",
+        "touch"
+      ],
+      "devices": [
+        "desktop",
+        "mobile"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "从多层麻将牌阵中寻找可移除的相同牌，逐步拆掉整座牌山",
+      "没有牌盖住且左右至少一侧空着，才是可消除的自由牌。"
+    ],
+    "art": {
+      "cover": "/games/mahjong-solitaire/cover.png",
+      "hero": "/games/mahjong-solitaire/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "独立 HTML / CSS / JavaScript 静态运行包",
+    "license": "MIT; tile art public domain and CC-BY-SA-4.0",
+    "sourceUrl": "https://github.com/ffalt/mah",
+    "localization": "中文游戏菜单、操作说明和主要反馈；保留原作署名。",
+    "fit": "通过 game.json 与 iframe 接入，无需新增服务器进程。",
+    "highlights": [
+      "立体配对消除"
+    ],
+    "cautions": [
+      "单人玩法，本地成绩不跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/mahjong-solitaire/index.html"
+    }
+  },
+  "capabilities": [
+    "fullscreen",
+    "storage",
+    "audio"
+  ],
+  "permissions": [
+    "fullscreen",
+    "autoplay"
+  ]
+}

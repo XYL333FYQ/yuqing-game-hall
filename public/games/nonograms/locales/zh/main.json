@@ -1,0 +1,10 @@
+{
+ "navbar":{"home":"首页","levels":"关卡","about":"玩法","nonograms":"数织画谜","language":"中文"},
+ "homepage":{"title":"数织画谜","subtitle":"从数字线索中发现隐藏图画","button":"开始游戏"},
+ "about":{"title":"数织怎么玩","content":{"title":"什么是数织？","text":"行列数字表示连续填色格的长度。不同段之间至少留一格空白。左键填色，右键标记空格；同时满足横向和纵向的线索，便能揭开隐藏图画。","author":{"title":"原作者","content":"本游戏由以下作者创作："}}},
+ "game":{"level":"关卡","loading":"正在加载…","check":"检查答案","errorsShow":"显示错误","restart":"重玩","lose":"挑战结束","loseMessage":"别灰心，可以重新尝试！","loseButton":"再试一次","win":"通关！","winMessage":"你找出了隐藏图画！","winButton":"再玩一关","time":"完成时间："},
+ "levels":{"title":"关卡","subtitle":"选择一幅画谜","rows":"行","columns":"列","play":"开始"},
+ "settings":{"title":"游戏设置","canvasSize":"棋盘大小","cluesSize":"线索区大小","fontSize":"字号","saveWarning":"修改设置会重新开始当前关卡。"},
+ "data":{"import":{"title":{"error":"导入失败","success":"导入成功"},"success":"关卡数据已导入。","text":"在下方粘贴关卡数据","error":{"notInRange":"关卡编号超出范围"},"button":"导入关卡"},"export":{"text":"复制下方数据即可分享此关卡","button":"导出关卡"},"type":{"raw":"原始数据","json":"JSON 数据","csv":"CSV 数据"}},
+ "buttons":{"homepage":"返回首页","close":"关闭","cancel":"取消","copy":"复制","import":"导入关卡","export":"导出关卡","saveAndClose":"保存并关闭"}
+}

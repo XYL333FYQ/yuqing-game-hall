@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 2,
+  "id": "color-lines",
+  "order": 56,
+  "discovery": {
+    "audiences": [
+      "single"
+    ]
+  },
+  "theme": {
+    "accent": "#8d75b0",
+    "dark": "#20292e"
+  },
+  "presentation": {
+    "title": "五彩连珠",
+    "originalTitle": "Color Lines",
+    "mark": "连珠",
+    "category": "路线消除策略",
+    "tagline": "在九乘九棋盘中移动彩球，把同色球连成横、竖或斜线消除。",
+    "description": "在九乘九棋盘中移动彩球，把同色球连成横、竖或斜线消除。路线必须畅通，新球预告、连珠得分和本地纪录让整理空间成为核心挑战。",
+    "tags": [
+      "消除",
+      "策略",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "点击彩球，再点击能通过空格抵达的位置；同色连成五个或更多即可消除。",
+      "inputs": [
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "在九乘九棋盘中移动彩球，把同色球连成横、竖或斜线消除",
+      "没有消除时会增加三颗球，先用上方预告规划空间。"
+    ],
+    "art": {
+      "cover": "/games/color-lines/cover.png",
+      "hero": "/games/color-lines/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "独立 HTML / CSS / JavaScript 静态运行包",
+    "license": "MIT",
+    "sourceUrl": "https://github.com/arnisritins/Color-Lines",
+    "localization": "中文游戏菜单、操作说明和主要反馈；保留原作署名。",
+    "fit": "通过 game.json 与 iframe 接入，无需新增服务器进程。",
+    "highlights": [
+      "路线消除策略"
+    ],
+    "cautions": [
+      "单人玩法，本地成绩不跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/color-lines/index.html"
+    }
+  },
+  "capabilities": [
+    "fullscreen",
+    "storage"
+  ],
+  "permissions": [
+    "fullscreen"
+  ]
+}

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>经典纸牌接龙 · 雨晴游戏厅</title>
+<link rel="stylesheet" href="main.css"></head>
+<body style="display: none">
+    <div class="window">
+        <div class="window__inner">
+            <div class="window__heading">
+                <div class="window__heading-icon"></div>
+                纸牌接龙
+            </div>
+            <div class="window__actions">
+                <button type="button" id="js-reset" class="new-game">新游戏</button>
+            </div>
+            <div class="window__content">
+                <div class="window__content-inner">
+                    <div class="solitaire" id="js-solitaire">
+                        <div id="js-finish" class="finish-deck"></div>
+                        <div id="js-board" class="board-deck"></div>
+
+                        <div class="deck">
+                            <div id="js-deck-pile" class="deck__pile"></div>
+                            <div id="js-deck-deal" class="deck__deal"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript" src="main.js"></script>
+<script src="../_shared/game-help.js" data-title="经典纸牌接龙" data-controls="点击牌堆翻三张牌；拖动一张牌或整组牌，点击正面牌可自动寻找收牌区。" data-tip="下方按红黑交替递减排列，上方收牌区按同花色从 A 到 K 收齐。"></script></body>
+</html>

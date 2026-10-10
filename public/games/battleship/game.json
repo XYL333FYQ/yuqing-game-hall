@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 2,
+  "id": "battleship",
+  "order": 54,
+  "discovery": {
+    "audiences": [
+      "single"
+    ]
+  },
+  "theme": {
+    "accent": "#577f9b",
+    "dark": "#20292e"
+  },
+  "presentation": {
+    "title": "舰队猎手",
+    "originalTitle": "Battleship",
+    "mark": "海战",
+    "category": "人机海战推理",
+    "tagline": "把五艘船藏进海图，再与电脑轮流射击寻找对方舰队。",
+    "description": "把五艘船藏进海图，再与电脑轮流射击寻找对方舰队。船位隐藏、命中追踪与击沉胜负，让每次开火都需要排除和推理。",
+    "tags": [
+      "策略",
+      "推理",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "先在自己的棋盘摆放五艘舰船，可点旋转；随后点击敌方格子开火。",
+      "inputs": [
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "把五艘船藏进海图，再与电脑轮流射击寻找对方舰队",
+      "击中后沿横竖方向追击；电脑同样会利用命中信息寻找你的舰船。"
+    ],
+    "art": {
+      "cover": "/games/battleship/cover.png",
+      "hero": "/games/battleship/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "独立 HTML / CSS / JavaScript 静态运行包",
+    "license": "MIT; normalize.css MIT",
+    "sourceUrl": "https://github.com/Shahir-47/Battleship",
+    "localization": "中文游戏菜单、操作说明和主要反馈；保留原作署名。",
+    "fit": "通过 game.json 与 iframe 接入，无需新增服务器进程。",
+    "highlights": [
+      "人机海战推理"
+    ],
+    "cautions": [
+      "单人玩法，本地成绩不跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/battleship/index.html"
+    }
+  },
+  "capabilities": [
+    "fullscreen",
+    "storage"
+  ],
+  "permissions": [
+    "fullscreen"
+  ]
+}

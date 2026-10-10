@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 2,
+  "id": "sudoku",
+  "order": 49,
+  "discovery": {
+    "audiences": [
+      "single"
+    ]
+  },
+  "theme": {
+    "accent": "#658bb5",
+    "dark": "#20292e"
+  },
+  "presentation": {
+    "title": "九宫数独",
+    "originalTitle": "Sudoku",
+    "mark": "数独",
+    "category": "九宫数字推理",
+    "tagline": "在九行九列的棋盘里填入数字，检查行、列和宫格的限制。",
+    "description": "在九行九列的棋盘里填入数字，检查行、列和宫格的限制。三档题库、冲突提示、计时和自动保存，随时继续未完成的棋盘。",
+    "tags": [
+      "益智",
+      "推理",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "选择难度后点击空格输入 1–9；删除数字可重新填写。",
+      "inputs": [
+        "keyboard",
+        "mouse",
+        "touch"
+      ],
+      "devices": [
+        "desktop",
+        "mobile"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "在九行九列的棋盘里填入数字，检查行、列和宫格的限制",
+      "每行、每列和每个九宫格的 1–9 都不能重复，红色提示表示冲突。"
+    ],
+    "art": {
+      "cover": "/games/sudoku/cover.png",
+      "hero": "/games/sudoku/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "独立 HTML / CSS / JavaScript 静态运行包",
+    "license": "MIT; bundled dependencies retain notices",
+    "sourceUrl": "https://github.com/andreynering/sudoku",
+    "localization": "中文游戏菜单、操作说明和主要反馈；保留原作署名。",
+    "fit": "通过 game.json 与 iframe 接入，无需新增服务器进程。",
+    "highlights": [
+      "九宫数字推理"
+    ],
+    "cautions": [
+      "单人玩法，本地成绩不跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/sudoku/index.html"
+    }
+  },
+  "capabilities": [
+    "fullscreen",
+    "storage"
+  ],
+  "permissions": [
+    "fullscreen"
+  ]
+}

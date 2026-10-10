@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 2,
+  "id": "visible-dots",
+  "order": 47,
+  "discovery": {
+    "audiences": [
+      "single"
+    ]
+  },
+  "theme": {
+    "accent": "#469ab0",
+    "dark": "#20292e"
+  },
+  "presentation": {
+    "title": "视线谜阵",
+    "originalTitle": "0h n0",
+    "mark": "视线",
+    "category": "数字视线推理",
+    "tagline": "让每个数字看到恰好数量的蓝点，用红点隔断多余视线。",
+    "description": "让每个数字看到恰好数量的蓝点，用红点隔断多余视线。四种棋盘大小、互动教学与提示让规则逐步变成层层推理。",
+    "tags": [
+      "逻辑",
+      "解谜",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "点击格子在蓝点、红点、空白之间切换；眼睛按钮提供提示。",
+      "inputs": [
+        "mouse",
+        "touch"
+      ],
+      "devices": [
+        "desktop",
+        "mobile"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "让每个数字看到恰好数量的蓝点，用红点隔断多余视线",
+      "数字只计算同行同列能看见的其他蓝点，红点阻挡视线。"
+    ],
+    "art": {
+      "cover": "/games/visible-dots/cover.png",
+      "hero": "/games/visible-dots/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "独立 HTML / CSS / JavaScript 静态运行包",
+    "license": "MIT; Apache-2.0 launcher",
+    "sourceUrl": "https://github.com/Techdojo/0hn0",
+    "localization": "中文游戏菜单、操作说明和主要反馈；保留原作署名。",
+    "fit": "通过 game.json 与 iframe 接入，无需新增服务器进程。",
+    "highlights": [
+      "数字视线推理"
+    ],
+    "cautions": [
+      "单人玩法，本地成绩不跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/visible-dots/index.html"
+    }
+  },
+  "capabilities": [
+    "fullscreen",
+    "storage"
+  ],
+  "permissions": [
+    "fullscreen"
+  ]
+}

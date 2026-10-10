@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>四子连线 · 雨晴游戏厅</title>
+  <meta name="description" content="Play two-player 四子连线 online. To win, be the first to form a horizontal, vertical, or diagonal line with four of your discs.">
+
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="stylesheet" type="text/css" href="css/main.css">
+  <style id="a11y-styles"></style>
+</head>
+<body>
+  <div class="keyboard-friendly">
+    <img class="keyboard-friendly-img" src="img/arrow-keys.svg" />
+  </div>
+  <section class="wrapper">
+    <div class="center">
+      <h1 class="title">四子连线</h1>
+      <div id="top-text" class="top-text">
+        <h2 class="primary">
+          <span id="prefix">当前玩家：</span>
+          <span id="current-player" contenteditable="true">黑方</span>
+        </h2>
+        <h3 class="secondary">
+          <span>接下来：</span>
+          <span id="other-player" contenteditable="true">红方</span>
+        </h3>
+      </h2>
+      <div id="play-again" class="play-again">
+        <a href="#" class="play-again-btn" id="play-again-btn">再来一局</a>
+      </div>
+    </div>
+    <table id="board" class="board">
+      <tbody>
+        <tr>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+        </tr>
+        <tr>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+        </tr>
+        <tr>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+        </tr>
+        <tr>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+        </tr>
+        <tr>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+        </tr>
+        <tr>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+          <td><button type="button"></button></td>
+        </tr>
+      </tbody>
+    </table>
+    <a class="code" href="https://github.com/bryanbraun/connect-four">查看源码</a>
+  </section>
+
+  <script src="js/vars.js"></script>
+  <script src="js/functions.js"></script>
+  <script src="js/accessibility.js"></script>
+  <script src="js/main.js"></script>
+<script src="../_shared/game-help.js" data-title="四子连线" data-controls="两人轮流点击棋盘的一列投下棋子；也可以使用方向键和回车。" data-tip="横、竖、斜连成四子就获胜，留意对手同时制造两条威胁。"></script></body>
+</html>

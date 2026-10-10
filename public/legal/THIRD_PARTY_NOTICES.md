@@ -202,3 +202,24 @@ Hextris 的 Exo 2 字体使用 SIL OFL 1.1；Font Awesome 4.1 字体使用 SIL O
 象棋采用原作 JavaScript 引擎，保留 GPL 声明；GBK 转 UTF-8、入口适配和新增合成音效的可编辑源码随包提供。象棋与陨石射击的原 WAV 录音均未分发，陨石射击原自定义字体也未分发。黑白棋的外站字体、背景，2048 的 Clear Sans 字体以及图案解锁的 Roboto Mono 字体均未分发，改用系统字体或 CSS 背景。
 
 陨石射击的 jQuery 1.4.1 保留文件内 MIT / GPL 许可头与 `JQUERY-LICENSE.txt`；扫雷的 React/ReactDOM、Workbox 均为 MIT，完整许可位于该运行包 `licenses/`，并保留生成代码的第三方许可注释。其它中文入口和资源路径改动按原作许可提供，共享 `game-help.js` 的 MIT 文本为 `public/games/_shared/expansion-LICENSE`。
+
+## 追加十二款中文静态游戏（2026-10-10）
+
+固定版本见 games/collection12/SOURCES.json。各款目录保留 LICENSE、SOURCE.md、source.zip；源码包包含首选源文件、修改后运行包与构建脚本。
+
+| 游戏 / 路径 | 上游 | 许可 |
+| --- | --- | --- |
+| 双色逻辑 (binary-puzzle) | https://github.com/florisluiten/0hh1 | MIT; Apache-2.0 launcher |
+| 视线谜阵 (visible-dots) | https://github.com/Techdojo/0hn0 | MIT; Apache-2.0 launcher |
+| 麻将叠叠消 (mahjong-solitaire) | https://github.com/ffalt/mah | MIT; tile art public domain and CC-BY-SA-4.0 |
+| 九宫数独 (sudoku) | https://github.com/andreynering/sudoku | MIT; bundled dependencies retain notices |
+| 经典纸牌接龙 (klondike) | https://github.com/rjanjic/js-solitaire | MIT |
+| 数织画谜 (nonograms) | https://github.com/jodua/nonograms | MIT; dependencies see licenses |
+| 四子连线 (connect-four) | https://github.com/bryanbraun/connect-four | MIT |
+| 国际象棋 (international-chess) | https://github.com/kbjorklu/chess | MIT; jQuery and jQuery UI MIT |
+| 舰队猎手 (battleship) | https://github.com/Shahir-47/Battleship | MIT; normalize.css MIT |
+| 贪吃蛇挑战 (snake-classic) | https://github.com/patorjk/JavaScript-Snake | MIT |
+| 五彩连珠 (color-lines) | https://github.com/arnisritins/Color-Lines | MIT |
+| 摩天楼建造 (tower-building) | https://github.com/iamkun/tower_game | MIT; Zepto MIT |
+
+麻将只分发 Unicode 牌面（Shizhao，公共领域），百搭牌来自 Cangjie6（CC BY-SA 4.0）；TILE-ATTRIBUTION.md 和 CC-BY-SA-4.0.txt 保留署名与完整许可，牌面未修改，封面按相同许可发布。0h h1 / 0h n0 保留 Q42 MIT 和 Apache-2.0 启动器声明。数独附 React 0.14 BSD 许可及 PATENTS、Redux、Lodash、React Router 许可。数织附 React/i18next/Router 等依赖许可及 Font Awesome 与 Bootstrap Icons 声明。国际象棋附 jQuery/UI MIT，海战附 normalize.css MIT，叠塔附 Zepto MIT；移除未使用字体与外站统计脚本。

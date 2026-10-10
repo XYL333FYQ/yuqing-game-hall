@@ -1,0 +1,85 @@
+{
+    "navbar": {
+        "home": "Home",
+        "levels": "Levels",
+        "about": "About",
+        "nonograms": "Nonograms",
+        "language": "Language"
+    },
+    "homepage": {
+        "title": "NONOGRAMS",
+        "subtitle": "Play nonograms for free",
+        "button": "Play"
+    },
+    "about": {
+        "title": "About nonograms",
+        "content": {
+            "title": "What are nonograms?",
+            "text": "Nonograms are a puzzle game that can be played by anyone. The game is played on a grid of squares, each of which can be either a 1 or a 0. The game is won when all clues (both horizontal and vertical) are satisfied.",
+            "author": {
+                "title": "Author",
+                "content": "This game was created by "
+            }
+        }
+    },
+    "game": {
+        "level": "Level",
+        "loading": "Loading...",
+        "check": "Check solution",
+        "errorsShow": "Show errors",
+        "restart": "Restart",
+        "lose": "You lose!",
+        "loseMessage": "Don't worry, you can try again!",
+        "loseButton": "Try again",
+        "win": "Victory!",
+        "winMessage": "Congratulations! You have completed the game!",
+        "winButton": "Play again",
+        "time": "Completion time: "
+    },
+    "levels": {
+        "title": "Levels",
+        "subtitle": "Choose a level to play",
+        "rows": "Rows",
+        "columns": "Columns",
+        "play": "Play"
+    },
+    "settings": {
+        "title": "Game settings",
+        "canvasSize": "Canvas size",
+        "cluesSize": "Clues size",
+        "fontSize": "Font size",
+        "saveWarning": "Warning: if you change the settings, you will lose the current game!"
+    },
+    "data": {
+        "import": {
+            "title": {
+                "error": "Importing error",
+                "success": "Success"
+            },
+            "success": "The data has been imported successfully!",
+            "text": "Paste the code below to import a level",
+            "error": {
+                "notInRange": "The level is not in the range of levels"
+            },
+            "button": "Import level"
+        },
+        "export": {
+            "text": "Copy the code below and share it with others to play this level",
+            "button": "Export level"
+        },
+        "type": {
+            "raw": "Raw data",
+            "json": "JSON data",
+            "csv": "CSV data"
+        }
+    },
+    "buttons": {
+        "homepage": "Back to homepage",
+        "close": "Close",
+        "cancel": "Cancel",
+        "copy": "Copy",
+        "import": "Import level",
+        "export": "Export level",
+        "saveAndClose": "Save and close"
+    }
+}

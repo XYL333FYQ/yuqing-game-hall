@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 2,
+  "id": "tower-building",
+  "order": 57,
+  "discovery": {
+    "audiences": [
+      "single"
+    ]
+  },
+  "theme": {
+    "accent": "#d17c58",
+    "dark": "#20292e"
+  },
+  "presentation": {
+    "title": "摩天楼建造",
+    "originalTitle": "Tower Building",
+    "mark": "叠塔",
+    "category": "时机叠塔",
+    "tagline": "从摇晃的吊钩上放下楼层，把高楼一层层垒起来。",
+    "description": "从摇晃的吊钩上放下楼层，把高楼一层层垒起来。落点越整齐得分越高，三次失误机会与连续完美奖励，越高越考验时机。",
+    "tags": [
+      "街机",
+      "反应",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "点击开始，再点击屏幕放下摆动的楼层；掉落三次后结束，可重新挑战。",
+      "inputs": [
+        "mouse",
+        "touch"
+      ],
+      "devices": [
+        "desktop",
+        "mobile"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "从摇晃的吊钩上放下楼层，把高楼一层层垒起来",
+      "等待楼层对齐再松手，连续完美落点会增加连击得分。"
+    ],
+    "art": {
+      "cover": "/games/tower-building/cover.png",
+      "hero": "/games/tower-building/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "独立 HTML / CSS / JavaScript 静态运行包",
+    "license": "MIT; Zepto MIT",
+    "sourceUrl": "https://github.com/iamkun/tower_game",
+    "localization": "中文游戏菜单、操作说明和主要反馈；保留原作署名。",
+    "fit": "通过 game.json 与 iframe 接入，无需新增服务器进程。",
+    "highlights": [
+      "时机叠塔"
+    ],
+    "cautions": [
+      "单人玩法，本地成绩不跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/tower-building/index.html"
+    }
+  },
+  "capabilities": [
+    "fullscreen",
+    "storage",
+    "audio"
+  ],
+  "permissions": [
+    "fullscreen",
+    "autoplay"
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 2,
+  "id": "international-chess",
+  "order": 53,
+  "discovery": {
+    "audiences": [
+      "single"
+    ]
+  },
+  "theme": {
+    "accent": "#aa8d62",
+    "dark": "#20292e"
+  },
+  "presentation": {
+    "title": "国际象棋",
+    "originalTitle": "JavaScript Chess",
+    "mark": "象棋",
+    "category": "人机棋类对弈",
+    "tagline": "与本地电脑对手下国际象棋，支持王车易位、吃过路兵和升变。",
+    "description": "与本地电脑对手下国际象棋，支持王车易位、吃过路兵和升变。合法走法提示、悔棋与电脑代走便于练习布局和攻防。",
+    "tags": [
+      "棋类",
+      "策略",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "拖动棋子走子，也可点击右侧合法走法；右侧可以悔棋和让电脑代走。",
+      "inputs": [
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "与本地电脑对手下国际象棋，支持王车易位、吃过路兵和升变",
+      "你执白先走；保护国王，悬停棋子可查看允许的目标格。"
+    ],
+    "art": {
+      "cover": "/games/international-chess/cover.png",
+      "hero": "/games/international-chess/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "独立 HTML / CSS / JavaScript 静态运行包",
+    "license": "MIT; jQuery and jQuery UI MIT",
+    "sourceUrl": "https://github.com/kbjorklu/chess",
+    "localization": "中文游戏菜单、操作说明和主要反馈；保留原作署名。",
+    "fit": "通过 game.json 与 iframe 接入，无需新增服务器进程。",
+    "highlights": [
+      "人机棋类对弈"
+    ],
+    "cautions": [
+      "单人玩法，本地成绩不跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/international-chess/index.html"
+    }
+  },
+  "capabilities": [
+    "fullscreen",
+    "storage"
+  ],
+  "permissions": [
+    "fullscreen"
+  ]
+}

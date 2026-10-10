@@ -112,7 +112,7 @@ try {
 
 // Checking the actual runtime inventory catches missing maps/audio as well as
 // entry files. A SPA fallback can otherwise return HTML with status 200.
-for (const batch of ["expansion", "classics"]) {
+for (const batch of ["expansion", "classics", "collection12"]) {
 try {
   const sources = JSON.parse(await readFile(path.join(root, `games/${batch}/SOURCES.json`), "utf8"));
   const inventory = JSON.parse(await readFile(path.join(root, `games/${batch}/runtime-assets.json`), "utf8"));

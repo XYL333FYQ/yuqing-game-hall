@@ -1,0 +1,25 @@
+<!DOCTYPE HTML>
+<html lang="zh-CN">
+<head><meta name="viewport" content="width=device-width,initial-scale=1">
+	<meta charset="utf-8">
+	<title>五彩连珠 · 雨晴游戏厅</title>
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+	<div id="game">
+		<div class="forecast"></div>
+		<div class="grid"></div>
+		<div style="text-align:center">
+			分数： <strong class="score">0</strong> /
+			纪录： <strong class="record">0</strong>
+		</div>
+	</div>
+
+	<script src="lines.js"></script>
+	<script>
+		Lines.init();
+	</script>
+
+<script src="../_shared/game-help.js" data-title="五彩连珠" data-controls="点击彩球，再点击能通过空格抵达的位置；同色连成五个或更多即可消除。" data-tip="没有消除时会增加三颗球，先用上方预告规划空间。"></script></body>
+</html>

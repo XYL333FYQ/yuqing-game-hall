@@ -287,3 +287,5 @@ writeFileSync(file, text, { encoding: "utf8" });
 ## 新增中文游戏
 
 首批接入 20 款经营、动作、卡牌、解谜与塔防游戏，说明见 [NEW_GAMES.md](NEW_GAMES.md)。第二批再接入 10 款完整经典玩法，来源、玩法和验收见 [CLASSIC_GAMES.md](CLASSIC_GAMES.md)。大厅现展示 44 款游戏（45 份清单，含一个原有不可用条目）。两批都是独立静态运行包，不需要新增 VPS 后端，主要菜单和关键规则提供中文。
+
+新增游戏：第一批 10 款见 [CLASSIC_GAMES.md](CLASSIC_GAMES.md)，追加 12 款见 [COLLECTION12_GAMES.md](COLLECTION12_GAMES.md)。当前 56 款可用游戏，57 份清单；新增游戏自动进入精选与热门候选池。

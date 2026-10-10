@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head><meta name="viewport" content="width=device-width,initial-scale=1">
+		<meta http-equiv="x-ua-compatible" content="IE=edge">
+		<meta charset="utf-8">
+		<title>国际象棋 · 雨晴游戏厅</title>
+		
+		<link rel="stylesheet" href="chess.css">
+		
+	<link rel="stylesheet" href="hall.css"></head>
+	<body>
+		<h1>国际象棋 · 你执白，电脑执黑 <button onclick="location.reload()">重新开局</button></h1>
+		<div id="content">
+			<div id="chessboard" role="main"></div>
+			<div id="moves"></div>
+			<div id="clear"></div>
+			<div id="help">
+				<ul><li>拖动棋子走子；右侧列出所有合法走法，也可直接点击。</li><li>兵到达底线可升变；右侧可选择升变棋子。</li><li>将王向车的方向移动两格即可王车易位。悔棋会撤销双方上一步。</li></ul>
+			</div>
+		</div>
+		<div id="footer"></div>
+		<div id="dim"></div>
+		
+		
+		
+		<!--[if lt IE 9]><![endif]-->
+		<script src="jquery.min.js"></script><script src="jquery-ui.min.js"></script><script src="chess.include.js"></script>
+		<script>
+			$(makeChessGame);
+		</script>
+		
+	<script src="../_shared/game-help.js" data-title="国际象棋" data-controls="拖动棋子走子，也可点击右侧合法走法；右侧可以悔棋和让电脑代走。" data-tip="你执白先走；保护国王，悬停棋子可查看允许的目标格。"></script></body>
+</html>

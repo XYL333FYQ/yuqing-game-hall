@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 2,
+  "id": "binary-puzzle",
+  "order": 46,
+  "discovery": {
+    "audiences": [
+      "single"
+    ]
+  },
+  "theme": {
+    "accent": "#d05a61",
+    "dark": "#20292e"
+  },
+  "presentation": {
+    "title": "双色逻辑",
+    "originalTitle": "0h h1",
+    "mark": "双色",
+    "category": "双色推理",
+    "tagline": "根据三条规则填满双色棋盘，不靠反应速度。",
+    "description": "根据三条规则填满双色棋盘，不靠反应速度。提供四种棋盘大小、逐步教学、撤销和有理由的提示。",
+    "tags": [
+      "逻辑",
+      "解谜",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "点击格子在空白、红色、蓝色之间切换；撤销和提示在棋盘下方。",
+      "inputs": [
+        "mouse",
+        "touch"
+      ],
+      "devices": [
+        "desktop",
+        "mobile"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "根据三条规则填满双色棋盘，不靠反应速度",
+      "每行每列红蓝数量相等，不能连续出现三个同色，不能有重复的行或列。"
+    ],
+    "art": {
+      "cover": "/games/binary-puzzle/cover.png",
+      "hero": "/games/binary-puzzle/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "独立 HTML / CSS / JavaScript 静态运行包",
+    "license": "MIT; Apache-2.0 launcher",
+    "sourceUrl": "https://github.com/florisluiten/0hh1",
+    "localization": "中文游戏菜单、操作说明和主要反馈；保留原作署名。",
+    "fit": "通过 game.json 与 iframe 接入，无需新增服务器进程。",
+    "highlights": [
+      "双色推理"
+    ],
+    "cautions": [
+      "单人玩法，本地成绩不跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/binary-puzzle/index.html"
+    }
+  },
+  "capabilities": [
+    "fullscreen",
+    "storage"
+  ],
+  "permissions": [
+    "fullscreen"
+  ]
+}

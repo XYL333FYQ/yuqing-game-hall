@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 2,
+  "id": "nonograms",
+  "order": 51,
+  "discovery": {
+    "audiences": [
+      "single"
+    ]
+  },
+  "theme": {
+    "accent": "#7189b5",
+    "dark": "#20292e"
+  },
+  "presentation": {
+    "title": "数织画谜",
+    "originalTitle": "Nonograms",
+    "mark": "数织",
+    "category": "数字绘图推理",
+    "tagline": "用行列旁的数字线索推理出隐藏图画，兼顾横纵两套限制。",
+    "description": "用行列旁的数字线索推理出隐藏图画，兼顾横纵两套限制。提供不同大小的关卡、错误检查、计时，以及导入导出关卡。",
+    "tags": [
+      "解谜",
+      "绘图",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "选择关卡，左键填格、右键标记空格；可检查答案与重玩。",
+      "inputs": [
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "用行列旁的数字线索推理出隐藏图画，兼顾横纵两套限制",
+      "行列数字表示连续色块的长度，不同色块之间至少留一格。"
+    ],
+    "art": {
+      "cover": "/games/nonograms/cover.png",
+      "hero": "/games/nonograms/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "独立 HTML / CSS / JavaScript 静态运行包",
+    "license": "MIT; dependencies see licenses",
+    "sourceUrl": "https://github.com/jodua/nonograms",
+    "localization": "中文游戏菜单、操作说明和主要反馈；保留原作署名。",
+    "fit": "通过 game.json 与 iframe 接入，无需新增服务器进程。",
+    "highlights": [
+      "数字绘图推理"
+    ],
+    "cautions": [
+      "单人玩法，本地成绩不跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/nonograms/index.html"
+    }
+  },
+  "capabilities": [
+    "fullscreen",
+    "storage"
+  ],
+  "permissions": [
+    "fullscreen"
+  ]
+}

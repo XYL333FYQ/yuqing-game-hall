@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 2,
+  "id": "klondike",
+  "order": 50,
+  "discovery": {
+    "audiences": [
+      "single"
+    ]
+  },
+  "theme": {
+    "accent": "#598d78",
+    "dark": "#20292e"
+  },
+  "presentation": {
+    "title": "经典纸牌接龙",
+    "originalTitle": "JavaScript Solitaire",
+    "mark": "接龙",
+    "category": "单人纸牌策略",
+    "tagline": "七列经典纸牌接龙，用翻牌、挪动整组牌和空列整理隐藏牌。",
+    "description": "七列经典纸牌接龙，用翻牌、挪动整组牌和空列整理隐藏牌。四个收牌区都按花色收齐才算通关，保留原作完整发牌与拖动玩法。",
+    "tags": [
+      "纸牌",
+      "策略",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "点击牌堆翻三张牌；拖动一张牌或整组牌，点击正面牌可自动寻找收牌区。",
+      "inputs": [
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "七列经典纸牌接龙，用翻牌、挪动整组牌和空列整理隐藏牌",
+      "下方按红黑交替递减排列，上方收牌区按同花色从 A 到 K 收齐。"
+    ],
+    "art": {
+      "cover": "/games/klondike/cover.png",
+      "hero": "/games/klondike/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "独立 HTML / CSS / JavaScript 静态运行包",
+    "license": "MIT",
+    "sourceUrl": "https://github.com/rjanjic/js-solitaire",
+    "localization": "中文游戏菜单、操作说明和主要反馈；保留原作署名。",
+    "fit": "通过 game.json 与 iframe 接入，无需新增服务器进程。",
+    "highlights": [
+      "单人纸牌策略"
+    ],
+    "cautions": [
+      "单人玩法，本地成绩不跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/klondike/index.html"
+    }
+  },
+  "capabilities": [
+    "fullscreen",
+    "storage"
+  ],
+  "permissions": [
+    "fullscreen"
+  ]
+}

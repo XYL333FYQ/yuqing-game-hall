@@ -44,6 +44,18 @@
 // - public/games/breaklock/game.json
 // - public/games/minesweeper/game.json
 // - public/games/asteroids/game.json
+// - public/games/binary-puzzle/game.json
+// - public/games/visible-dots/game.json
+// - public/games/mahjong-solitaire/game.json
+// - public/games/sudoku/game.json
+// - public/games/klondike/game.json
+// - public/games/nonograms/game.json
+// - public/games/connect-four/game.json
+// - public/games/international-chess/game.json
+// - public/games/battleship/game.json
+// - public/games/snake-classic/game.json
+// - public/games/color-lines/game.json
+// - public/games/tower-building/game.json
 import type { GameManifest } from "../platform/game-manifest";
 
 export const GAME_MANIFESTS = [
@@ -3704,6 +3716,947 @@ export const GAME_MANIFESTS = [
       "launch": {
         "kind": "iframe",
         "entry": "/games/asteroids/index.html"
+      }
+    },
+    "capabilities": [
+      "fullscreen",
+      "storage",
+      "audio"
+    ],
+    "permissions": [
+      "fullscreen",
+      "autoplay"
+    ]
+  },
+  {
+    "schemaVersion": 2,
+    "id": "binary-puzzle",
+    "order": 46,
+    "discovery": {
+      "audiences": [
+        "single"
+      ]
+    },
+    "theme": {
+      "accent": "#d05a61",
+      "dark": "#20292e"
+    },
+    "presentation": {
+      "title": "双色逻辑",
+      "originalTitle": "0h h1",
+      "mark": "双色",
+      "category": "双色推理",
+      "tagline": "根据三条规则填满双色棋盘，不靠反应速度。",
+      "description": "根据三条规则填满双色棋盘，不靠反应速度。提供四种棋盘大小、逐步教学、撤销和有理由的提示。",
+      "tags": [
+        "逻辑",
+        "解谜",
+        "中文"
+      ],
+      "play": {
+        "modes": "单人挑战",
+        "players": "1 人",
+        "controls": "点击格子在空白、红色、蓝色之间切换；撤销和提示在棋盘下方。",
+        "inputs": [
+          "mouse",
+          "touch"
+        ],
+        "devices": [
+          "desktop",
+          "mobile"
+        ],
+        "vision": false
+      },
+      "highlights": [
+        "根据三条规则填满双色棋盘，不靠反应速度",
+        "每行每列红蓝数量相等，不能连续出现三个同色，不能有重复的行或列。"
+      ],
+      "art": {
+        "cover": "/games/binary-puzzle/cover.png",
+        "hero": "/games/binary-puzzle/cover.png"
+      },
+      "availability": {
+        "state": "playable",
+        "label": "可直接游玩"
+      },
+      "actionLabel": "进入游戏"
+    },
+    "platform": {
+      "hosting": "static",
+      "technology": "独立 HTML / CSS / JavaScript 静态运行包",
+      "license": "MIT; Apache-2.0 launcher",
+      "sourceUrl": "https://github.com/florisluiten/0hh1",
+      "localization": "中文游戏菜单、操作说明和主要反馈；保留原作署名。",
+      "fit": "通过 game.json 与 iframe 接入，无需新增服务器进程。",
+      "highlights": [
+        "双色推理"
+      ],
+      "cautions": [
+        "单人玩法，本地成绩不跨设备同步。"
+      ],
+      "launch": {
+        "kind": "iframe",
+        "entry": "/games/binary-puzzle/index.html"
+      }
+    },
+    "capabilities": [
+      "fullscreen",
+      "storage"
+    ],
+    "permissions": [
+      "fullscreen"
+    ]
+  },
+  {
+    "schemaVersion": 2,
+    "id": "visible-dots",
+    "order": 47,
+    "discovery": {
+      "audiences": [
+        "single"
+      ]
+    },
+    "theme": {
+      "accent": "#469ab0",
+      "dark": "#20292e"
+    },
+    "presentation": {
+      "title": "视线谜阵",
+      "originalTitle": "0h n0",
+      "mark": "视线",
+      "category": "数字视线推理",
+      "tagline": "让每个数字看到恰好数量的蓝点，用红点隔断多余视线。",
+      "description": "让每个数字看到恰好数量的蓝点，用红点隔断多余视线。四种棋盘大小、互动教学与提示让规则逐步变成层层推理。",
+      "tags": [
+        "逻辑",
+        "解谜",
+        "中文"
+      ],
+      "play": {
+        "modes": "单人挑战",
+        "players": "1 人",
+        "controls": "点击格子在蓝点、红点、空白之间切换；眼睛按钮提供提示。",
+        "inputs": [
+          "mouse",
+          "touch"
+        ],
+        "devices": [
+          "desktop",
+          "mobile"
+        ],
+        "vision": false
+      },
+      "highlights": [
+        "让每个数字看到恰好数量的蓝点，用红点隔断多余视线",
+        "数字只计算同行同列能看见的其他蓝点，红点阻挡视线。"
+      ],
+      "art": {
+        "cover": "/games/visible-dots/cover.png",
+        "hero": "/games/visible-dots/cover.png"
+      },
+      "availability": {
+        "state": "playable",
+        "label": "可直接游玩"
+      },
+      "actionLabel": "进入游戏"
+    },
+    "platform": {
+      "hosting": "static",
+      "technology": "独立 HTML / CSS / JavaScript 静态运行包",
+      "license": "MIT; Apache-2.0 launcher",
+      "sourceUrl": "https://github.com/Techdojo/0hn0",
+      "localization": "中文游戏菜单、操作说明和主要反馈；保留原作署名。",
+      "fit": "通过 game.json 与 iframe 接入，无需新增服务器进程。",
+      "highlights": [
+        "数字视线推理"
+      ],
+      "cautions": [
+        "单人玩法，本地成绩不跨设备同步。"
+      ],
+      "launch": {
+        "kind": "iframe",
+        "entry": "/games/visible-dots/index.html"
+      }
+    },
+    "capabilities": [
+      "fullscreen",
+      "storage"
+    ],
+    "permissions": [
+      "fullscreen"
+    ]
+  },
+  {
+    "schemaVersion": 2,
+    "id": "mahjong-solitaire",
+    "order": 48,
+    "discovery": {
+      "audiences": [
+        "single"
+      ]
+    },
+    "theme": {
+      "accent": "#5f9478",
+      "dark": "#20292e"
+    },
+    "presentation": {
+      "title": "麻将叠叠消",
+      "originalTitle": "Mah",
+      "mark": "配对",
+      "category": "立体配对消除",
+      "tagline": "从多层麻将牌阵中寻找可移除的相同牌，逐步拆掉整座牌山。",
+      "description": "从多层麻将牌阵中寻找可移除的相同牌，逐步拆掉整座牌山。多种布局、可解牌局、提示与撤销，适合慢慢规划消除顺序。",
+      "tags": [
+        "消除",
+        "策略",
+        "中文"
+      ],
+      "play": {
+        "modes": "单人挑战",
+        "players": "1 人",
+        "controls": "点击两张相同的自由牌消除；上方可选布局、提示、撤销和重新开始。",
+        "inputs": [
+          "mouse",
+          "touch"
+        ],
+        "devices": [
+          "desktop",
+          "mobile"
+        ],
+        "vision": false
+      },
+      "highlights": [
+        "从多层麻将牌阵中寻找可移除的相同牌，逐步拆掉整座牌山",
+        "没有牌盖住且左右至少一侧空着，才是可消除的自由牌。"
+      ],
+      "art": {
+        "cover": "/games/mahjong-solitaire/cover.png",
+        "hero": "/games/mahjong-solitaire/cover.png"
+      },
+      "availability": {
+        "state": "playable",
+        "label": "可直接游玩"
+      },
+      "actionLabel": "进入游戏"
+    },
+    "platform": {
+      "hosting": "static",
+      "technology": "独立 HTML / CSS / JavaScript 静态运行包",
+      "license": "MIT; tile art public domain and CC-BY-SA-4.0",
+      "sourceUrl": "https://github.com/ffalt/mah",
+      "localization": "中文游戏菜单、操作说明和主要反馈；保留原作署名。",
+      "fit": "通过 game.json 与 iframe 接入，无需新增服务器进程。",
+      "highlights": [
+        "立体配对消除"
+      ],
+      "cautions": [
+        "单人玩法，本地成绩不跨设备同步。"
+      ],
+      "launch": {
+        "kind": "iframe",
+        "entry": "/games/mahjong-solitaire/index.html"
+      }
+    },
+    "capabilities": [
+      "fullscreen",
+      "storage",
+      "audio"
+    ],
+    "permissions": [
+      "fullscreen",
+      "autoplay"
+    ]
+  },
+  {
+    "schemaVersion": 2,
+    "id": "sudoku",
+    "order": 49,
+    "discovery": {
+      "audiences": [
+        "single"
+      ]
+    },
+    "theme": {
+      "accent": "#658bb5",
+      "dark": "#20292e"
+    },
+    "presentation": {
+      "title": "九宫数独",
+      "originalTitle": "Sudoku",
+      "mark": "数独",
+      "category": "九宫数字推理",
+      "tagline": "在九行九列的棋盘里填入数字，检查行、列和宫格的限制。",
+      "description": "在九行九列的棋盘里填入数字，检查行、列和宫格的限制。三档题库、冲突提示、计时和自动保存，随时继续未完成的棋盘。",
+      "tags": [
+        "益智",
+        "推理",
+        "中文"
+      ],
+      "play": {
+        "modes": "单人挑战",
+        "players": "1 人",
+        "controls": "选择难度后点击空格输入 1–9；删除数字可重新填写。",
+        "inputs": [
+          "keyboard",
+          "mouse",
+          "touch"
+        ],
+        "devices": [
+          "desktop",
+          "mobile"
+        ],
+        "vision": false
+      },
+      "highlights": [
+        "在九行九列的棋盘里填入数字，检查行、列和宫格的限制",
+        "每行、每列和每个九宫格的 1–9 都不能重复，红色提示表示冲突。"
+      ],
+      "art": {
+        "cover": "/games/sudoku/cover.png",
+        "hero": "/games/sudoku/cover.png"
+      },
+      "availability": {
+        "state": "playable",
+        "label": "可直接游玩"
+      },
+      "actionLabel": "进入游戏"
+    },
+    "platform": {
+      "hosting": "static",
+      "technology": "独立 HTML / CSS / JavaScript 静态运行包",
+      "license": "MIT; bundled dependencies retain notices",
+      "sourceUrl": "https://github.com/andreynering/sudoku",
+      "localization": "中文游戏菜单、操作说明和主要反馈；保留原作署名。",
+      "fit": "通过 game.json 与 iframe 接入，无需新增服务器进程。",
+      "highlights": [
+        "九宫数字推理"
+      ],
+      "cautions": [
+        "单人玩法，本地成绩不跨设备同步。"
+      ],
+      "launch": {
+        "kind": "iframe",
+        "entry": "/games/sudoku/index.html"
+      }
+    },
+    "capabilities": [
+      "fullscreen",
+      "storage"
+    ],
+    "permissions": [
+      "fullscreen"
+    ]
+  },
+  {
+    "schemaVersion": 2,
+    "id": "klondike",
+    "order": 50,
+    "discovery": {
+      "audiences": [
+        "single"
+      ]
+    },
+    "theme": {
+      "accent": "#598d78",
+      "dark": "#20292e"
+    },
+    "presentation": {
+      "title": "经典纸牌接龙",
+      "originalTitle": "JavaScript Solitaire",
+      "mark": "接龙",
+      "category": "单人纸牌策略",
+      "tagline": "七列经典纸牌接龙，用翻牌、挪动整组牌和空列整理隐藏牌。",
+      "description": "七列经典纸牌接龙，用翻牌、挪动整组牌和空列整理隐藏牌。四个收牌区都按花色收齐才算通关，保留原作完整发牌与拖动玩法。",
+      "tags": [
+        "纸牌",
+        "策略",
+        "中文"
+      ],
+      "play": {
+        "modes": "单人挑战",
+        "players": "1 人",
+        "controls": "点击牌堆翻三张牌；拖动一张牌或整组牌，点击正面牌可自动寻找收牌区。",
+        "inputs": [
+          "mouse"
+        ],
+        "devices": [
+          "desktop"
+        ],
+        "vision": false
+      },
+      "highlights": [
+        "七列经典纸牌接龙，用翻牌、挪动整组牌和空列整理隐藏牌",
+        "下方按红黑交替递减排列，上方收牌区按同花色从 A 到 K 收齐。"
+      ],
+      "art": {
+        "cover": "/games/klondike/cover.png",
+        "hero": "/games/klondike/cover.png"
+      },
+      "availability": {
+        "state": "playable",
+        "label": "可直接游玩"
+      },
+      "actionLabel": "进入游戏"
+    },
+    "platform": {
+      "hosting": "static",
+      "technology": "独立 HTML / CSS / JavaScript 静态运行包",
+      "license": "MIT",
+      "sourceUrl": "https://github.com/rjanjic/js-solitaire",
+      "localization": "中文游戏菜单、操作说明和主要反馈；保留原作署名。",
+      "fit": "通过 game.json 与 iframe 接入，无需新增服务器进程。",
+      "highlights": [
+        "单人纸牌策略"
+      ],
+      "cautions": [
+        "单人玩法，本地成绩不跨设备同步。"
+      ],
+      "launch": {
+        "kind": "iframe",
+        "entry": "/games/klondike/index.html"
+      }
+    },
+    "capabilities": [
+      "fullscreen",
+      "storage"
+    ],
+    "permissions": [
+      "fullscreen"
+    ]
+  },
+  {
+    "schemaVersion": 2,
+    "id": "nonograms",
+    "order": 51,
+    "discovery": {
+      "audiences": [
+        "single"
+      ]
+    },
+    "theme": {
+      "accent": "#7189b5",
+      "dark": "#20292e"
+    },
+    "presentation": {
+      "title": "数织画谜",
+      "originalTitle": "Nonograms",
+      "mark": "数织",
+      "category": "数字绘图推理",
+      "tagline": "用行列旁的数字线索推理出隐藏图画，兼顾横纵两套限制。",
+      "description": "用行列旁的数字线索推理出隐藏图画，兼顾横纵两套限制。提供不同大小的关卡、错误检查、计时，以及导入导出关卡。",
+      "tags": [
+        "解谜",
+        "绘图",
+        "中文"
+      ],
+      "play": {
+        "modes": "单人挑战",
+        "players": "1 人",
+        "controls": "选择关卡，左键填格、右键标记空格；可检查答案与重玩。",
+        "inputs": [
+          "mouse"
+        ],
+        "devices": [
+          "desktop"
+        ],
+        "vision": false
+      },
+      "highlights": [
+        "用行列旁的数字线索推理出隐藏图画，兼顾横纵两套限制",
+        "行列数字表示连续色块的长度，不同色块之间至少留一格。"
+      ],
+      "art": {
+        "cover": "/games/nonograms/cover.png",
+        "hero": "/games/nonograms/cover.png"
+      },
+      "availability": {
+        "state": "playable",
+        "label": "可直接游玩"
+      },
+      "actionLabel": "进入游戏"
+    },
+    "platform": {
+      "hosting": "static",
+      "technology": "独立 HTML / CSS / JavaScript 静态运行包",
+      "license": "MIT; dependencies see licenses",
+      "sourceUrl": "https://github.com/jodua/nonograms",
+      "localization": "中文游戏菜单、操作说明和主要反馈；保留原作署名。",
+      "fit": "通过 game.json 与 iframe 接入，无需新增服务器进程。",
+      "highlights": [
+        "数字绘图推理"
+      ],
+      "cautions": [
+        "单人玩法，本地成绩不跨设备同步。"
+      ],
+      "launch": {
+        "kind": "iframe",
+        "entry": "/games/nonograms/index.html"
+      }
+    },
+    "capabilities": [
+      "fullscreen",
+      "storage"
+    ],
+    "permissions": [
+      "fullscreen"
+    ]
+  },
+  {
+    "schemaVersion": 2,
+    "id": "connect-four",
+    "order": 52,
+    "discovery": {
+      "audiences": [
+        "duo"
+      ]
+    },
+    "theme": {
+      "accent": "#bf6f4d",
+      "dark": "#20292e"
+    },
+    "presentation": {
+      "title": "四子连线",
+      "originalTitle": "Connect Four",
+      "mark": "四连",
+      "category": "同屏双人策略",
+      "tagline": "棋子落下后无法收回，两个人在同一台设备上争取先连成四子。",
+      "description": "棋子落下后无法收回，两个人在同一台设备上争取先连成四子。需要同时进攻和封堵，完整胜负判定与重开，支持键盘操作。",
+      "tags": [
+        "棋类",
+        "本地双人",
+        "策略",
+        "中文"
+      ],
+      "play": {
+        "modes": "同屏双人",
+        "players": "2 人",
+        "controls": "两人轮流点击棋盘的一列投下棋子；也可以使用方向键和回车。",
+        "inputs": [
+          "mouse"
+        ],
+        "devices": [
+          "desktop"
+        ],
+        "vision": false
+      },
+      "highlights": [
+        "棋子落下后无法收回，两个人在同一台设备上争取先连成四子",
+        "横、竖、斜连成四子就获胜，留意对手同时制造两条威胁。"
+      ],
+      "art": {
+        "cover": "/games/connect-four/cover.png",
+        "hero": "/games/connect-four/cover.png"
+      },
+      "availability": {
+        "state": "playable",
+        "label": "可直接游玩"
+      },
+      "actionLabel": "进入游戏"
+    },
+    "platform": {
+      "hosting": "static",
+      "technology": "独立 HTML / CSS / JavaScript 静态运行包",
+      "license": "MIT",
+      "sourceUrl": "https://github.com/bryanbraun/connect-four",
+      "localization": "中文游戏菜单、操作说明和主要反馈；保留原作署名。",
+      "fit": "通过 game.json 与 iframe 接入，无需新增服务器进程。",
+      "highlights": [
+        "同屏双人策略"
+      ],
+      "cautions": [
+        "双人在同一设备上轮流操作，无网络联机。"
+      ],
+      "launch": {
+        "kind": "iframe",
+        "entry": "/games/connect-four/index.html"
+      }
+    },
+    "capabilities": [
+      "fullscreen",
+      "storage"
+    ],
+    "permissions": [
+      "fullscreen"
+    ]
+  },
+  {
+    "schemaVersion": 2,
+    "id": "international-chess",
+    "order": 53,
+    "discovery": {
+      "audiences": [
+        "single"
+      ]
+    },
+    "theme": {
+      "accent": "#aa8d62",
+      "dark": "#20292e"
+    },
+    "presentation": {
+      "title": "国际象棋",
+      "originalTitle": "JavaScript Chess",
+      "mark": "象棋",
+      "category": "人机棋类对弈",
+      "tagline": "与本地电脑对手下国际象棋，支持王车易位、吃过路兵和升变。",
+      "description": "与本地电脑对手下国际象棋，支持王车易位、吃过路兵和升变。合法走法提示、悔棋与电脑代走便于练习布局和攻防。",
+      "tags": [
+        "棋类",
+        "策略",
+        "中文"
+      ],
+      "play": {
+        "modes": "单人挑战",
+        "players": "1 人",
+        "controls": "拖动棋子走子，也可点击右侧合法走法；右侧可以悔棋和让电脑代走。",
+        "inputs": [
+          "mouse"
+        ],
+        "devices": [
+          "desktop"
+        ],
+        "vision": false
+      },
+      "highlights": [
+        "与本地电脑对手下国际象棋，支持王车易位、吃过路兵和升变",
+        "你执白先走；保护国王，悬停棋子可查看允许的目标格。"
+      ],
+      "art": {
+        "cover": "/games/international-chess/cover.png",
+        "hero": "/games/international-chess/cover.png"
+      },
+      "availability": {
+        "state": "playable",
+        "label": "可直接游玩"
+      },
+      "actionLabel": "进入游戏"
+    },
+    "platform": {
+      "hosting": "static",
+      "technology": "独立 HTML / CSS / JavaScript 静态运行包",
+      "license": "MIT; jQuery and jQuery UI MIT",
+      "sourceUrl": "https://github.com/kbjorklu/chess",
+      "localization": "中文游戏菜单、操作说明和主要反馈；保留原作署名。",
+      "fit": "通过 game.json 与 iframe 接入，无需新增服务器进程。",
+      "highlights": [
+        "人机棋类对弈"
+      ],
+      "cautions": [
+        "单人玩法，本地成绩不跨设备同步。"
+      ],
+      "launch": {
+        "kind": "iframe",
+        "entry": "/games/international-chess/index.html"
+      }
+    },
+    "capabilities": [
+      "fullscreen",
+      "storage"
+    ],
+    "permissions": [
+      "fullscreen"
+    ]
+  },
+  {
+    "schemaVersion": 2,
+    "id": "battleship",
+    "order": 54,
+    "discovery": {
+      "audiences": [
+        "single"
+      ]
+    },
+    "theme": {
+      "accent": "#577f9b",
+      "dark": "#20292e"
+    },
+    "presentation": {
+      "title": "舰队猎手",
+      "originalTitle": "Battleship",
+      "mark": "海战",
+      "category": "人机海战推理",
+      "tagline": "把五艘船藏进海图，再与电脑轮流射击寻找对方舰队。",
+      "description": "把五艘船藏进海图，再与电脑轮流射击寻找对方舰队。船位隐藏、命中追踪与击沉胜负，让每次开火都需要排除和推理。",
+      "tags": [
+        "策略",
+        "推理",
+        "中文"
+      ],
+      "play": {
+        "modes": "单人挑战",
+        "players": "1 人",
+        "controls": "先在自己的棋盘摆放五艘舰船，可点旋转；随后点击敌方格子开火。",
+        "inputs": [
+          "mouse"
+        ],
+        "devices": [
+          "desktop"
+        ],
+        "vision": false
+      },
+      "highlights": [
+        "把五艘船藏进海图，再与电脑轮流射击寻找对方舰队",
+        "击中后沿横竖方向追击；电脑同样会利用命中信息寻找你的舰船。"
+      ],
+      "art": {
+        "cover": "/games/battleship/cover.png",
+        "hero": "/games/battleship/cover.png"
+      },
+      "availability": {
+        "state": "playable",
+        "label": "可直接游玩"
+      },
+      "actionLabel": "进入游戏"
+    },
+    "platform": {
+      "hosting": "static",
+      "technology": "独立 HTML / CSS / JavaScript 静态运行包",
+      "license": "MIT; normalize.css MIT",
+      "sourceUrl": "https://github.com/Shahir-47/Battleship",
+      "localization": "中文游戏菜单、操作说明和主要反馈；保留原作署名。",
+      "fit": "通过 game.json 与 iframe 接入，无需新增服务器进程。",
+      "highlights": [
+        "人机海战推理"
+      ],
+      "cautions": [
+        "单人玩法，本地成绩不跨设备同步。"
+      ],
+      "launch": {
+        "kind": "iframe",
+        "entry": "/games/battleship/index.html"
+      }
+    },
+    "capabilities": [
+      "fullscreen",
+      "storage"
+    ],
+    "permissions": [
+      "fullscreen"
+    ]
+  },
+  {
+    "schemaVersion": 2,
+    "id": "snake-classic",
+    "order": 55,
+    "discovery": {
+      "audiences": [
+        "single"
+      ]
+    },
+    "theme": {
+      "accent": "#7b9853",
+      "dark": "#20292e"
+    },
+    "presentation": {
+      "title": "贪吃蛇挑战",
+      "originalTitle": "JavaScript Snake",
+      "mark": "贪吃蛇",
+      "category": "路线与反应",
+      "tagline": "吃食物增长蛇身，在越来越挤的棋盘里维持安全路线。",
+      "description": "吃食物增长蛇身，在越来越挤的棋盘里维持安全路线。五档速度、加速挑战与多种外观，挑战持续增长的得分。",
+      "tags": [
+        "街机",
+        "反应",
+        "中文"
+      ],
+      "play": {
+        "modes": "单人挑战",
+        "players": "1 人",
+        "controls": "方向键控制移动，空格暂停；开始前可切换速度与外观。",
+        "inputs": [
+          "keyboard",
+          "touch"
+        ],
+        "devices": [
+          "desktop"
+        ],
+        "vision": false
+      },
+      "highlights": [
+        "吃食物增长蛇身，在越来越挤的棋盘里维持安全路线",
+        "随着蛇身变长，提前规划回转路线，别把自己围进死路。"
+      ],
+      "art": {
+        "cover": "/games/snake-classic/cover.png",
+        "hero": "/games/snake-classic/cover.png"
+      },
+      "availability": {
+        "state": "playable",
+        "label": "可直接游玩"
+      },
+      "actionLabel": "进入游戏"
+    },
+    "platform": {
+      "hosting": "static",
+      "technology": "独立 HTML / CSS / JavaScript 静态运行包",
+      "license": "MIT",
+      "sourceUrl": "https://github.com/patorjk/JavaScript-Snake",
+      "localization": "中文游戏菜单、操作说明和主要反馈；保留原作署名。",
+      "fit": "通过 game.json 与 iframe 接入，无需新增服务器进程。",
+      "highlights": [
+        "路线与反应"
+      ],
+      "cautions": [
+        "单人玩法，本地成绩不跨设备同步。"
+      ],
+      "launch": {
+        "kind": "iframe",
+        "entry": "/games/snake-classic/index.html"
+      }
+    },
+    "capabilities": [
+      "fullscreen",
+      "storage"
+    ],
+    "permissions": [
+      "fullscreen"
+    ]
+  },
+  {
+    "schemaVersion": 2,
+    "id": "color-lines",
+    "order": 56,
+    "discovery": {
+      "audiences": [
+        "single"
+      ]
+    },
+    "theme": {
+      "accent": "#8d75b0",
+      "dark": "#20292e"
+    },
+    "presentation": {
+      "title": "五彩连珠",
+      "originalTitle": "Color Lines",
+      "mark": "连珠",
+      "category": "路线消除策略",
+      "tagline": "在九乘九棋盘中移动彩球，把同色球连成横、竖或斜线消除。",
+      "description": "在九乘九棋盘中移动彩球，把同色球连成横、竖或斜线消除。路线必须畅通，新球预告、连珠得分和本地纪录让整理空间成为核心挑战。",
+      "tags": [
+        "消除",
+        "策略",
+        "中文"
+      ],
+      "play": {
+        "modes": "单人挑战",
+        "players": "1 人",
+        "controls": "点击彩球，再点击能通过空格抵达的位置；同色连成五个或更多即可消除。",
+        "inputs": [
+          "mouse"
+        ],
+        "devices": [
+          "desktop"
+        ],
+        "vision": false
+      },
+      "highlights": [
+        "在九乘九棋盘中移动彩球，把同色球连成横、竖或斜线消除",
+        "没有消除时会增加三颗球，先用上方预告规划空间。"
+      ],
+      "art": {
+        "cover": "/games/color-lines/cover.png",
+        "hero": "/games/color-lines/cover.png"
+      },
+      "availability": {
+        "state": "playable",
+        "label": "可直接游玩"
+      },
+      "actionLabel": "进入游戏"
+    },
+    "platform": {
+      "hosting": "static",
+      "technology": "独立 HTML / CSS / JavaScript 静态运行包",
+      "license": "MIT",
+      "sourceUrl": "https://github.com/arnisritins/Color-Lines",
+      "localization": "中文游戏菜单、操作说明和主要反馈；保留原作署名。",
+      "fit": "通过 game.json 与 iframe 接入，无需新增服务器进程。",
+      "highlights": [
+        "路线消除策略"
+      ],
+      "cautions": [
+        "单人玩法，本地成绩不跨设备同步。"
+      ],
+      "launch": {
+        "kind": "iframe",
+        "entry": "/games/color-lines/index.html"
+      }
+    },
+    "capabilities": [
+      "fullscreen",
+      "storage"
+    ],
+    "permissions": [
+      "fullscreen"
+    ]
+  },
+  {
+    "schemaVersion": 2,
+    "id": "tower-building",
+    "order": 57,
+    "discovery": {
+      "audiences": [
+        "single"
+      ]
+    },
+    "theme": {
+      "accent": "#d17c58",
+      "dark": "#20292e"
+    },
+    "presentation": {
+      "title": "摩天楼建造",
+      "originalTitle": "Tower Building",
+      "mark": "叠塔",
+      "category": "时机叠塔",
+      "tagline": "从摇晃的吊钩上放下楼层，把高楼一层层垒起来。",
+      "description": "从摇晃的吊钩上放下楼层，把高楼一层层垒起来。落点越整齐得分越高，三次失误机会与连续完美奖励，越高越考验时机。",
+      "tags": [
+        "街机",
+        "反应",
+        "中文"
+      ],
+      "play": {
+        "modes": "单人挑战",
+        "players": "1 人",
+        "controls": "点击开始，再点击屏幕放下摆动的楼层；掉落三次后结束，可重新挑战。",
+        "inputs": [
+          "mouse",
+          "touch"
+        ],
+        "devices": [
+          "desktop",
+          "mobile"
+        ],
+        "vision": false
+      },
+      "highlights": [
+        "从摇晃的吊钩上放下楼层，把高楼一层层垒起来",
+        "等待楼层对齐再松手，连续完美落点会增加连击得分。"
+      ],
+      "art": {
+        "cover": "/games/tower-building/cover.png",
+        "hero": "/games/tower-building/cover.png"
+      },
+      "availability": {
+        "state": "playable",
+        "label": "可直接游玩"
+      },
+      "actionLabel": "进入游戏"
+    },
+    "platform": {
+      "hosting": "static",
+      "technology": "独立 HTML / CSS / JavaScript 静态运行包",
+      "license": "MIT; Zepto MIT",
+      "sourceUrl": "https://github.com/iamkun/tower_game",
+      "localization": "中文游戏菜单、操作说明和主要反馈；保留原作署名。",
+      "fit": "通过 game.json 与 iframe 接入，无需新增服务器进程。",
+      "highlights": [
+        "时机叠塔"
+      ],
+      "cautions": [
+        "单人玩法，本地成绩不跨设备同步。"
+      ],
+      "launch": {
+        "kind": "iframe",
+        "entry": "/games/tower-building/index.html"
       }
     },
     "capabilities": [
