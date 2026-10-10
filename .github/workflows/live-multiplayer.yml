@@ -1,0 +1,59 @@
+name: Live Multiplayer Smoke Test
+
+# 从 GitHub Actions 独立公网模拟 2+ 玩家。
+# 不启动或更新 VPS 容器、不改 Cloudflare DNS；只创建随机临时游戏房间。
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/live-multiplayer.yml"
+      - ".github/scripts/live-public-multiplayer.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-multiplayer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout repository tests
+        uses: actions/checkout@v6
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: "11.24.0"
+          run_install: false
+      - name: Install only multiplayer test dependencies
+        run: |
+          pnpm install --frozen-lockfile \
+            --filter @yuqing/sanctuary-relay \
+            --filter @yuqing/webrtc-gateway \
+            --filter @yuqing/card-room \
+            --filter @yuqing/gobang-server
+
+      - name: Public dual-client Sanctuary and Fruit Party
+        run: node --test .github/scripts/live-public-multiplayer.mjs
+
+      - name: Public two-player card room (Guandan and Mahjong)
+        env:
+          CARD_ROOM_URL: https://cards.xyllovefyq.cc.cd
+          BOARD_ORIGIN: https://game.xyllovefyq.cc.cd
+        run: pnpm --dir server-games/card-room test:smoke
+
+      - name: Public two-player Gobang (turns, rejoin, spectator)
+        env:
+          GOBANG_URL: wss://gobang.xyllovefyq.cc.cd/socket
+          BOARD_ORIGIN: https://game.xyllovefyq.cc.cd
+        run: pnpm --dir server-games/gobang test
+
+      - name: Public WebRTC signaling and TURN credential endpoints
+        env:
+          WEBRTC_GATEWAY_URL: https://rtc.xyllovefyq.cc.cd
+          WEBRTC_GATEWAY_ORIGIN: https://game.xyllovefyq.cc.cd
+        run: pnpm --dir server-games/webrtc-gateway test:smoke
