@@ -34,6 +34,16 @@
 // - public/games/hextris/game.json
 // - public/games/thirteenth-floor/game.json
 // - public/games/khan/game.json
+// - public/games/classic-tower-defense/game.json
+// - public/games/classic-2048/game.json
+// - public/games/classic-tetris/game.json
+// - public/games/classic-breakout/game.json
+// - public/games/sokoban-100/game.json
+// - public/games/chinese-chess/game.json
+// - public/games/othello/game.json
+// - public/games/breaklock/game.json
+// - public/games/minesweeper/game.json
+// - public/games/asteroids/game.json
 import type { GameManifest } from "../platform/game-manifest";
 
 export const GAME_MANIFESTS = [
@@ -2885,6 +2895,821 @@ export const GAME_MANIFESTS = [
     "capabilities": [
       "audio",
       "fullscreen"
+    ],
+    "permissions": [
+      "fullscreen",
+      "autoplay"
+    ]
+  },
+  {
+    "schemaVersion": 2,
+    "id": "classic-tower-defense",
+    "order": 36,
+    "discovery": {
+      "audiences": [
+        "single"
+      ]
+    },
+    "theme": {
+      "accent": "#42946f",
+      "dark": "#20292e"
+    },
+    "presentation": {
+      "title": "自由布阵塔防",
+      "originalTitle": "HTML5 Tower Defense",
+      "mark": "塔防",
+      "category": "布阵塔防",
+      "tagline": "亲手布置防线，让怪物绕进你的火力网。",
+      "description": "用围墙改变怪物路线，搭配机枪、激光等防御设施，升级火力并守住一波波进攻。布阵与资源分配比单纯堆塔更重要。",
+      "tags": [
+        "塔防",
+        "策略",
+        "中文"
+      ],
+      "play": {
+        "modes": "单人挑战",
+        "players": "1 人",
+        "controls": "鼠标选择建筑和空地放置，点击已建防御塔升级或出售；建好首座武器后自动迎战。",
+        "inputs": [
+          "mouse"
+        ],
+        "devices": [
+          "desktop"
+        ],
+        "vision": false
+      },
+      "highlights": [
+        "可以自己改变行进路线",
+        "多种防御设施与升级",
+        "连续波次考验资源分配"
+      ],
+      "art": {
+        "cover": "/games/classic-tower-defense/cover.png",
+        "hero": "/games/classic-tower-defense/cover.png"
+      },
+      "availability": {
+        "state": "playable",
+        "label": "可直接游玩"
+      },
+      "actionLabel": "进入游戏"
+    },
+    "platform": {
+      "hosting": "static",
+      "technology": "独立 HTML / CSS / JavaScript 运行包",
+      "license": "MIT",
+      "sourceUrl": "https://github.com/oldj/html5-tower-defense",
+      "localization": "游戏内菜单、玩法说明和主要状态为中文，保留原作署名。",
+      "fit": "独立静态运行包，通过 game.json 和 iframe 接入。",
+      "highlights": [
+        "可以自己改变行进路线",
+        "多种防御设施与升级",
+        "连续波次考验资源分配"
+      ],
+      "cautions": [
+        "单人玩法；本地成绩不跨设备同步。"
+      ],
+      "launch": {
+        "kind": "iframe",
+        "entry": "/games/classic-tower-defense/index.html"
+      }
+    },
+    "capabilities": [
+      "fullscreen",
+      "storage"
+    ],
+    "permissions": [
+      "fullscreen"
+    ]
+  },
+  {
+    "schemaVersion": 2,
+    "id": "classic-2048",
+    "order": 37,
+    "discovery": {
+      "audiences": [
+        "single"
+      ]
+    },
+    "theme": {
+      "accent": "#d98b46",
+      "dark": "#20292e"
+    },
+    "presentation": {
+      "title": "2048 合成",
+      "originalTitle": "2048",
+      "mark": "2048",
+      "category": "数字合成",
+      "tagline": "把相同数字叠在一起，留出通往 2048 的空间。",
+      "description": "整盘滑动数字方块，让相同的数字合并。每次操作都会增加新方块，需要提前规划最大数字的位置和空格。可以继续挑战超过 2048 的纪录。",
+      "tags": [
+        "益智",
+        "合成",
+        "中文"
+      ],
+      "play": {
+        "modes": "单人挑战",
+        "players": "1 人",
+        "controls": "方向键移动整盘方块；手机上向四个方向滑动。",
+        "inputs": [
+          "keyboard",
+          "touch"
+        ],
+        "devices": [
+          "desktop",
+          "mobile"
+        ],
+        "vision": false
+      },
+      "highlights": [
+        "经典合成规则",
+        "本地保存棋盘与最高分",
+        "电脑与手机均可游玩"
+      ],
+      "art": {
+        "cover": "/games/classic-2048/cover.png",
+        "hero": "/games/classic-2048/cover.png"
+      },
+      "availability": {
+        "state": "playable",
+        "label": "可直接游玩"
+      },
+      "actionLabel": "进入游戏"
+    },
+    "platform": {
+      "hosting": "static",
+      "technology": "独立 HTML / CSS / JavaScript 运行包",
+      "license": "MIT",
+      "sourceUrl": "https://github.com/gabrielecirulli/2048",
+      "localization": "游戏内菜单、玩法说明和主要状态为中文，保留原作署名。",
+      "fit": "独立静态运行包，通过 game.json 和 iframe 接入。",
+      "highlights": [
+        "经典合成规则",
+        "本地保存棋盘与最高分",
+        "电脑与手机均可游玩"
+      ],
+      "cautions": [
+        "单人玩法；本地成绩不跨设备同步。"
+      ],
+      "launch": {
+        "kind": "iframe",
+        "entry": "/games/classic-2048/index.html"
+      }
+    },
+    "capabilities": [
+      "fullscreen",
+      "storage"
+    ],
+    "permissions": [
+      "fullscreen"
+    ]
+  },
+  {
+    "schemaVersion": 2,
+    "id": "classic-tetris",
+    "order": 38,
+    "discovery": {
+      "audiences": [
+        "single"
+      ]
+    },
+    "theme": {
+      "accent": "#6382d1",
+      "dark": "#20292e"
+    },
+    "presentation": {
+      "title": "俄罗斯方块",
+      "originalTitle": "Javascript Tetris",
+      "mark": "方块",
+      "category": "方块消行",
+      "tagline": "旋转、落下、消行，在越来越快的节奏中坚持。",
+      "description": "把七种方块放进棋盘，填满一整行即可消除。随着消行数量增加，方块下落越来越快，观察下一块并为长条留下位置。",
+      "tags": [
+        "益智",
+        "街机",
+        "中文"
+      ],
+      "play": {
+        "modes": "单人挑战",
+        "players": "1 人",
+        "controls": "空格开始；左右移动，上键旋转，下键加速落下，Esc 结束本局。",
+        "inputs": [
+          "keyboard"
+        ],
+        "devices": [
+          "desktop"
+        ],
+        "vision": false
+      },
+      "highlights": [
+        "七种经典方块",
+        "下一块预览",
+        "随消行逐渐加速"
+      ],
+      "art": {
+        "cover": "/games/classic-tetris/cover.png",
+        "hero": "/games/classic-tetris/cover.png"
+      },
+      "availability": {
+        "state": "playable",
+        "label": "可直接游玩"
+      },
+      "actionLabel": "进入游戏"
+    },
+    "platform": {
+      "hosting": "static",
+      "technology": "独立 HTML / CSS / JavaScript 运行包",
+      "license": "MIT",
+      "sourceUrl": "https://github.com/jakesgordon/javascript-tetris",
+      "localization": "游戏内菜单、玩法说明和主要状态为中文，保留原作署名。",
+      "fit": "独立静态运行包，通过 game.json 和 iframe 接入。",
+      "highlights": [
+        "七种经典方块",
+        "下一块预览",
+        "随消行逐渐加速"
+      ],
+      "cautions": [
+        "单人玩法；本地成绩不跨设备同步。"
+      ],
+      "launch": {
+        "kind": "iframe",
+        "entry": "/games/classic-tetris/index.html"
+      }
+    },
+    "capabilities": [
+      "fullscreen",
+      "storage"
+    ],
+    "permissions": [
+      "fullscreen"
+    ]
+  },
+  {
+    "schemaVersion": 2,
+    "id": "classic-breakout",
+    "order": 39,
+    "discovery": {
+      "audiences": [
+        "single"
+      ]
+    },
+    "theme": {
+      "accent": "#de704c",
+      "dark": "#20292e"
+    },
+    "presentation": {
+      "title": "弹球打砖块",
+      "originalTitle": "Javascript Breakout",
+      "mark": "弹球",
+      "category": "弹球闯关",
+      "tagline": "接住每一次反弹，把整面砖墙打得干干净净。",
+      "description": "移动挡板反弹小球，清除不同造型的砖块。挡板上的击球位置会改变反弹角度；多种关卡图案、有限生命和最高分让每一局都有目标。",
+      "tags": [
+        "街机",
+        "闯关",
+        "中文"
+      ],
+      "play": {
+        "modes": "单人挑战",
+        "players": "1 人",
+        "controls": "空格开始或发球；左右方向键或 A / D 移动，菜单中上下切换关卡；手机拖动挡板。",
+        "inputs": [
+          "keyboard",
+          "touch"
+        ],
+        "devices": [
+          "desktop",
+          "mobile"
+        ],
+        "vision": false
+      },
+      "highlights": [
+        "多种砖块关卡",
+        "反弹角度由接球位置决定",
+        "生命与最高分挑战"
+      ],
+      "art": {
+        "cover": "/games/classic-breakout/cover.png",
+        "hero": "/games/classic-breakout/cover.png"
+      },
+      "availability": {
+        "state": "playable",
+        "label": "可直接游玩"
+      },
+      "actionLabel": "进入游戏"
+    },
+    "platform": {
+      "hosting": "static",
+      "technology": "独立 HTML / CSS / JavaScript 运行包",
+      "license": "MIT; audio CC-BY-ND-2.0",
+      "sourceUrl": "https://github.com/jakesgordon/javascript-breakout",
+      "localization": "游戏内菜单、玩法说明和主要状态为中文，保留原作署名。",
+      "fit": "独立静态运行包，通过 game.json 和 iframe 接入。",
+      "highlights": [
+        "多种砖块关卡",
+        "反弹角度由接球位置决定",
+        "生命与最高分挑战"
+      ],
+      "cautions": [
+        "单人玩法；本地成绩不跨设备同步。"
+      ],
+      "launch": {
+        "kind": "iframe",
+        "entry": "/games/classic-breakout/index.html"
+      }
+    },
+    "capabilities": [
+      "fullscreen",
+      "storage",
+      "audio"
+    ],
+    "permissions": [
+      "fullscreen",
+      "autoplay"
+    ]
+  },
+  {
+    "schemaVersion": 2,
+    "id": "sokoban-100",
+    "order": 40,
+    "discovery": {
+      "audiences": [
+        "single"
+      ]
+    },
+    "theme": {
+      "accent": "#a67e42",
+      "dark": "#20292e"
+    },
+    "presentation": {
+      "title": "百关推箱子",
+      "originalTitle": "Sokoban",
+      "mark": "推箱",
+      "category": "仓库解谜",
+      "tagline": "箱子能推不能拉，走一步之前先想好退路。",
+      "description": "把所有箱子推到目标位置，挑战 100 张不同的仓库地图。狭窄通道与互相挡路的箱子考验移动顺序，可以重玩本关和切换关卡。",
+      "tags": [
+        "解谜",
+        "闯关",
+        "中文"
+      ],
+      "play": {
+        "modes": "单人挑战",
+        "players": "1 人",
+        "controls": "方向键或 WASD 移动；点击关卡按钮切换或重玩。",
+        "inputs": [
+          "keyboard",
+          "mouse"
+        ],
+        "devices": [
+          "desktop"
+        ],
+        "vision": false
+      },
+      "highlights": [
+        "100 张独立地图",
+        "关卡切换与重玩",
+        "移动次数记录"
+      ],
+      "art": {
+        "cover": "/games/sokoban-100/cover.png",
+        "hero": "/games/sokoban-100/cover.png"
+      },
+      "availability": {
+        "state": "playable",
+        "label": "可直接游玩"
+      },
+      "actionLabel": "进入游戏"
+    },
+    "platform": {
+      "hosting": "static",
+      "technology": "独立 HTML / CSS / JavaScript 运行包",
+      "license": "MIT",
+      "sourceUrl": "https://github.com/shunyue1320/sokoban",
+      "localization": "游戏内菜单、玩法说明和主要状态为中文，保留原作署名。",
+      "fit": "独立静态运行包，通过 game.json 和 iframe 接入。",
+      "highlights": [
+        "100 张独立地图",
+        "关卡切换与重玩",
+        "移动次数记录"
+      ],
+      "cautions": [
+        "单人玩法；本地成绩不跨设备同步。"
+      ],
+      "launch": {
+        "kind": "iframe",
+        "entry": "/games/sokoban-100/index.html"
+      }
+    },
+    "capabilities": [
+      "fullscreen",
+      "storage"
+    ],
+    "permissions": [
+      "fullscreen"
+    ]
+  },
+  {
+    "schemaVersion": 2,
+    "id": "chinese-chess",
+    "order": 41,
+    "discovery": {
+      "audiences": [
+        "single",
+        "duo"
+      ]
+    },
+    "theme": {
+      "accent": "#b45840",
+      "dark": "#20292e"
+    },
+    "presentation": {
+      "title": "中国象棋",
+      "originalTitle": "XiangQi Wizard Light",
+      "mark": "象棋",
+      "category": "人机对弈",
+      "tagline": "楚河汉界之间，用一盘棋检验你的布局。",
+      "description": "与象棋小巫师引擎对弈，车马炮配合攻守。可选择三种电脑水平、先后手及让子，支持悔棋和走子记录，也可切换同屏双人对弈。",
+      "tags": [
+        "棋类",
+        "策略",
+        "中文"
+      ],
+      "play": {
+        "modes": "人机对弈 / 同屏双人",
+        "players": "1–2 人",
+        "controls": "点击棋子和目标位置走子；右侧可选电脑水平、悔棋、先后手，修改后点重新开始。",
+        "inputs": [
+          "mouse"
+        ],
+        "devices": [
+          "desktop"
+        ],
+        "vision": false
+      },
+      "highlights": [
+        "本地人机对弈",
+        "三种电脑水平与让子",
+        "悔棋与重新开局"
+      ],
+      "art": {
+        "cover": "/games/chinese-chess/cover.png",
+        "hero": "/games/chinese-chess/cover.png"
+      },
+      "availability": {
+        "state": "playable",
+        "label": "可直接游玩"
+      },
+      "actionLabel": "进入游戏"
+    },
+    "platform": {
+      "hosting": "static",
+      "technology": "独立 HTML / CSS / JavaScript 运行包",
+      "license": "GPL-2.0-or-later",
+      "sourceUrl": "https://github.com/xqbase/xqwlight",
+      "localization": "游戏内菜单、玩法说明和主要状态为中文，保留原作署名。",
+      "fit": "独立静态运行包，通过 game.json 和 iframe 接入。",
+      "highlights": [
+        "本地人机对弈",
+        "三种电脑水平与让子",
+        "悔棋与重新开局"
+      ],
+      "cautions": [
+        "双人模式在同一台设备上对弈，无网络联机。"
+      ],
+      "launch": {
+        "kind": "iframe",
+        "entry": "/games/chinese-chess/index.html"
+      }
+    },
+    "capabilities": [
+      "fullscreen",
+      "storage",
+      "audio"
+    ],
+    "permissions": [
+      "fullscreen",
+      "autoplay"
+    ]
+  },
+  {
+    "schemaVersion": 2,
+    "id": "othello",
+    "order": 42,
+    "discovery": {
+      "audiences": [
+        "duo"
+      ]
+    },
+    "theme": {
+      "accent": "#638968",
+      "dark": "#20292e"
+    },
+    "presentation": {
+      "title": "黑白棋",
+      "originalTitle": "Othello Board",
+      "mark": "黑白",
+      "category": "同屏双人策略",
+      "tagline": "夹住一条棋子，就能让整条战线换成你的颜色。",
+      "description": "两人在同一台设备上轮流落子，用横、竖、斜方向夹住对手棋子并翻转。棋盘显示合法落点、双方数量，支持撤销、重做和回合计时。",
+      "tags": [
+        "棋类",
+        "本地双人",
+        "策略",
+        "中文"
+      ],
+      "play": {
+        "modes": "同屏双人",
+        "players": "2 人",
+        "controls": "点开始开局，黑白双方轮流点击提示落点；这款是同屏双人玩法。",
+        "inputs": [
+          "mouse"
+        ],
+        "devices": [
+          "desktop"
+        ],
+        "vision": false
+      },
+      "highlights": [
+        "同屏双人对弈",
+        "合法落点提示",
+        "撤销、重做与计时"
+      ],
+      "art": {
+        "cover": "/games/othello/cover.png",
+        "hero": "/games/othello/cover.png"
+      },
+      "availability": {
+        "state": "playable",
+        "label": "可直接游玩"
+      },
+      "actionLabel": "进入游戏"
+    },
+    "platform": {
+      "hosting": "static",
+      "technology": "独立 HTML / CSS / JavaScript 运行包",
+      "license": "MIT",
+      "sourceUrl": "https://github.com/NXY666/othello-board",
+      "localization": "游戏内菜单、玩法说明和主要状态为中文，保留原作署名。",
+      "fit": "独立静态运行包，通过 game.json 和 iframe 接入。",
+      "highlights": [
+        "同屏双人对弈",
+        "合法落点提示",
+        "撤销、重做与计时"
+      ],
+      "cautions": [
+        "仅支持同一台设备上的双人对弈，无网络联机。"
+      ],
+      "launch": {
+        "kind": "iframe",
+        "entry": "/games/othello/index.html"
+      }
+    },
+    "capabilities": [
+      "fullscreen",
+      "storage"
+    ],
+    "permissions": [
+      "fullscreen"
+    ]
+  },
+  {
+    "schemaVersion": 2,
+    "id": "breaklock",
+    "order": 43,
+    "discovery": {
+      "audiences": [
+        "single"
+      ]
+    },
+    "theme": {
+      "accent": "#43b6ab",
+      "dark": "#20292e"
+    },
+    "presentation": {
+      "title": "图案解锁",
+      "originalTitle": "BreakLock",
+      "mark": "解锁",
+      "category": "线索推理",
+      "tagline": "根据每次尝试的反馈，推理出隐藏的解锁图案。",
+      "description": "在九个点之间连线，每次提交都会给出点位与顺序是否正确的反馈。像密码破译一样排除错误答案，可选择练习、限次挑战或一分钟计时。",
+      "tags": [
+        "解谜",
+        "推理",
+        "中文"
+      ],
+      "play": {
+        "modes": "单人挑战",
+        "players": "1 人",
+        "controls": "选择难度与模式，点开始；按住鼠标或手指连接规定数量的点。",
+        "inputs": [
+          "mouse",
+          "touch"
+        ],
+        "devices": [
+          "desktop",
+          "mobile"
+        ],
+        "vision": false
+      },
+      "highlights": [
+        "三种难度",
+        "练习、限次与计时模式",
+        "每次反馈都能用于排除答案"
+      ],
+      "art": {
+        "cover": "/games/breaklock/cover.png",
+        "hero": "/games/breaklock/cover.png"
+      },
+      "availability": {
+        "state": "playable",
+        "label": "可直接游玩"
+      },
+      "actionLabel": "进入游戏"
+    },
+    "platform": {
+      "hosting": "static",
+      "technology": "独立 HTML / CSS / JavaScript 运行包",
+      "license": "MIT",
+      "sourceUrl": "https://github.com/maxwellito/breaklock",
+      "localization": "游戏内菜单、玩法说明和主要状态为中文，保留原作署名。",
+      "fit": "独立静态运行包，通过 game.json 和 iframe 接入。",
+      "highlights": [
+        "三种难度",
+        "练习、限次与计时模式",
+        "每次反馈都能用于排除答案"
+      ],
+      "cautions": [
+        "单人玩法；本地成绩不跨设备同步。"
+      ],
+      "launch": {
+        "kind": "iframe",
+        "entry": "/games/breaklock/index.html"
+      }
+    },
+    "capabilities": [
+      "fullscreen",
+      "storage"
+    ],
+    "permissions": [
+      "fullscreen"
+    ]
+  },
+  {
+    "schemaVersion": 2,
+    "id": "minesweeper",
+    "order": 44,
+    "discovery": {
+      "audiences": [
+        "single"
+      ]
+    },
+    "theme": {
+      "accent": "#4b98c6",
+      "dark": "#20292e"
+    },
+    "presentation": {
+      "title": "经典扫雷",
+      "originalTitle": "Minesweeper",
+      "mark": "扫雷",
+      "category": "数字推理",
+      "tagline": "把危险藏在哪里看清楚，用数字推理清空棋盘。",
+      "description": "数字表示周围八格的地雷数量。用标记排除危险格，翻开全部安全格即可获胜；提供三档难度、自定义棋盘、首击保护、计时和本地最佳成绩。",
+      "tags": [
+        "益智",
+        "推理",
+        "中文"
+      ],
+      "play": {
+        "modes": "单人挑战",
+        "players": "1 人",
+        "controls": "左键翻开格子，右键插旗，双击已满足标记数量的数字格展开周围；可暂停。",
+        "inputs": [
+          "mouse"
+        ],
+        "devices": [
+          "desktop"
+        ],
+        "vision": false
+      },
+      "highlights": [
+        "三档难度与自定义棋盘",
+        "首击与邻格保护",
+        "暂停和本地最佳成绩"
+      ],
+      "art": {
+        "cover": "/games/minesweeper/cover.png",
+        "hero": "/games/minesweeper/cover.png"
+      },
+      "availability": {
+        "state": "playable",
+        "label": "可直接游玩"
+      },
+      "actionLabel": "进入游戏"
+    },
+    "platform": {
+      "hosting": "static",
+      "technology": "独立 HTML / CSS / JavaScript 运行包",
+      "license": "MIT",
+      "sourceUrl": "https://github.com/junjie-xu-lab/minesweeper",
+      "localization": "游戏内菜单、玩法说明和主要状态为中文，保留原作署名。",
+      "fit": "独立静态运行包，通过 game.json 和 iframe 接入。",
+      "highlights": [
+        "三档难度与自定义棋盘",
+        "首击与邻格保护",
+        "暂停和本地最佳成绩"
+      ],
+      "cautions": [
+        "单人玩法；本地成绩不跨设备同步。"
+      ],
+      "launch": {
+        "kind": "iframe",
+        "entry": "/games/minesweeper/index.html"
+      }
+    },
+    "capabilities": [
+      "fullscreen",
+      "storage"
+    ],
+    "permissions": [
+      "fullscreen"
+    ]
+  },
+  {
+    "schemaVersion": 2,
+    "id": "asteroids",
+    "order": 45,
+    "discovery": {
+      "audiences": [
+        "single"
+      ]
+    },
+    "theme": {
+      "accent": "#637da9",
+      "dark": "#20292e"
+    },
+    "presentation": {
+      "title": "陨石突围",
+      "originalTitle": "HTML5 Asteroids",
+      "mark": "陨石",
+      "category": "惯性射击",
+      "tagline": "飞船不会立刻停下，转向、推进、开火都要算准。",
+      "description": "驾驶有惯性的飞船穿过陨石群，击碎大陨石后还要应付分裂的小碎片与飞碟。清理一轮后迎来更多目标，用有限生命挑战更高分。",
+      "tags": [
+        "射击",
+        "街机",
+        "中文"
+      ],
+      "play": {
+        "modes": "单人挑战",
+        "players": "1 人",
+        "controls": "空格开始与射击；左右键转向，上键推进，P 暂停，M 切换音效。",
+        "inputs": [
+          "keyboard"
+        ],
+        "devices": [
+          "desktop"
+        ],
+        "vision": false
+      },
+      "highlights": [
+        "惯性飞行与环绕空间",
+        "陨石分裂和飞碟敌人",
+        "生命与分数挑战"
+      ],
+      "art": {
+        "cover": "/games/asteroids/cover.png",
+        "hero": "/games/asteroids/cover.png"
+      },
+      "availability": {
+        "state": "playable",
+        "label": "可直接游玩"
+      },
+      "actionLabel": "进入游戏"
+    },
+    "platform": {
+      "hosting": "static",
+      "technology": "独立 HTML / CSS / JavaScript 运行包",
+      "license": "MIT",
+      "sourceUrl": "https://github.com/dmcinnes/HTML5-Asteroids",
+      "localization": "游戏内菜单、玩法说明和主要状态为中文，保留原作署名。",
+      "fit": "独立静态运行包，通过 game.json 和 iframe 接入。",
+      "highlights": [
+        "惯性飞行与环绕空间",
+        "陨石分裂和飞碟敌人",
+        "生命与分数挑战"
+      ],
+      "cautions": [
+        "单人玩法；本地成绩不跨设备同步。"
+      ],
+      "launch": {
+        "kind": "iframe",
+        "entry": "/games/asteroids/index.html"
+      }
+    },
+    "capabilities": [
+      "fullscreen",
+      "storage",
+      "audio"
     ],
     "permissions": [
       "fullscreen",

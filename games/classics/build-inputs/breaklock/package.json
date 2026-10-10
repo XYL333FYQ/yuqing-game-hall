@@ -1,0 +1,35 @@
+{
+  "name": "breaklock",
+  "version": "0.1.0",
+  "description": "Small PWA game to guess pattern locks",
+  "main": "scripts/app.js",
+  "scripts": {
+    "deploy": "gh-pages -d public",
+    "build": "node src/build/build.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/maxwellito/breaklock.git"
+  },
+  "author": "maxwellito",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/maxwellito/breaklock/issues"
+  },
+  "homepage": "https://github.com/maxwellito/breaklock",
+  "devDependencies": {
+    "@babel/core": "^7.29.0",
+    "@babel/preset-env": "^7.29.5",
+    "babel-loader": "^10.1.1",
+    "css-loader": "^7.1.4",
+    "fs-extra": "^11.3.5",
+    "gh-pages": "^6.3.0",
+    "mini-css-extract-plugin": "^2.10.2",
+    "raw-loader": "^4.0.2",
+    "sass": "^1.105.1",
+    "sass-loader": "^16.0.8",
+    "style-loader": "^4.0.0",
+    "webpack": "^5.106.2",
+    "yaml": "^2.8.4"
+  }
+}

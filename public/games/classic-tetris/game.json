@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 2,
+  "id": "classic-tetris",
+  "order": 38,
+  "discovery": {
+    "audiences": [
+      "single"
+    ]
+  },
+  "theme": {
+    "accent": "#6382d1",
+    "dark": "#20292e"
+  },
+  "presentation": {
+    "title": "俄罗斯方块",
+    "originalTitle": "Javascript Tetris",
+    "mark": "方块",
+    "category": "方块消行",
+    "tagline": "旋转、落下、消行，在越来越快的节奏中坚持。",
+    "description": "把七种方块放进棋盘，填满一整行即可消除。随着消行数量增加，方块下落越来越快，观察下一块并为长条留下位置。",
+    "tags": [
+      "益智",
+      "街机",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "空格开始；左右移动，上键旋转，下键加速落下，Esc 结束本局。",
+      "inputs": [
+        "keyboard"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "七种经典方块",
+      "下一块预览",
+      "随消行逐渐加速"
+    ],
+    "art": {
+      "cover": "/games/classic-tetris/cover.png",
+      "hero": "/games/classic-tetris/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "独立 HTML / CSS / JavaScript 运行包",
+    "license": "MIT",
+    "sourceUrl": "https://github.com/jakesgordon/javascript-tetris",
+    "localization": "游戏内菜单、玩法说明和主要状态为中文，保留原作署名。",
+    "fit": "独立静态运行包，通过 game.json 和 iframe 接入。",
+    "highlights": [
+      "七种经典方块",
+      "下一块预览",
+      "随消行逐渐加速"
+    ],
+    "cautions": [
+      "单人玩法；本地成绩不跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/classic-tetris/index.html"
+    }
+  },
+  "capabilities": [
+    "fullscreen",
+    "storage"
+  ],
+  "permissions": [
+    "fullscreen"
+  ]
+}

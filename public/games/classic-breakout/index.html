@@ -1,0 +1,53 @@
+<!DOCTYPE html> 
+<html lang="zh-CN">
+<head>
+  <title>弹球打砖块 · 雨晴游戏厅</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="viewport" content="width=device-width", initial-scale=1.0, user-scalable="no"/>
+  <link href="breakout.css" media="screen, print" rel="stylesheet" type="text/css" /> 
+<link rel="icon" href="data:,"><link rel="stylesheet" href="hall.css"></head> 
+ 
+<body> 
+
+
+  <div id="breakout">
+    <canvas id="canvas">
+      <div class='unsupported'>
+        浏览器需要支持 Canvas 才能游玩。
+      </div>
+    </canvas>
+    <div id="levels">
+      <img id="next" class="disabled" src="images/up.png"   title="下一关">
+      <img id="prev" class="disabled" src="images/down.png" title="上一关">
+      <span id="label">关卡：</span><span id="level"></span>
+    </div>
+    <div id="controls">
+      <input id='sound' type='checkbox' />
+      <label for='sound'>音效</label>
+    </div>
+    <div id="instructions" style='display:none;'>
+      <div class='keyboard'>
+        <b>空格</b> 开始或发球<br>
+        <b>左右方向键</b> 移动挡板<br>
+        <b>上下方向键</b> 切换关卡
+      </div>
+      <div class='touch'>
+        <b>轻触这里</b> 开始<br>
+        <b>拖动</b> 挡板接球<br>
+      </div>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+  <script src="modern-audio.js"></script>
+  <script src="breakout.js"></script>
+  <script src="levels.js"></script>
+  <script>
+  Game.ready(function() {
+    var game = Game.start('canvas', Breakout);
+  });
+  </script>
+
+<script src="../_shared/game-help.js" data-title="弹球打砖块" data-controls="空格开始或发球；左右方向键或 A / D 移动，菜单中上下切换关卡；手机拖动挡板。" data-tip="用挡板边缘接球，能把球送到不同的角度。"></script>
+</body> 
+</html>

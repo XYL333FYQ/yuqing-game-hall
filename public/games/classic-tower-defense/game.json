@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 2,
+  "id": "classic-tower-defense",
+  "order": 36,
+  "discovery": {
+    "audiences": [
+      "single"
+    ]
+  },
+  "theme": {
+    "accent": "#42946f",
+    "dark": "#20292e"
+  },
+  "presentation": {
+    "title": "自由布阵塔防",
+    "originalTitle": "HTML5 Tower Defense",
+    "mark": "塔防",
+    "category": "布阵塔防",
+    "tagline": "亲手布置防线，让怪物绕进你的火力网。",
+    "description": "用围墙改变怪物路线，搭配机枪、激光等防御设施，升级火力并守住一波波进攻。布阵与资源分配比单纯堆塔更重要。",
+    "tags": [
+      "塔防",
+      "策略",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "鼠标选择建筑和空地放置，点击已建防御塔升级或出售；建好首座武器后自动迎战。",
+      "inputs": [
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "可以自己改变行进路线",
+      "多种防御设施与升级",
+      "连续波次考验资源分配"
+    ],
+    "art": {
+      "cover": "/games/classic-tower-defense/cover.png",
+      "hero": "/games/classic-tower-defense/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "独立 HTML / CSS / JavaScript 运行包",
+    "license": "MIT",
+    "sourceUrl": "https://github.com/oldj/html5-tower-defense",
+    "localization": "游戏内菜单、玩法说明和主要状态为中文，保留原作署名。",
+    "fit": "独立静态运行包，通过 game.json 和 iframe 接入。",
+    "highlights": [
+      "可以自己改变行进路线",
+      "多种防御设施与升级",
+      "连续波次考验资源分配"
+    ],
+    "cautions": [
+      "单人玩法；本地成绩不跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/classic-tower-defense/index.html"
+    }
+  },
+  "capabilities": [
+    "fullscreen",
+    "storage"
+  ],
+  "permissions": [
+    "fullscreen"
+  ]
+}

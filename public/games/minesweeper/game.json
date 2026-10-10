@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 2,
+  "id": "minesweeper",
+  "order": 44,
+  "discovery": {
+    "audiences": [
+      "single"
+    ]
+  },
+  "theme": {
+    "accent": "#4b98c6",
+    "dark": "#20292e"
+  },
+  "presentation": {
+    "title": "经典扫雷",
+    "originalTitle": "Minesweeper",
+    "mark": "扫雷",
+    "category": "数字推理",
+    "tagline": "把危险藏在哪里看清楚，用数字推理清空棋盘。",
+    "description": "数字表示周围八格的地雷数量。用标记排除危险格，翻开全部安全格即可获胜；提供三档难度、自定义棋盘、首击保护、计时和本地最佳成绩。",
+    "tags": [
+      "益智",
+      "推理",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "左键翻开格子，右键插旗，双击已满足标记数量的数字格展开周围；可暂停。",
+      "inputs": [
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "三档难度与自定义棋盘",
+      "首击与邻格保护",
+      "暂停和本地最佳成绩"
+    ],
+    "art": {
+      "cover": "/games/minesweeper/cover.png",
+      "hero": "/games/minesweeper/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "独立 HTML / CSS / JavaScript 运行包",
+    "license": "MIT",
+    "sourceUrl": "https://github.com/junjie-xu-lab/minesweeper",
+    "localization": "游戏内菜单、玩法说明和主要状态为中文，保留原作署名。",
+    "fit": "独立静态运行包，通过 game.json 和 iframe 接入。",
+    "highlights": [
+      "三档难度与自定义棋盘",
+      "首击与邻格保护",
+      "暂停和本地最佳成绩"
+    ],
+    "cautions": [
+      "单人玩法；本地成绩不跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/minesweeper/index.html"
+    }
+  },
+  "capabilities": [
+    "fullscreen",
+    "storage"
+  ],
+  "permissions": [
+    "fullscreen"
+  ]
+}

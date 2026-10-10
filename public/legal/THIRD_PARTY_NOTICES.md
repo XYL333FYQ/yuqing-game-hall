@@ -179,3 +179,26 @@ Kaetram Open 的自定义 OPL 明确限制 AI 相关用途，因此本项目不�
 第三方运行组件：jQuery（MIT）、RequireJS（MIT）、Hammer 1.1.2（MIT）、Keypress 1.0.8（Apache-2.0，David Mauro）、jsfxr（Apache-2.0，Markus Neubrand）、Kontra.js 9（MIT，Steven Lambert）、SweetAlert（MIT）、JSONfn（MIT）、RRSSB（MIT）、jQuery Cookie（MIT，Klaus Hartl）、ZzFX（MIT，Frank Force）、natlib 0.1.13（MIT，Mark Vasilkov）。完整文本在 `licenses/` 和 `/legal/licenses/`；Sonant-X 的 zlib 声明直接保留于 Underrun 源文件。
 
 Hextris 的 Exo 2 字体使用 SIL OFL 1.1；Font Awesome 4.1 字体使用 SIL OFL 1.1，CSS 使用 MIT。Picosonic 两款游戏的 Kenney 素材为 CC0；Bee Kind 的《蓝色多瑙河》片段为程序合成的公共领域作曲素材，未复制现代录音。原作 README 署名见每款源码包。
+
+## 第二批 10 款中文经典静态游戏（2026-10-10）
+
+每款完整许可在 `/games/<id>/LICENSE`，固定提交在 `games/classics/SOURCES.json` 与各款 `SOURCE.md`；对应源码随同 `/games/<id>/source.zip` 分发。运行截图作为本项目封面，仍遵循游戏素材的原许可。
+
+| 游戏 / 路径 | 上游 | 代码许可 |
+| --- | --- | --- |
+| 自由布阵塔防 (`classic-tower-defense`) | https://github.com/oldj/html5-tower-defense | MIT，oldj |
+| 2048 合成 (`classic-2048`) | https://github.com/gabrielecirulli/2048 | MIT，Gabriele Cirulli |
+| 俄罗斯方块 (`classic-tetris`) | https://github.com/jakesgordon/javascript-tetris | MIT，Jake Gordon |
+| 弹球打砖块 (`classic-breakout`) | https://github.com/jakesgordon/javascript-breakout | MIT，Jake Gordon and contributors |
+| 百关推箱子 (`sokoban-100`) | https://github.com/shunyue1320/sokoban | MIT，舜岳 |
+| 中国象棋 (`chinese-chess`) | https://github.com/xqbase/xqwlight | GPL-2.0-or-later，Morning Yellow / www.xqbase.com |
+| 黑白棋 (`othello`) | https://github.com/NXY666/othello-board | MIT，NXY666 |
+| 图案解锁 (`breaklock`) | https://github.com/maxwellito/breaklock | MIT，maxwellito |
+| 经典扫雷 (`minesweeper`) | https://github.com/junjie-xu-lab/minesweeper | MIT，junjie-xu-lab |
+| 陨石突围 (`asteroids`) | https://github.com/dmcinnes/HTML5-Asteroids | MIT，Doug McInnes |
+
+打砖块音频保持原样，依据上游 `LICENSE` 中的 CC BY-ND 2.0 声明分发，来源为 Freesound Project，原作者列表由上游链接 [Freesound attribution](http://www.freesound.org/usersAttribution.php?id=2227288) 提供；未修改录音。已用原生 Audio API 替换旧 Flash 音频加载，不使用 SoundManager2，但源码包保留原许可。
+
+象棋采用原作 JavaScript 引擎，保留 GPL 声明；GBK 转 UTF-8、入口适配和新增合成音效的可编辑源码随包提供。象棋与陨石射击的原 WAV 录音均未分发，陨石射击原自定义字体也未分发。黑白棋的外站字体、背景，2048 的 Clear Sans 字体以及图案解锁的 Roboto Mono 字体均未分发，改用系统字体或 CSS 背景。
+
+陨石射击的 jQuery 1.4.1 保留文件内 MIT / GPL 许可头与 `JQUERY-LICENSE.txt`；扫雷的 React/ReactDOM、Workbox 均为 MIT，完整许可位于该运行包 `licenses/`，并保留生成代码的第三方许可注释。其它中文入口和资源路径改动按原作许可提供，共享 `game-help.js` 的 MIT 文本为 `public/games/_shared/expansion-LICENSE`。

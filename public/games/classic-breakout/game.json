@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 2,
+  "id": "classic-breakout",
+  "order": 39,
+  "discovery": {
+    "audiences": [
+      "single"
+    ]
+  },
+  "theme": {
+    "accent": "#de704c",
+    "dark": "#20292e"
+  },
+  "presentation": {
+    "title": "弹球打砖块",
+    "originalTitle": "Javascript Breakout",
+    "mark": "弹球",
+    "category": "弹球闯关",
+    "tagline": "接住每一次反弹，把整面砖墙打得干干净净。",
+    "description": "移动挡板反弹小球，清除不同造型的砖块。挡板上的击球位置会改变反弹角度；多种关卡图案、有限生命和最高分让每一局都有目标。",
+    "tags": [
+      "街机",
+      "闯关",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "空格开始或发球；左右方向键或 A / D 移动，菜单中上下切换关卡；手机拖动挡板。",
+      "inputs": [
+        "keyboard",
+        "touch"
+      ],
+      "devices": [
+        "desktop",
+        "mobile"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "多种砖块关卡",
+      "反弹角度由接球位置决定",
+      "生命与最高分挑战"
+    ],
+    "art": {
+      "cover": "/games/classic-breakout/cover.png",
+      "hero": "/games/classic-breakout/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "独立 HTML / CSS / JavaScript 运行包",
+    "license": "MIT; audio CC-BY-ND-2.0",
+    "sourceUrl": "https://github.com/jakesgordon/javascript-breakout",
+    "localization": "游戏内菜单、玩法说明和主要状态为中文，保留原作署名。",
+    "fit": "独立静态运行包，通过 game.json 和 iframe 接入。",
+    "highlights": [
+      "多种砖块关卡",
+      "反弹角度由接球位置决定",
+      "生命与最高分挑战"
+    ],
+    "cautions": [
+      "单人玩法；本地成绩不跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/classic-breakout/index.html"
+    }
+  },
+  "capabilities": [
+    "fullscreen",
+    "storage",
+    "audio"
+  ],
+  "permissions": [
+    "fullscreen",
+    "autoplay"
+  ]
+}

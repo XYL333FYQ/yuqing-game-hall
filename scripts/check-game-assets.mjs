@@ -112,9 +112,10 @@ try {
 
 // Checking the actual runtime inventory catches missing maps/audio as well as
 // entry files. A SPA fallback can otherwise return HTML with status 200.
+for (const batch of ["expansion", "classics"]) {
 try {
-  const sources = JSON.parse(await readFile(path.join(root, "games/expansion/SOURCES.json"), "utf8"));
-  const inventory = JSON.parse(await readFile(path.join(root, "games/expansion/runtime-assets.json"), "utf8"));
+  const sources = JSON.parse(await readFile(path.join(root, `games/${batch}/SOURCES.json`), "utf8"));
+  const inventory = JSON.parse(await readFile(path.join(root, `games/${batch}/runtime-assets.json`), "utf8"));
   for (const { id } of sources) {
     const files = inventory[id];
     if (!Array.isArray(files) || !files.includes("index.html")) {
@@ -133,9 +134,10 @@ try {
       }
     }
   }
-  console.log(`已按完整资源清单检查 ${sources.length} 款新增游戏。`);
+  console.log(`已按完整资源清单检查 ${batch} 的 ${sources.length} 款新增游戏。`);
 } catch (error) {
-  failures.push(`新增游戏资源清单检查失败：${error instanceof Error ? error.message : String(error)}`);
+  failures.push(`${batch} 新增游戏资源清单检查失败：${error instanceof Error ? error.message : String(error)}`);
+}
 }
 
 if (failures.length) {

@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 2,
+  "id": "sokoban-100",
+  "order": 40,
+  "discovery": {
+    "audiences": [
+      "single"
+    ]
+  },
+  "theme": {
+    "accent": "#a67e42",
+    "dark": "#20292e"
+  },
+  "presentation": {
+    "title": "百关推箱子",
+    "originalTitle": "Sokoban",
+    "mark": "推箱",
+    "category": "仓库解谜",
+    "tagline": "箱子能推不能拉，走一步之前先想好退路。",
+    "description": "把所有箱子推到目标位置，挑战 100 张不同的仓库地图。狭窄通道与互相挡路的箱子考验移动顺序，可以重玩本关和切换关卡。",
+    "tags": [
+      "解谜",
+      "闯关",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "方向键或 WASD 移动；点击关卡按钮切换或重玩。",
+      "inputs": [
+        "keyboard",
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "100 张独立地图",
+      "关卡切换与重玩",
+      "移动次数记录"
+    ],
+    "art": {
+      "cover": "/games/sokoban-100/cover.png",
+      "hero": "/games/sokoban-100/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "独立 HTML / CSS / JavaScript 运行包",
+    "license": "MIT",
+    "sourceUrl": "https://github.com/shunyue1320/sokoban",
+    "localization": "游戏内菜单、玩法说明和主要状态为中文，保留原作署名。",
+    "fit": "独立静态运行包，通过 game.json 和 iframe 接入。",
+    "highlights": [
+      "100 张独立地图",
+      "关卡切换与重玩",
+      "移动次数记录"
+    ],
+    "cautions": [
+      "单人玩法；本地成绩不跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/sokoban-100/index.html"
+    }
+  },
+  "capabilities": [
+    "fullscreen",
+    "storage"
+  ],
+  "permissions": [
+    "fullscreen"
+  ]
+}

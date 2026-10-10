@@ -1,0 +1,352 @@
+[
+  {
+    "id": "classic-tower-defense",
+    "folder": "tower-defense",
+    "repo": "oldj/html5-tower-defense",
+    "license": "MIT",
+    "licenseFile": "License.md",
+    "recipe": "tower",
+    "title": "自由布阵塔防",
+    "original": "HTML5 Tower Defense",
+    "category": "布阵塔防",
+    "accent": "#42946f",
+    "mark": "塔防",
+    "tagline": "亲手布置防线，让怪物绕进你的火力网。",
+    "description": "用围墙改变怪物路线，搭配机枪、激光等防御设施，升级火力并守住一波波进攻。布阵与资源分配比单纯堆塔更重要。",
+    "controls": "鼠标选择建筑和空地放置，点击已建防御塔升级或出售；建好首座武器后自动迎战。",
+    "tip": "让敌人多走几步，但不要把路线彻底封死。",
+    "highlights": [
+      "可以自己改变行进路线",
+      "多种防御设施与升级",
+      "连续波次考验资源分配"
+    ],
+    "tags": [
+      "塔防",
+      "策略"
+    ],
+    "inputs": [
+      "mouse"
+    ],
+    "devices": [
+      "desktop"
+    ],
+    "commit": "e3e009c7673121e98d6ff02c85fb442c774b6391"
+  },
+  {
+    "id": "classic-2048",
+    "folder": "2048",
+    "repo": "gabrielecirulli/2048",
+    "license": "MIT",
+    "licenseFile": "LICENSE.txt",
+    "recipe": "2048",
+    "title": "2048 合成",
+    "original": "2048",
+    "category": "数字合成",
+    "accent": "#d98b46",
+    "mark": "2048",
+    "tagline": "把相同数字叠在一起，留出通往 2048 的空间。",
+    "description": "整盘滑动数字方块，让相同的数字合并。每次操作都会增加新方块，需要提前规划最大数字的位置和空格。可以继续挑战超过 2048 的纪录。",
+    "controls": "方向键移动整盘方块；手机上向四个方向滑动。",
+    "tip": "把最大数字留在一个角，尽量不要打乱它的位置。",
+    "highlights": [
+      "经典合成规则",
+      "本地保存棋盘与最高分",
+      "电脑与手机均可游玩"
+    ],
+    "tags": [
+      "益智",
+      "合成"
+    ],
+    "inputs": [
+      "keyboard",
+      "touch"
+    ],
+    "devices": [
+      "desktop",
+      "mobile"
+    ],
+    "commit": "478b6ec346e3787f589e4af751378d06ded4cbbc"
+  },
+  {
+    "id": "classic-tetris",
+    "folder": "tetris",
+    "repo": "jakesgordon/javascript-tetris",
+    "license": "MIT",
+    "licenseFile": "LICENSE",
+    "recipe": "tetris",
+    "title": "俄罗斯方块",
+    "original": "Javascript Tetris",
+    "category": "方块消行",
+    "accent": "#6382d1",
+    "mark": "方块",
+    "tagline": "旋转、落下、消行，在越来越快的节奏中坚持。",
+    "description": "把七种方块放进棋盘，填满一整行即可消除。随着消行数量增加，方块下落越来越快，观察下一块并为长条留下位置。",
+    "controls": "空格开始；左右移动，上键旋转，下键加速落下，Esc 结束本局。",
+    "tip": "避免留下无法填补的洞，提前看下一块。",
+    "highlights": [
+      "七种经典方块",
+      "下一块预览",
+      "随消行逐渐加速"
+    ],
+    "tags": [
+      "益智",
+      "街机"
+    ],
+    "inputs": [
+      "keyboard"
+    ],
+    "devices": [
+      "desktop"
+    ],
+    "commit": "e5c0c42f7dac0f3514a55eff656c6e22e95d68ed"
+  },
+  {
+    "id": "classic-breakout",
+    "folder": "breakout",
+    "repo": "jakesgordon/javascript-breakout",
+    "license": "MIT; audio CC-BY-ND-2.0",
+    "licenseFile": "LICENSE",
+    "recipe": "breakout",
+    "title": "弹球打砖块",
+    "original": "Javascript Breakout",
+    "category": "弹球闯关",
+    "accent": "#de704c",
+    "mark": "弹球",
+    "tagline": "接住每一次反弹，把整面砖墙打得干干净净。",
+    "description": "移动挡板反弹小球，清除不同造型的砖块。挡板上的击球位置会改变反弹角度；多种关卡图案、有限生命和最高分让每一局都有目标。",
+    "controls": "空格开始或发球；左右方向键或 A / D 移动，菜单中上下切换关卡；手机拖动挡板。",
+    "tip": "用挡板边缘接球，能把球送到不同的角度。",
+    "highlights": [
+      "多种砖块关卡",
+      "反弹角度由接球位置决定",
+      "生命与最高分挑战"
+    ],
+    "tags": [
+      "街机",
+      "闯关"
+    ],
+    "inputs": [
+      "keyboard",
+      "touch"
+    ],
+    "devices": [
+      "desktop",
+      "mobile"
+    ],
+    "commit": "eed59e2affa9423b93d2ac8ff93061bb88b33284"
+  },
+  {
+    "id": "sokoban-100",
+    "folder": "sokoban-100",
+    "repo": "shunyue1320/sokoban",
+    "license": "MIT",
+    "licenseFile": "LICENSE",
+    "recipe": "sokoban",
+    "title": "百关推箱子",
+    "original": "Sokoban",
+    "category": "仓库解谜",
+    "accent": "#a67e42",
+    "mark": "推箱",
+    "tagline": "箱子能推不能拉，走一步之前先想好退路。",
+    "description": "把所有箱子推到目标位置，挑战 100 张不同的仓库地图。狭窄通道与互相挡路的箱子考验移动顺序，可以重玩本关和切换关卡。",
+    "controls": "方向键或 WASD 移动；点击关卡按钮切换或重玩。",
+    "tip": "不要把箱子推到没有目标点的墙角。",
+    "highlights": [
+      "100 张独立地图",
+      "关卡切换与重玩",
+      "移动次数记录"
+    ],
+    "tags": [
+      "解谜",
+      "闯关"
+    ],
+    "inputs": [
+      "keyboard",
+      "mouse"
+    ],
+    "devices": [
+      "desktop"
+    ],
+    "commit": "9d15e6d32a533cf1099f995e30c01ea45ee0f1ff"
+  },
+  {
+    "id": "chinese-chess",
+    "folder": "xiangqi-original",
+    "repo": "xqbase/xqwlight",
+    "license": "GPL-2.0-or-later",
+    "licenseFile": "LICENSE",
+    "recipe": "xiangqi",
+    "title": "中国象棋",
+    "original": "XiangQi Wizard Light",
+    "category": "人机对弈",
+    "accent": "#b45840",
+    "mark": "象棋",
+    "tagline": "楚河汉界之间，用一盘棋检验你的布局。",
+    "description": "与象棋小巫师引擎对弈，车马炮配合攻守。可选择三种电脑水平、先后手及让子，支持悔棋和走子记录，也可切换同屏双人对弈。",
+    "controls": "点击棋子和目标位置走子；右侧可选电脑水平、悔棋、先后手，修改后点重新开始。",
+    "tip": "先保护帅，再看对手下一步的威胁。",
+    "highlights": [
+      "本地人机对弈",
+      "三种电脑水平与让子",
+      "悔棋与重新开局"
+    ],
+    "tags": [
+      "棋类",
+      "策略"
+    ],
+    "inputs": [
+      "mouse"
+    ],
+    "devices": [
+      "desktop"
+    ],
+    "commit": "6221733f1f79b3acb44cce6f83dc6100443cb2c9",
+    "audiences": [
+      "single",
+      "duo"
+    ],
+    "modes": "人机对弈 / 同屏双人",
+    "players": "1–2 人",
+    "cautions": [
+      "双人模式在同一台设备上对弈，无网络联机。"
+    ]
+  },
+  {
+    "id": "othello",
+    "folder": "othello",
+    "repo": "NXY666/othello-board",
+    "license": "MIT",
+    "licenseFile": "LICENSE",
+    "recipe": "othello",
+    "title": "黑白棋",
+    "original": "Othello Board",
+    "category": "同屏双人策略",
+    "accent": "#638968",
+    "mark": "黑白",
+    "tagline": "夹住一条棋子，就能让整条战线换成你的颜色。",
+    "description": "两人在同一台设备上轮流落子，用横、竖、斜方向夹住对手棋子并翻转。棋盘显示合法落点、双方数量，支持撤销、重做和回合计时。",
+    "controls": "点开始开局，黑白双方轮流点击提示落点；这款是同屏双人玩法。",
+    "tip": "角落的棋子不会再被翻转，但抢角前要留意附近的危险格。",
+    "highlights": [
+      "同屏双人对弈",
+      "合法落点提示",
+      "撤销、重做与计时"
+    ],
+    "tags": [
+      "棋类",
+      "本地双人",
+      "策略"
+    ],
+    "audiences": [
+      "duo"
+    ],
+    "inputs": [
+      "mouse"
+    ],
+    "devices": [
+      "desktop"
+    ],
+    "commit": "4e8af47a92ff56767f0c6c1a039c8995077c1dd7"
+  },
+  {
+    "id": "breaklock",
+    "folder": "breaklock",
+    "repo": "maxwellito/breaklock",
+    "license": "MIT",
+    "licenseFile": "LICENSE",
+    "recipe": "breaklock",
+    "title": "图案解锁",
+    "original": "BreakLock",
+    "category": "线索推理",
+    "accent": "#43b6ab",
+    "mark": "解锁",
+    "tagline": "根据每次尝试的反馈，推理出隐藏的解锁图案。",
+    "description": "在九个点之间连线，每次提交都会给出点位与顺序是否正确的反馈。像密码破译一样排除错误答案，可选择练习、限次挑战或一分钟计时。",
+    "controls": "选择难度与模式，点开始；按住鼠标或手指连接规定数量的点。",
+    "tip": "实心点代表位置和顺序都对，空心点代表选对了点但顺序不同。",
+    "highlights": [
+      "三种难度",
+      "练习、限次与计时模式",
+      "每次反馈都能用于排除答案"
+    ],
+    "tags": [
+      "解谜",
+      "推理"
+    ],
+    "inputs": [
+      "mouse",
+      "touch"
+    ],
+    "devices": [
+      "desktop",
+      "mobile"
+    ],
+    "commit": "a06fb28a3fa6072a089ca664c66a7bf08c0a3e99"
+  },
+  {
+    "id": "minesweeper",
+    "folder": "minesweeper",
+    "repo": "junjie-xu-lab/minesweeper",
+    "license": "MIT",
+    "licenseFile": "LICENSE",
+    "recipe": "minesweeper",
+    "title": "经典扫雷",
+    "original": "Minesweeper",
+    "category": "数字推理",
+    "accent": "#4b98c6",
+    "mark": "扫雷",
+    "tagline": "把危险藏在哪里看清楚，用数字推理清空棋盘。",
+    "description": "数字表示周围八格的地雷数量。用标记排除危险格，翻开全部安全格即可获胜；提供三档难度、自定义棋盘、首击保护、计时和本地最佳成绩。",
+    "controls": "左键翻开格子，右键插旗，双击已满足标记数量的数字格展开周围；可暂停。",
+    "tip": "先寻找确定安全的格子；首击保护不代表整盘完全不需要猜测。",
+    "highlights": [
+      "三档难度与自定义棋盘",
+      "首击与邻格保护",
+      "暂停和本地最佳成绩"
+    ],
+    "tags": [
+      "益智",
+      "推理"
+    ],
+    "inputs": [
+      "mouse"
+    ],
+    "devices": [
+      "desktop"
+    ],
+    "commit": "979f135fd2e2f493fc6ea5fa8fd90d4eb251f78b"
+  },
+  {
+    "id": "asteroids",
+    "folder": "asteroids",
+    "repo": "dmcinnes/HTML5-Asteroids",
+    "license": "MIT",
+    "licenseFile": "LICENSE",
+    "recipe": "asteroids",
+    "title": "陨石突围",
+    "original": "HTML5 Asteroids",
+    "category": "惯性射击",
+    "accent": "#637da9",
+    "mark": "陨石",
+    "tagline": "飞船不会立刻停下，转向、推进、开火都要算准。",
+    "description": "驾驶有惯性的飞船穿过陨石群，击碎大陨石后还要应付分裂的小碎片与飞碟。清理一轮后迎来更多目标，用有限生命挑战更高分。",
+    "controls": "空格开始与射击；左右键转向，上键推进，P 暂停，M 切换音效。",
+    "tip": "短促推进比一直踩油门更容易控制，留意屏幕另一边飞来的目标。",
+    "highlights": [
+      "惯性飞行与环绕空间",
+      "陨石分裂和飞碟敌人",
+      "生命与分数挑战"
+    ],
+    "tags": [
+      "射击",
+      "街机"
+    ],
+    "inputs": [
+      "keyboard"
+    ],
+    "devices": [
+      "desktop"
+    ],
+    "commit": "930301cbda83ed3b120f64b801d937d077ee2da0"
+  }
+]

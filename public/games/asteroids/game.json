@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 2,
+  "id": "asteroids",
+  "order": 45,
+  "discovery": {
+    "audiences": [
+      "single"
+    ]
+  },
+  "theme": {
+    "accent": "#637da9",
+    "dark": "#20292e"
+  },
+  "presentation": {
+    "title": "陨石突围",
+    "originalTitle": "HTML5 Asteroids",
+    "mark": "陨石",
+    "category": "惯性射击",
+    "tagline": "飞船不会立刻停下，转向、推进、开火都要算准。",
+    "description": "驾驶有惯性的飞船穿过陨石群，击碎大陨石后还要应付分裂的小碎片与飞碟。清理一轮后迎来更多目标，用有限生命挑战更高分。",
+    "tags": [
+      "射击",
+      "街机",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "空格开始与射击；左右键转向，上键推进，P 暂停，M 切换音效。",
+      "inputs": [
+        "keyboard"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "惯性飞行与环绕空间",
+      "陨石分裂和飞碟敌人",
+      "生命与分数挑战"
+    ],
+    "art": {
+      "cover": "/games/asteroids/cover.png",
+      "hero": "/games/asteroids/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "独立 HTML / CSS / JavaScript 运行包",
+    "license": "MIT",
+    "sourceUrl": "https://github.com/dmcinnes/HTML5-Asteroids",
+    "localization": "游戏内菜单、玩法说明和主要状态为中文，保留原作署名。",
+    "fit": "独立静态运行包，通过 game.json 和 iframe 接入。",
+    "highlights": [
+      "惯性飞行与环绕空间",
+      "陨石分裂和飞碟敌人",
+      "生命与分数挑战"
+    ],
+    "cautions": [
+      "单人玩法；本地成绩不跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/asteroids/index.html"
+    }
+  },
+  "capabilities": [
+    "fullscreen",
+    "storage",
+    "audio"
+  ],
+  "permissions": [
+    "fullscreen",
+    "autoplay"
+  ]
+}

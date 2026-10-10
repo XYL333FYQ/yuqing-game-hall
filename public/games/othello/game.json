@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 2,
+  "id": "othello",
+  "order": 42,
+  "discovery": {
+    "audiences": [
+      "duo"
+    ]
+  },
+  "theme": {
+    "accent": "#638968",
+    "dark": "#20292e"
+  },
+  "presentation": {
+    "title": "黑白棋",
+    "originalTitle": "Othello Board",
+    "mark": "黑白",
+    "category": "同屏双人策略",
+    "tagline": "夹住一条棋子，就能让整条战线换成你的颜色。",
+    "description": "两人在同一台设备上轮流落子，用横、竖、斜方向夹住对手棋子并翻转。棋盘显示合法落点、双方数量，支持撤销、重做和回合计时。",
+    "tags": [
+      "棋类",
+      "本地双人",
+      "策略",
+      "中文"
+    ],
+    "play": {
+      "modes": "同屏双人",
+      "players": "2 人",
+      "controls": "点开始开局，黑白双方轮流点击提示落点；这款是同屏双人玩法。",
+      "inputs": [
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "同屏双人对弈",
+      "合法落点提示",
+      "撤销、重做与计时"
+    ],
+    "art": {
+      "cover": "/games/othello/cover.png",
+      "hero": "/games/othello/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "独立 HTML / CSS / JavaScript 运行包",
+    "license": "MIT",
+    "sourceUrl": "https://github.com/NXY666/othello-board",
+    "localization": "游戏内菜单、玩法说明和主要状态为中文，保留原作署名。",
+    "fit": "独立静态运行包，通过 game.json 和 iframe 接入。",
+    "highlights": [
+      "同屏双人对弈",
+      "合法落点提示",
+      "撤销、重做与计时"
+    ],
+    "cautions": [
+      "仅支持同一台设备上的双人对弈，无网络联机。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/othello/index.html"
+    }
+  },
+  "capabilities": [
+    "fullscreen",
+    "storage"
+  ],
+  "permissions": [
+    "fullscreen"
+  ]
+}

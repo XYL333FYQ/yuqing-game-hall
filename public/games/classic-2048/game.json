@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 2,
+  "id": "classic-2048",
+  "order": 37,
+  "discovery": {
+    "audiences": [
+      "single"
+    ]
+  },
+  "theme": {
+    "accent": "#d98b46",
+    "dark": "#20292e"
+  },
+  "presentation": {
+    "title": "2048 合成",
+    "originalTitle": "2048",
+    "mark": "2048",
+    "category": "数字合成",
+    "tagline": "把相同数字叠在一起，留出通往 2048 的空间。",
+    "description": "整盘滑动数字方块，让相同的数字合并。每次操作都会增加新方块，需要提前规划最大数字的位置和空格。可以继续挑战超过 2048 的纪录。",
+    "tags": [
+      "益智",
+      "合成",
+      "中文"
+    ],
+    "play": {
+      "modes": "单人挑战",
+      "players": "1 人",
+      "controls": "方向键移动整盘方块；手机上向四个方向滑动。",
+      "inputs": [
+        "keyboard",
+        "touch"
+      ],
+      "devices": [
+        "desktop",
+        "mobile"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "经典合成规则",
+      "本地保存棋盘与最高分",
+      "电脑与手机均可游玩"
+    ],
+    "art": {
+      "cover": "/games/classic-2048/cover.png",
+      "hero": "/games/classic-2048/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "独立 HTML / CSS / JavaScript 运行包",
+    "license": "MIT",
+    "sourceUrl": "https://github.com/gabrielecirulli/2048",
+    "localization": "游戏内菜单、玩法说明和主要状态为中文，保留原作署名。",
+    "fit": "独立静态运行包，通过 game.json 和 iframe 接入。",
+    "highlights": [
+      "经典合成规则",
+      "本地保存棋盘与最高分",
+      "电脑与手机均可游玩"
+    ],
+    "cautions": [
+      "单人玩法；本地成绩不跨设备同步。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/classic-2048/index.html"
+    }
+  },
+  "capabilities": [
+    "fullscreen",
+    "storage"
+  ],
+  "permissions": [
+    "fullscreen"
+  ]
+}

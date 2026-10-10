@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 2,
+  "id": "chinese-chess",
+  "order": 41,
+  "discovery": {
+    "audiences": [
+      "single",
+      "duo"
+    ]
+  },
+  "theme": {
+    "accent": "#b45840",
+    "dark": "#20292e"
+  },
+  "presentation": {
+    "title": "中国象棋",
+    "originalTitle": "XiangQi Wizard Light",
+    "mark": "象棋",
+    "category": "人机对弈",
+    "tagline": "楚河汉界之间，用一盘棋检验你的布局。",
+    "description": "与象棋小巫师引擎对弈，车马炮配合攻守。可选择三种电脑水平、先后手及让子，支持悔棋和走子记录，也可切换同屏双人对弈。",
+    "tags": [
+      "棋类",
+      "策略",
+      "中文"
+    ],
+    "play": {
+      "modes": "人机对弈 / 同屏双人",
+      "players": "1–2 人",
+      "controls": "点击棋子和目标位置走子；右侧可选电脑水平、悔棋、先后手，修改后点重新开始。",
+      "inputs": [
+        "mouse"
+      ],
+      "devices": [
+        "desktop"
+      ],
+      "vision": false
+    },
+    "highlights": [
+      "本地人机对弈",
+      "三种电脑水平与让子",
+      "悔棋与重新开局"
+    ],
+    "art": {
+      "cover": "/games/chinese-chess/cover.png",
+      "hero": "/games/chinese-chess/cover.png"
+    },
+    "availability": {
+      "state": "playable",
+      "label": "可直接游玩"
+    },
+    "actionLabel": "进入游戏"
+  },
+  "platform": {
+    "hosting": "static",
+    "technology": "独立 HTML / CSS / JavaScript 运行包",
+    "license": "GPL-2.0-or-later",
+    "sourceUrl": "https://github.com/xqbase/xqwlight",
+    "localization": "游戏内菜单、玩法说明和主要状态为中文，保留原作署名。",
+    "fit": "独立静态运行包，通过 game.json 和 iframe 接入。",
+    "highlights": [
+      "本地人机对弈",
+      "三种电脑水平与让子",
+      "悔棋与重新开局"
+    ],
+    "cautions": [
+      "双人模式在同一台设备上对弈，无网络联机。"
+    ],
+    "launch": {
+      "kind": "iframe",
+      "entry": "/games/chinese-chess/index.html"
+    }
+  },
+  "capabilities": [
+    "fullscreen",
+    "storage",
+    "audio"
+  ],
+  "permissions": [
+    "fullscreen",
+    "autoplay"
+  ]
+}
