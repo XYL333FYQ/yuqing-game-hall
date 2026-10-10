@@ -14,15 +14,25 @@ on:
     branches: [main]
     paths:
       - "server-games/**"
+      # 文档修改不需要重启正在进行的香港对局。
+      - "!server-games/README.md"
       - "games/fruit-party/src/shared/**"
       - "public/games/littlejs-arcade/**"
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - ".dockerignore"
-      - ".github/workflows/deploy-vps.yml"
+      # 修改部署工作流本身也不应自动重启线上服务器。
   workflow_dispatch:
     inputs:
+      deploy_target:
+        description: "部署目标：香港沿用现有仓库配置；马来西亚读取 malaysia 环境配置"
+        required: true
+        type: choice
+        options:
+          - hongkong
+          - malaysia
+        default: hongkong
       image_sha:
         description: "留空部署当前提交；填 40 位提交号可回滚到已保留的镜像版本"
         required: false
@@ -30,7 +40,7 @@ on:
         default: ""
 
 concurrency:
-  group: vps-production
+  group: vps-${{ github.event_name == 'workflow_dispatch' && inputs.deploy_target || 'hongkong' }}
   cancel-in-progress: false
 
 permissions:
@@ -40,8 +50,48 @@ permissions:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    # push 默认继续部署香港；仅手动选择 malaysia 才使用独立环境配置。
+    # GitHub 同名环境 Secret/Variable 优先于仓库级配置；malaysia 有额外防误部署校验。
+    environment:
+      name: ${{ github.event_name == 'workflow_dispatch' && inputs.deploy_target == 'malaysia' && 'malaysia' || 'hongkong' }}
 
     steps:
+      - name: Verify selected deployment environment
+        shell: bash
+        env:
+          DEPLOY_TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.deploy_target || 'hongkong' }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          TURN_EXTERNAL_IP: ${{ vars.TURN_EXTERNAL_IP }}
+          MALAYSIA_PUBLIC_IP: ${{ vars.MALAYSIA_PUBLIC_IP }}
+          DEPLOY_TARGET_GUARD: ${{ vars.DEPLOY_TARGET_GUARD }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$VPS_HOST" || -z "$VPS_USER" || -z "$VPS_SSH_KEY" ]]; then
+            echo "::error::缺少 VPS_HOST、VPS_USER 或 VPS_SSH_KEY，停止部署。"
+            exit 1
+          fi
+          case "$DEPLOY_TARGET" in
+            malaysia)
+              # 防止 malaysia 环境缺少私有配置时，悄悄回退到香港仓库级 Secrets。
+              if [[ "$DEPLOY_TARGET_GUARD" != "malaysia" || -z "$MALAYSIA_PUBLIC_IP" ]]; then
+                echo "::error::malaysia 环境缺少 DEPLOY_TARGET_GUARD=malaysia 或 MALAYSIA_PUBLIC_IP，停止部署。"
+                exit 1
+              fi
+              if [[ "$VPS_HOST" != "$MALAYSIA_PUBLIC_IP" || "$TURN_EXTERNAL_IP" != "$MALAYSIA_PUBLIC_IP" ]]; then
+                echo "::error::malaysia 的 VPS_HOST、TURN_EXTERNAL_IP 必须与 MALAYSIA_PUBLIC_IP 一致，拒绝部署到错误服务器。"
+                exit 1
+              fi
+              ;;
+            hongkong) ;;
+            *)
+              echo "::error::未知部署目标，停止部署。"
+              exit 1
+              ;;
+          esac
+          echo "部署目标配置校验通过：$DEPLOY_TARGET"
+
       - name: Checkout
         uses: actions/checkout@v6
 
@@ -461,8 +511,11 @@ jobs:
             "bash /opt/yuqing-game-hall/server-games/prune-deployed-images.sh \
               '${IMAGE_PREFIX}' '${IMAGE_SHA}' '${PREVIOUS_SHA}'"
 
+      # 迁移期间香港和马来西亚共用 GHCR 镜像仓库。
+      # 暂停全局 GHCR 版本删除，避免一台机器的部署删掉另一台机器正在使用的镜像。
+      # 单台 VPS 上的镜像保留/清理逻辑不受影响。香港退役后可恢复全局清理。
       - name: Keep current and previous GHCR versions
-        if: always() && steps.deploy.outcome == 'success'
+        if: ${{ false }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IMAGE_SHA: ${{ steps.vars.outputs.image_sha }}
