@@ -41,7 +41,8 @@ jobs:
           EXPECTED_IP: "85.211.247.254"
         run: |
           set -euo pipefail
-          for item in "rooms:/api/health" "rtc:/health" "cards:/health" "gobang:/health" "sanctuary:/health"; do
+          # Sanctuary 仅在 Nginx 暴露 /socket；它的 WebSocket 在下一步单独测试。
+          for item in "rooms:/api/health" "rtc:/health" "cards:/health" "gobang:/health"; do
             name="${item%%:*}"
             path="${item#*:}"
             host="${name}.xyllovefyq.cc.cd"
