@@ -9,30 +9,33 @@ export function playableGames(games: readonly GameManifest[]): GameManifest[] {
   return games.filter((game) => game.platform.launch.kind !== "none");
 }
 
-export function featuredGames(games: readonly GameManifest[]): GameManifest[] {
-  const playable = playableGames(games);
-  const selected = playable.filter((game) => game.featured);
-  return (selected.length > 0 ? selected : playable.slice(0, 1)).sort((left, right) =>
-    featuredRank(left) - featuredRank(right) || popularityRank(left) - popularityRank(right) || left.order - right.order,
-  );
+/** 全部可玩的游戏自动参与推荐；首页每次进入时打乱一次，轮换期间保持顺序稳定。 */
+export function featuredGames(games: readonly GameManifest[], random: () => number = Math.random): GameManifest[] {
+  const pool = playableGames(games);
+  for (let index = pool.length - 1; index > 0; index -= 1) {
+    const target = Math.floor(random() * (index + 1));
+    [pool[index], pool[target]] = [pool[target], pool[index]];
+  }
+  return pool;
 }
 
 /**
- * 热门位由目录中的初始热度、可玩的形式和本次会话内的实际兴趣组成。
- * cycle 让同一批高分候选在“换一批”时轮换，避免首页永远是同四张卡。
+ * 首页传入打乱后的完整推荐池，本次会话内的实际兴趣优先。
+ * 每轮前进一批，覆盖整个目录，不用手工排名限制新游戏的曝光。
  */
 export function trendingGames(
   games: readonly GameManifest[],
   engagement: GameEngagement = {},
   options: { limit?: number; cycle?: number } = {},
 ): GameManifest[] {
-  const limit = options.limit ?? 4;
-  const ranked = playableGames(games).sort((left, right) => trendScore(right, engagement) - trendScore(left, engagement) || popularityRank(left) - popularityRank(right) || left.order - right.order);
+  const limit = Math.max(0, Math.floor(options.limit ?? 4));
+  if (limit === 0) return [];
+  const ranked = playableGames(games).sort((left, right) => trendScore(right, engagement) - trendScore(left, engagement));
   if (ranked.length <= limit) return ranked;
 
-  const pool = ranked.slice(0, Math.min(ranked.length, limit + 3));
-  const start = ((options.cycle ?? 0) % pool.length + pool.length) % pool.length;
-  return Array.from({ length: limit }, (_, index) => pool[(start + index) % pool.length]);
+  const offset = (options.cycle ?? 0) * limit;
+  const start = (offset % ranked.length + ranked.length) % ranked.length;
+  return Array.from({ length: limit }, (_, index) => ranked[(start + index) % ranked.length]);
 }
 
 export function readSessionEngagement(): GameEngagement {
@@ -59,24 +62,12 @@ export function recordSessionEngagement(gameId: string, kind: EngagementKind): G
   try {
     sessionStorage.setItem(ENGAGEMENT_STORAGE_KEY, JSON.stringify(engagement));
   } catch {
-    // 隐私模式或禁用存储时，页面仍按目录热度正常工作。
+    // 隐私模式或禁用存储时，页面仍可正常轮换推荐。
   }
   return engagement;
 }
 
 function trendScore(game: GameManifest, engagement: GameEngagement): number {
   const clicks = engagement[game.id] ?? { detail: 0, launch: 0 };
-  const base = 120 - Math.min(popularityRank(game), 20) * 7;
-  const format = game.platform.launch.kind === "iframe" ? 10 : 5;
-  const audience = game.discovery.audiences.length * 3;
-  const featured = game.featured ? 8 : 0;
-  return base + format + audience + featured + clicks.detail * 2 + clicks.launch * 12;
-}
-
-function popularityRank(game: GameManifest): number {
-  return game.discovery.popularRank ?? Number.MAX_SAFE_INTEGER;
-}
-
-function featuredRank(game: GameManifest): number {
-  return game.discovery.featuredRank ?? Number.MAX_SAFE_INTEGER;
+  return clicks.detail * 2 + clicks.launch * 12;
 }

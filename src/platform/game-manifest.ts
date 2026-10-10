@@ -22,11 +22,12 @@ export interface GameManifest {
   schemaVersion: 2;
   id: string;
   order: number;
+  /** 兼容旧清单；首页推荐自动包含全部可玩的游戏，不再以此字段筛选。 */
   featured?: boolean;
   discovery: {
     audiences: readonly GameAudience[];
     popularRank?: number;
-    /** 首页精选轮播的顺序；标记 featured 的游戏可按此字段自行排位。 */
+    /** 兼容旧清单；首页精选轮播不再使用手工排名。 */
     featuredRank?: number;
   };
   theme: {

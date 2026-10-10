@@ -1,11 +1,11 @@
 import { GAME_CATALOG } from "../platform/game-catalog";
-import { featuredGames, playableGames, readSessionEngagement, recordSessionEngagement, trendingGames } from "../platform/game-discovery";
+import { featuredGames, readSessionEngagement, recordSessionEngagement, trendingGames } from "../platform/game-discovery";
 import type { GameAudience, GameManifest } from "../platform/game-manifest";
 import { siteFooter, siteHeader } from "../platform/shell";
 
 export function renderHome(root: HTMLElement): () => void {
-  const games = playableGames(GAME_CATALOG);
-  const featured = featuredGames(games);
+  const games = featuredGames(GAME_CATALOG);
+  const featured = games;
   if (featured.length === 0) throw new Error("没有可展示的游戏资料。");
   const availableTags = [...new Set(games.flatMap((game) => game.presentation.tags))].sort((left, right) => left.localeCompare(right, "zh-CN"));
 
@@ -28,7 +28,7 @@ export function renderHome(root: HTMLElement): () => void {
         </section>
 
         <section class="arcade-section arcade-trending" aria-labelledby="trending-title">
-          ${sectionHeading("🔥", "热门游戏", "大家都在玩的精选游戏", `<div class="arcade-heading-actions"><a class="arcade-heading-link" href="#all-games" data-nav>查看更多 <span>→</span></a><button type="button" class="arcade-refresh" data-trending-refresh>换一批 <span>↻</span></button></div>`, "trending-title")}
+          ${sectionHeading("🔥", "热门游戏", "换着发现更多好玩的游戏", `<div class="arcade-heading-actions"><a class="arcade-heading-link" href="#all-games" data-nav>查看更多 <span>→</span></a><button type="button" class="arcade-refresh" data-trending-refresh>换一批 <span>↻</span></button></div>`, "trending-title")}
           <div class="arcade-trending-grid" data-trending-grid></div>
         </section>
 
@@ -95,7 +95,11 @@ export function renderHome(root: HTMLElement): () => void {
   const renderFeatured = (): void => {
     const game = featured[featuredIndex];
     if (featuredStage) featuredStage.innerHTML = featureSlide(game, featuredIndex, featured.length);
-    if (featuredDots) featuredDots.innerHTML = featured.map((item, index) => `<button type="button" data-featured-index="${index}" aria-label="切换到 ${escapeHtml(item.presentation.title)}" aria-current="${index === featuredIndex ? "true" : "false"}"></button>`).join("");
+    const dotStart = Math.floor(featuredIndex / 5) * 5;
+    if (featuredDots) featuredDots.innerHTML = featured.slice(dotStart, dotStart + 5).map((item, offset) => {
+      const index = dotStart + offset;
+      return `<button type="button" data-featured-index="${index}" aria-label="切换到 ${escapeHtml(item.presentation.title)}" aria-current="${index === featuredIndex ? "true" : "false"}"></button>`;
+    }).join("");
   };
   const renderTrending = (): void => {
     if (trendingGrid) trendingGrid.innerHTML = trendingGames(games, readSessionEngagement(), { limit: 4, cycle: trendCycle }).map((game) => gameCard(game, "trending")).join("");
