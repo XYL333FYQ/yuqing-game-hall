@@ -21,7 +21,7 @@
       "vision": false
     },
     "highlights": ["大地图领土扩张与兵力调配", "和大量玩家同场博弈", "每局局势都会随着选择不断变化"],
-    "art": {},
+    "art": { "cover": "/games/openfront/cover.svg", "hero": "/games/openfront/cover.svg" },
     "availability": { "state": "external", "label": "在线体验" },
     "actionLabel": "前往体验"
   },

@@ -22,7 +22,7 @@
       "vision": false
     },
     "highlights": ["轮流作画、限时猜词和回合计分", "简单规则，朋友第一次玩也能马上加入", "每一轮都可能画出意料之外的答案"],
-    "art": {},
+    "art": { "cover": "/games/scribble/cover.svg", "hero": "/games/scribble/cover.svg" },
     "availability": { "state": "external", "label": "在线体验" },
     "actionLabel": "前往体验"
   },

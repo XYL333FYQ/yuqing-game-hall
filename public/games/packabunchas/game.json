@@ -43,8 +43,8 @@
       "先考虑最难放的大块，留意拐角空位。"
     ],
     "art": {
-      "cover": "/games/packabunchas/cover.png",
-      "hero": "/games/packabunchas/cover.png"
+      "cover": "/games/packabunchas/cover.svg",
+      "hero": "/games/packabunchas/cover.svg"
     },
     "availability": {
       "state": "playable",

@@ -1,5 +1,5 @@
 import { GAME_CATALOG } from "../platform/game-catalog";
-import type { GameAvailability, GameManifest, GamePermission } from "../platform/game-manifest";
+import type { GameAvailability, GameDevice, GameInput, GameManifest, GamePermission } from "../platform/game-manifest";
 
 /**
  * 大厅列表所需的轻量视图模型。
@@ -25,6 +25,8 @@ export interface LibraryGame {
   mode: string;
   players: string;
   controls: string;
+  devices: readonly GameDevice[];
+  inputs: readonly GameInput[];
   highlights: readonly string[];
   icon?: string;
   cover?: string;
@@ -63,6 +65,8 @@ function toLibraryGame(game: GameManifest): LibraryGame {
     mode: presentation.play.modes,
     players: presentation.play.players,
     controls: presentation.play.controls,
+    devices: presentation.play.devices,
+    inputs: presentation.play.inputs,
     highlights: presentation.highlights,
     icon: presentation.art.icon,
     cover: presentation.art.cover,

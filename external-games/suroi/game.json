@@ -21,7 +21,7 @@
       "vision": false
     },
     "highlights": ["搜集枪械、护甲和投掷物", "在毒圈变化中寻找路线和时机", "单排、双排与四排带来不同的生存节奏"],
-    "art": {},
+    "art": { "cover": "/games/suroi/cover.svg", "hero": "/games/suroi/cover.svg" },
     "availability": { "state": "external", "label": "在线体验" },
     "actionLabel": "前往体验"
   },

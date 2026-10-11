@@ -33,10 +33,10 @@ export function renderLibraryGame(root: HTMLElement, slug: string): () => void {
         </section>
 
         <section class="library-facts" aria-label="游戏信息">
-          <div><small>玩法</small><strong>${game.mode}</strong></div>
-          <div><small>人数</small><strong>${game.players}</strong></div>
-          <div><small>操作</small><strong>${game.controls}</strong></div>
-          <div><small>适合</small><strong>${game.genre}</strong></div>
+          <div><small>玩法模式</small><strong>${game.mode}</strong></div>
+          <div><small>适玩人数</small><strong>${game.players}</strong></div>
+          <div><small>支持终端</small><strong>${game.devices.includes("mobile") || game.inputs.includes("touch") ? "电脑 · 手机 / 触屏" : "电脑键盘 / 鼠标"}</strong></div>
+          <div><small>游戏类别</small><strong>${game.genre}</strong></div>
         </section>
 
         ${game.screenshots.length > 0 ? `

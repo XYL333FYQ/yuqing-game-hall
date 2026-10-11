@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 800">
+  <defs>
+    <radialGradient id="bg" cx="65%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#475569" stop-opacity="0.8"/>
+      <stop offset="45%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#090d16"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ef4444" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#7f1d1d" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#000" flood-opacity="0.7"/></filter>
+  </defs>
+  <rect width="1280" height="800" fill="url(#bg)"/>
+  <path d="M0 160H1280M0 320H1280M0 480H1280M0 640H1280M256 0V800M512 0V800M768 0V800M1024 0V800" stroke="#94a3b8" stroke-width="1" stroke-opacity="0.05"/>
+  <circle cx="880" cy="400" r="320" fill="url(#glow)"/>
+  <g transform="translate(860, 400)" filter="url(#shadow)">
+    <rect x="-160" y="-190" width="320" height="380" rx="16" fill="#0f172a" stroke="#475569" stroke-width="4"/>
+    <rect x="-140" y="-130" width="125" height="300" fill="#1e293b" stroke="#334155" stroke-width="2"/>
+    <rect x="15" y="-130" width="125" height="300" fill="#1e293b" stroke="#334155" stroke-width="2"/>
+    <rect x="-15" y="-130" width="30" height="300" fill="#450a0a"/>
+    <line x1="0" y1="-130" x2="0" y2="170" stroke="#ef4444" stroke-width="3" opacity="0.8"/>
+    <rect x="-45" y="-175" width="90" height="36" rx="6" fill="#000" stroke="#ef4444" stroke-width="2"/>
+    <text x="0" y="-150" text-anchor="middle" fill="#ef4444" font-family="'Consolas', monospace" font-size="24" font-weight="900" letter-spacing="4">13</text>
+    <path d="M-140 160 L140 160" stroke="#f59e0b" stroke-width="4" stroke-dasharray="12 12"/>
+  </g>
+  <g transform="translate(100, 150)">
+    <rect width="180" height="36" rx="8" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.2)"/>
+    <text x="90" y="23" text-anchor="middle" fill="#fecaca" font-family="'Microsoft YaHei', sans-serif" font-size="14" font-weight="700" letter-spacing="2">ARCADE EDITION</text>
+    <text x="0" y="110" fill="#f87171" font-family="'Microsoft YaHei', sans-serif" font-size="22" font-weight="700" letter-spacing="4">潜行惊悚冒险</text>
+    <text x="0" y="240" fill="#ffffff" font-family="'Microsoft YaHei', sans-serif" font-size="92" font-weight="900" letter-spacing="-2">第十三层</text>
+    <text x="4" y="300" fill="rgba(255,255,255,0.35)" font-family="'Segoe UI', sans-serif" font-size="28" font-weight="800" letter-spacing="6">THE 13TH FLOOR</text>
+    <text x="0" y="380" fill="#e2e8f0" font-family="'Microsoft YaHei', sans-serif" font-size="22" font-weight="500">找齐房间钥匙，记得躲进黑暗。</text>
+    <g transform="translate(0, 430)">
+      <rect width="84" height="36" rx="18" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.15)"/>
+      <text x="42" y="23" text-anchor="middle" fill="#cbd5e1" font-family="'Microsoft YaHei', sans-serif" font-size="14" font-weight="600">单人</text>
+      <rect x="96" width="84" height="36" rx="18" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.15)"/>
+      <text x="138" y="23" text-anchor="middle" fill="#cbd5e1" font-family="'Microsoft YaHei', sans-serif" font-size="14" font-weight="600">惊悚</text>
+      <rect x="192" width="84" height="36" rx="18" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.15)"/>
+      <text x="234" y="23" text-anchor="middle" fill="#cbd5e1" font-family="'Microsoft YaHei', sans-serif" font-size="14" font-weight="600">潜行</text>
+    </g>
+  </g>
+  <rect x="24" y="24" width="1232" height="752" rx="20" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="2"/>
+</svg>

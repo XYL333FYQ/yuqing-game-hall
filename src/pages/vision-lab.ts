@@ -10,7 +10,7 @@ export function renderVisionLab(root: HTMLElement): () => void {
   document.body.dataset.page = "site";
   const playable = canPlayGames();
   root.innerHTML = `
-    <div class="site-shell">
+    <div class="site-shell arcade-shell arcade-vision-shell">
       ${siteHeader("vision")}
       <main class="vision-page">
         <header class="vision-heading"><div><p class="kicker">浏览器本地识别</p><h1>体感实验室</h1><p>这是未来体感游戏共用的识别底座，不再控制果切刀刃。画面、模型推理和关键点全部留在浏览器本地。</p></div><span class="privacy-chip"><i></i> 视频不会上传</span></header>

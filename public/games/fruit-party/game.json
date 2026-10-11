@@ -22,7 +22,7 @@
       "vision": false
     },
     "highlights": ["限时挑战与经典无尽两种节奏", "水果、炸弹和连切反馈带来爽快手感", "和朋友用房间码进行 1v1 对决"],
-    "art": { "cover": "/games/fruit-party/assets/fruits/watermelon.svg", "hero": "/games/fruit-party/assets/fruits/watermelon.svg" },
+    "art": { "cover": "/games/fruit-party/cover.svg", "hero": "/games/fruit-party/cover.svg" },
     "availability": { "state": "playable", "label": "可直接游玩" },
     "actionLabel": "选择玩法"
   },

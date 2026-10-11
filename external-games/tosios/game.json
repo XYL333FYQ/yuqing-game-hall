@@ -21,7 +21,7 @@
       "vision": false
     },
     "highlights": ["死亡竞赛与团队模式自由切换", "紧凑地图带来连续交锋", "适合和朋友组队来一场短局对抗"],
-    "art": {},
+    "art": { "cover": "/games/tosios/cover.svg", "hero": "/games/tosios/cover.svg" },
     "availability": { "state": "external", "label": "在线体验" },
     "actionLabel": "前往体验"
   },

@@ -10,6 +10,9 @@ public/games/littlejs-arcade/dist/*
 !public/games/littlejs-arcade/dist/littlejs.min.js
 .vite/
 .playwright-cli/
+.playwright-mcp/
+gemini-history.json
+
 output/
 references/
 .wrangler/

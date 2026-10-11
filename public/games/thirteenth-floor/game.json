@@ -43,8 +43,8 @@
       "留意追踪者的灯光；被发现时关灯、转弯并躲进房间。"
     ],
     "art": {
-      "cover": "/games/thirteenth-floor/cover.png",
-      "hero": "/games/thirteenth-floor/cover.png"
+      "cover": "/games/thirteenth-floor/cover.svg",
+      "hero": "/games/thirteenth-floor/cover.svg"
     },
     "availability": {
       "state": "playable",

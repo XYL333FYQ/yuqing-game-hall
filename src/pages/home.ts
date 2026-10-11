@@ -20,20 +20,13 @@ export function renderHome(root: HTMLElement): () => void {
           ${featured.length > 1 ? `<div class="arcade-featured-controls"><button type="button" data-featured-step="previous" aria-label="上一款精选游戏">←</button><div class="arcade-featured-dots" data-featured-dots></div><button type="button" data-featured-step="next" aria-label="下一款精选游戏">→</button></div>` : ""}
         </section>
 
-        <section class="arcade-benefits" aria-label="游戏厅特色">
-          <article><span class="arcade-benefit-icon arcade-benefit-icon-green" aria-hidden="true">🎮</span><div><b>无需下载</b><small>打开就能玩，随时随地享受游戏</small></div></article>
-          <article><span class="arcade-benefit-icon arcade-benefit-icon-lime" aria-hidden="true">♟</span><div><b>丰富的游戏类型</b><small>动作、街机、策略等多种选择</small></div></article>
-          <article><span class="arcade-benefit-icon arcade-benefit-icon-orange" aria-hidden="true">♥</span><div><b>和朋友一起玩</b><small>支持单人、双人及多人游戏</small></div></article>
-          <article><span class="arcade-benefit-icon arcade-benefit-icon-yellow" aria-hidden="true">✦</span><div><b>纯粹的游戏体验</b><small>简单、干净、专注于乐趣</small></div></article>
-        </section>
-
         <section class="arcade-section arcade-trending" aria-labelledby="trending-title">
-          ${sectionHeading("🔥", "热门游戏", "换着发现更多好玩的游戏", `<div class="arcade-heading-actions"><a class="arcade-heading-link" href="#all-games" data-nav>查看更多 <span>→</span></a><button type="button" class="arcade-refresh" data-trending-refresh>换一批 <span>↻</span></button></div>`, "trending-title")}
+          ${sectionHeading("🔥", "热门对局", "精选高频游玩与好友对战项目", `<div class="arcade-heading-actions"><a class="arcade-heading-link" href="#all-games" data-nav>浏览全部 <span>→</span></a><button type="button" class="arcade-refresh" data-trending-refresh>换一批 <span>↻</span></button></div>`, "trending-title")}
           <div class="arcade-trending-grid" data-trending-grid></div>
         </section>
 
         <section class="arcade-section arcade-all-games" id="all-games" aria-labelledby="all-games-title">
-          ${sectionHeading("🎮", "全部游戏", "发现更多有趣的游戏", `<div class="arcade-heading-actions"><span class="arcade-heading-note">按人数与类型筛选</span><span class="arcade-result-count" data-result-count></span></div>`, "all-games-title")}
+          ${sectionHeading("🎮", "全部游戏", "56 款精选游戏收录 · 支持触屏与多人开黑", `<div class="arcade-heading-actions"><span class="arcade-heading-note">实时筛选</span><span class="arcade-result-count" data-result-count></span></div>`, "all-games-title")}
           <div class="arcade-filter-bar" aria-label="筛选游戏">
             <div class="arcade-filter-pills" role="group" aria-label="按人数筛选">
               <button class="is-active" type="button" data-audience="all" aria-pressed="true">全部</button>
@@ -42,7 +35,6 @@ export function renderHome(root: HTMLElement): () => void {
               <button type="button" data-audience="multi" aria-pressed="false">多人</button>
               ${availableTags.filter((tag) => !["单人", "多人", "本地双人", "1–4 人"].includes(tag)).slice(0, 7).map((tag) => `<button type="button" data-tag-pill="${escapeHtml(tag)}" aria-pressed="false">${escapeHtml(tag)}</button>`).join("")}
             </div>
-            <span class="arcade-filter-hint">✦ 挑一款喜欢的，马上开始</span>
             <div class="arcade-select" data-sort-control>
               <span>排序</span>
               <button class="arcade-select-trigger" type="button" data-sort-trigger aria-haspopup="listbox" aria-expanded="false" aria-label="游戏排序"><span data-sort-label>热门优先</span></button>
@@ -55,13 +47,13 @@ export function renderHome(root: HTMLElement): () => void {
             </div>
           </div>
           <div class="arcade-library-grid" data-game-list></div>
-          <p class="arcade-empty" data-empty hidden>没有找到这款游戏，试试换个关键词或筛选条件。</p>
+          <p class="arcade-empty" data-empty hidden>没有找到匹配的游戏，试试换个关键词或分类条件。</p>
         </section>
 
         <a class="arcade-vision-card" href="/vision-lab" data-nav>
           <span class="arcade-vision-icon" aria-hidden="true">◌</span>
-          <span><b>体感实验室</b><small>用摄像头试试手势互动和体感小游戏</small></span>
-          <em>去体验 →</em>
+          <span><b>体感实验室 · Vision Lab</b><small>基于 MediaPipe 计算机视觉 · 摄像头免接触手势互动</small></span>
+          <em>进入工坊 →</em>
         </a>
       </main>
       ${siteFooter()}
@@ -147,7 +139,8 @@ export function renderHome(root: HTMLElement): () => void {
       updateList();
       return;
     }
-    if (target?.closest("[data-sort-control]")) {
+    const sortTriggerEl = target?.closest<HTMLButtonElement>("[data-sort-trigger]");
+    if (sortTriggerEl) {
       const isOpen = !sortMenu?.hidden;
       if (sortMenu) sortMenu.hidden = isOpen;
       sortTrigger?.setAttribute("aria-expanded", String(!isOpen));
@@ -231,9 +224,30 @@ export function renderHome(root: HTMLElement): () => void {
 function featureSlide(game: GameManifest, index: number, total: number): string {
   const presentation = game.presentation;
   const launch = game.platform.launch;
+  const isMobile = game.presentation.play.devices.includes("mobile") || game.presentation.play.inputs.includes("touch");
+  const isMulti = game.discovery.audiences.includes("multi") || game.discovery.audiences.includes("duo");
   return `<article class="arcade-featured-slide arcade-featured-slide-${escapeHtml(game.id)}" style="--game-accent:${game.theme.accent};--game-dark:${game.theme.dark}" aria-roledescription="slide" aria-label="第 ${index + 1} / ${total} 个精选游戏">
-    <div class="arcade-featured-copy"><span class="arcade-featured-kicker">★ 精选推荐</span><p class="arcade-overline">${escapeHtml(presentation.category)}</p><h1>${escapeHtml(presentation.title)}</h1><p>${escapeHtml(presentation.tagline)}</p><div class="arcade-tag-row">${presentation.tags.slice(0, 3).map(tagPill).join("")}</div><div class="arcade-featured-actions">${launchAction(game, actionLabel(game, launch.kind === "external" ? "前往体验" : "开始游戏"), "arcade-primary-action")}<a href="/library/${game.id}" data-nav data-game-interest="${game.id}" data-interest-kind="detail">游戏详情 <span>→</span></a></div></div>
-    <div class="arcade-featured-art">${gameArt(game, "hero", true)}${game.id === "fruit-party" ? fruitDecorations() : ""}</div>
+    <div class="arcade-featured-copy">
+      <div class="arcade-featured-eyebrow">
+        <span class="arcade-featured-kicker">★ 焦点特选</span>
+        ${isMobile ? '<span class="arcade-badge-pill mobile">📱 手机畅玩</span>' : ""}
+        ${isMulti ? '<span class="arcade-badge-pill multi">👥 好友对战</span>' : ""}
+      </div>
+      <p class="arcade-overline">${escapeHtml(presentation.category)}</p>
+      <h1>${escapeHtml(presentation.title)}</h1>
+      <p>${escapeHtml(presentation.tagline)}</p>
+      <div class="arcade-tag-row">${presentation.tags.slice(0, 3).map(tagPill).join("")}</div>
+      <div class="arcade-featured-actions">
+        ${launchAction(game, actionLabel(game, launch.kind === "external" ? "前往体验" : "立即进入"), "arcade-primary-action")}
+        <a class="arcade-secondary-action" href="/library/${game.id}" data-nav data-game-interest="${game.id}" data-interest-kind="detail">玩法详情 <span>→</span></a>
+      </div>
+    </div>
+    <div class="arcade-featured-art">
+      <div class="arcade-art-glow" aria-hidden="true"></div>
+      <div class="arcade-featured-art-frame">
+        ${gameArt(game, "hero", true)}
+      </div>
+    </div>
   </article>`;
 }
 
@@ -241,17 +255,34 @@ function sectionHeading(icon: string, title: string, lead: string, aside: string
   return `<div class="arcade-section-heading"><div class="arcade-section-title"><span class="arcade-section-icon" aria-hidden="true">${icon}</span><div><h2 id="${id}">${title}</h2><p>${lead}</p></div></div>${aside}</div>`;
 }
 
-function fruitDecorations(): string {
-  return `<span class="arcade-fruit-deco arcade-fruit-deco-orange"><img src="/games/fruit-party/assets/fruits/orange.svg" alt=""></span><span class="arcade-fruit-deco arcade-fruit-deco-lemon"><img src="/games/fruit-party/assets/fruits/lemon.svg" alt=""></span><span class="arcade-fruit-deco arcade-fruit-deco-strawberry"><img src="/games/fruit-party/assets/fruits/strawberry.svg" alt=""></span>`;
-}
-
 function gameCard(game: GameManifest, variant: "trending" | "people" | "library"): string {
   const presentation = game.presentation;
   const launch = game.platform.launch;
-  const label = actionLabel(game, launch.kind === "external" ? "打开" : "开始");
+  const label = actionLabel(game, launch.kind === "external" ? "前往" : "进入");
+  const isMobile = game.presentation.play.devices.includes("mobile") || game.presentation.play.inputs.includes("touch");
+  const isMulti = game.discovery.audiences.includes("multi") || game.discovery.audiences.includes("duo");
   return `<article class="arcade-game-card arcade-game-card-${variant}" style="--game-accent:${game.theme.accent};--game-dark:${game.theme.dark}">
-    <a class="arcade-game-art" href="/library/${game.id}" data-nav data-game-interest="${game.id}" data-interest-kind="detail" aria-label="查看 ${escapeHtml(presentation.title)}">${gameArt(game, "cover")}</a>
-    <div class="arcade-game-copy"><div class="arcade-card-meta"><span>${audienceSummary(game.discovery.audiences)}</span><small>${escapeHtml(presentation.category)}</small></div><a href="/library/${game.id}" data-nav data-game-interest="${game.id}" data-interest-kind="detail"><h3>${escapeHtml(presentation.title)}</h3></a><p>${escapeHtml(presentation.tagline)}</p><div class="arcade-card-bottom"><div class="arcade-tag-row">${presentation.tags.slice(0, 2).map(tagPill).join("")}</div>${launchAction(game, label, "arcade-card-action")}</div></div>
+    <a class="arcade-game-art" href="/library/${game.id}" data-nav data-game-interest="${game.id}" data-interest-kind="detail" aria-label="查看 ${escapeHtml(presentation.title)}">
+      ${gameArt(game, "cover")}
+      <div class="arcade-card-badges">
+        ${isMobile ? '<span class="badge-icon-pill" title="支持手机/触屏">📱</span>' : ""}
+        ${isMulti ? '<span class="badge-icon-pill" title="支持好友对战">👥</span>' : ""}
+      </div>
+    </a>
+    <div class="arcade-game-copy">
+      <div class="arcade-card-meta">
+        <span>${audienceSummary(game.discovery.audiences)}</span>
+        <small>${escapeHtml(presentation.category)}</small>
+      </div>
+      <a href="/library/${game.id}" data-nav data-game-interest="${game.id}" data-interest-kind="detail">
+        <h3>${escapeHtml(presentation.title)}</h3>
+      </a>
+      <p>${escapeHtml(presentation.tagline)}</p>
+      <div class="arcade-card-bottom">
+        <div class="arcade-tag-row">${presentation.tags.slice(0, 2).map(tagPill).join("")}</div>
+        ${launchAction(game, label, "arcade-card-action")}
+      </div>
+    </div>
   </article>`;
 }
 
@@ -260,7 +291,12 @@ function gameArt(game: GameManifest, variant: "hero" | "cover", hero = false): s
   const art = presentation.art;
   const source = variant === "hero" ? art.hero ?? art.cover ?? art.icon : art.cover ?? art.icon ?? art.hero;
   if (source) return `<img src="${escapeHtml(source)}" alt="${escapeHtml(presentation.title)} 展示图" ${hero ? "fetchpriority=\"high\"" : "loading=\"lazy\""}>`;
-  return `<div class="arcade-art-fallback ${hero ? "arcade-art-fallback-hero" : ""}" aria-label="${escapeHtml(presentation.title)} 展示素材待补"><span>${escapeHtml(presentation.mark)}</span><b>${escapeHtml(presentation.category)}</b><small>展示素材待补</small></div>`;
+  return `<div class="arcade-art-fallback ${hero ? "arcade-art-fallback-hero" : ""}" aria-label="${escapeHtml(presentation.title)} 街机经典收录">
+    <div class="arcade-cartridge-pattern" aria-hidden="true"></div>
+    <span class="arcade-cartridge-mark">${escapeHtml(presentation.mark)}</span>
+    <b class="arcade-cartridge-genre">${escapeHtml(presentation.category)}</b>
+    <small class="arcade-cartridge-tag">ARCADE EDITION</small>
+  </div>`;
 }
 
 function launchAction(game: GameManifest, label: string, className: string): string {

@@ -40,8 +40,8 @@
       "没有消除时会增加三颗球，先用上方预告规划空间。"
     ],
     "art": {
-      "cover": "/games/color-lines/cover.png",
-      "hero": "/games/color-lines/cover.png"
+      "cover": "/games/color-lines/cover.svg",
+      "hero": "/games/color-lines/cover.svg"
     },
     "availability": {
       "state": "playable",

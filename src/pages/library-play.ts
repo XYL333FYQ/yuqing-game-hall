@@ -1,4 +1,4 @@
-import { canPlayGames } from "../platform/device";
+import { canPlayGame } from "../platform/device";
 import { bindCopyUrl, desktopGate } from "../platform/shell";
 import { findLibraryGame, iframeAllowPolicy } from "../data/gameLibrary";
 
@@ -9,7 +9,7 @@ export function renderLibraryPlay(root: HTMLElement, slug: string): () => void {
   document.title = `${game.title} · 雨晴游戏厅`;
   document.body.dataset.page = "library-game";
 
-  if (!canPlayGames()) {
+  if (!canPlayGame(game)) {
     root.innerHTML = `<main class="library-player-gate"><a class="back-link" href="/library/${game.slug}" data-nav>← 返回游戏介绍</a>${desktopGate("请在电脑上游玩", "当前设备适合浏览游戏介绍，请使用电脑打开游戏。")}</main>`;
     return bindCopyUrl(root);
   }

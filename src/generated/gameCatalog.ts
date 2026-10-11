@@ -106,8 +106,8 @@ export const GAME_MANIFESTS = [
         "和朋友用房间码进行 1v1 对决"
       ],
       "art": {
-        "cover": "/games/fruit-party/assets/fruits/watermelon.svg",
-        "hero": "/games/fruit-party/assets/fruits/watermelon.svg"
+        "cover": "/games/fruit-party/cover.svg",
+        "hero": "/games/fruit-party/cover.svg"
       },
       "availability": {
         "state": "playable",
@@ -285,7 +285,10 @@ export const GAME_MANIFESTS = [
         "在毒圈变化中寻找路线和时机",
         "单排、双排与四排带来不同的生存节奏"
       ],
-      "art": {},
+      "art": {
+        "cover": "/games/suroi/cover.svg",
+        "hero": "/games/suroi/cover.svg"
+      },
       "availability": {
         "state": "external",
         "label": "在线体验"
@@ -533,7 +536,10 @@ export const GAME_MANIFESTS = [
         "简单规则，朋友第一次玩也能马上加入",
         "每一轮都可能画出意料之外的答案"
       ],
-      "art": {},
+      "art": {
+        "cover": "/games/scribble/cover.svg",
+        "hero": "/games/scribble/cover.svg"
+      },
       "availability": {
         "state": "external",
         "label": "在线体验"
@@ -686,7 +692,10 @@ export const GAME_MANIFESTS = [
         "紧凑地图带来连续交锋",
         "适合和朋友组队来一场短局对抗"
       ],
-      "art": {},
+      "art": {
+        "cover": "/games/tosios/cover.svg",
+        "hero": "/games/tosios/cover.svg"
+      },
       "availability": {
         "state": "external",
         "label": "在线体验"
@@ -840,7 +849,10 @@ export const GAME_MANIFESTS = [
         "和大量玩家同场博弈",
         "每局局势都会随着选择不断变化"
       ],
-      "art": {},
+      "art": {
+        "cover": "/games/openfront/cover.svg",
+        "hero": "/games/openfront/cover.svg"
+      },
       "availability": {
         "state": "external",
         "label": "在线体验"
@@ -1907,8 +1919,8 @@ export const GAME_MANIFESTS = [
         "先考虑最难放的大块，留意拐角空位。"
       ],
       "art": {
-        "cover": "/games/packabunchas/cover.png",
-        "hero": "/games/packabunchas/cover.png"
+        "cover": "/games/packabunchas/cover.svg",
+        "hero": "/games/packabunchas/cover.svg"
       },
       "availability": {
         "state": "playable",
@@ -2796,8 +2808,8 @@ export const GAME_MANIFESTS = [
         "留意追踪者的灯光；被发现时关灯、转弯并躲进房间。"
       ],
       "art": {
-        "cover": "/games/thirteenth-floor/cover.png",
-        "hero": "/games/thirteenth-floor/cover.png"
+        "cover": "/games/thirteenth-floor/cover.svg",
+        "hero": "/games/thirteenth-floor/cover.svg"
       },
       "availability": {
         "state": "playable",
@@ -4553,8 +4565,8 @@ export const GAME_MANIFESTS = [
         "没有消除时会增加三颗球，先用上方预告规划空间。"
       ],
       "art": {
-        "cover": "/games/color-lines/cover.png",
-        "hero": "/games/color-lines/cover.png"
+        "cover": "/games/color-lines/cover.svg",
+        "hero": "/games/color-lines/cover.svg"
       },
       "availability": {
         "state": "playable",
