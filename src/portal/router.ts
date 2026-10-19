@@ -3,7 +3,7 @@ import { siteFooter, siteHeader } from "../platform/shell";
 
 type PageLoader = (root: HTMLElement) => Promise<PageCleanup>;
 
-export function startPortal(app: HTMLDivElement): void {
+export function startPortal(app: HTMLDivElement): Promise<void> {
   if ("scrollRestoration" in window.history) window.history.scrollRestoration = "manual";
 
   let cleanup: PageCleanup | undefined;
@@ -32,7 +32,7 @@ export function startPortal(app: HTMLDivElement): void {
       if (typeof docWithTransition.startViewTransition === "function" && !prefersReducedMotion && app.childElementCount > 0) {
         await docWithTransition.startViewTransition(() => applyPage()).finished.catch(() => undefined);
       } else {
-        if (app.childElementCount === 0) {
+        if (app.childElementCount === 0 && !document.querySelector("#entry-screen[open]")) {
           app.innerHTML = `<div class="route-loader" role="status"><i></i><span>正在打开雨晴游戏厅…</span></div>`;
         }
         await applyPage();
@@ -51,7 +51,7 @@ export function startPortal(app: HTMLDivElement): void {
     cleanup?.();
     removeNavigation();
   });
-  void renderRoute();
+  return renderRoute();
 }
 
 function resolvePortalRoute(path: string): PageLoader | undefined {

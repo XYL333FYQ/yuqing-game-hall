@@ -5,11 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#090b10" />
     <script src="/platform/theme-init.js"></script>
+    <link rel="stylesheet" href="/platform/portal.css" />
     <meta name="description" content="雨晴游戏厅：轻松、好玩、可单机也可与朋友联机的浏览器小游戏。" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>雨晴游戏厅</title>
   </head>
   <body>
+    <dialog class="entry-screen" id="entry-screen" open aria-label="正在进入雨晴游戏厅">
+      <div class="entry-content">
+        <div class="entry-orbit" aria-hidden="true"><span class="entry-mark"><i></i><i></i><i></i></span></div>
+        <p class="entry-wordmark">雨晴游戏厅</p>
+        <p class="entry-caption">YUQING ARCADE · ENTER ANOTHER WORLD</p>
+        <p class="entry-status" role="status">正在为你准备下一局</p>
+        <span class="entry-scan" aria-hidden="true"></span>
+      </div>
+      <form class="entry-skip" method="dialog"><button type="submit">跳过开场 ↗</button></form>
+    </dialog>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>

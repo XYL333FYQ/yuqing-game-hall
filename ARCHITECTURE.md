@@ -31,7 +31,7 @@ VPS
 
 | 目录 | 内容 | 是否进入 Cloudflare Pages | 是否可直接运行 |
 | --- | --- | --- | --- |
-- `src/` | 大厅 TypeScript、页面、路由 | 编译后进入 | 是，作为大厅 |
+| `src/` | 大厅 TypeScript、页面、路由 | 编译后进入 | 是，作为大厅 |
 | `games/` | 自维护源码及不应公开的游戏开发资料 | 否 | 果切需先构建；其余供维护使用 |
 | `public/games/` | 完整静态游戏运行包 | 运行文件进入；已登记开发资料会剔除 | 是，通过 iframe |
 | `public/games/_shared/` | 跨游戏的公共运行脚本（汉化 bridge、WebRTC 运行时配置、只读网络诊断） | 是 | 由各游戏页面 `<script>` 引入 |
@@ -41,6 +41,31 @@ VPS
 | `dist/` | 每次构建生成的静态成品 | 就是部署内容 | 是 |
 
 `public/` 不是普通源码目录。Vite 会把它原样复制，因此访客能看到里面所有文件。把旧 Worker、TypeScript 服务端源码或部署密钥放进去，不只是杂乱，也会破坏安全边界。
+
+### 大厅前端的职责
+
+```text
+src/main.ts                 应用启动与首次入场衔接
+src/portal/router.ts        页面加载、导航与页面清理
+src/pages/                 各页面内容与本页交互
+src/platform/              公共外壳、目录、设备判断和主题控制
+  theme.ts                 主题选择、存储、跨页和跨标签同步
+  portal-effect.ts         入场与主题共用的短时前景特效
+  entry.ts                 初始页面准备好后关闭入场屏
+src/styles/index.css       唯一样式入口
+  base.css / shell.css     基础控件、变量与导航页脚
+  home.css / library.css   首页与游戏介绍
+  player.css / vision.css  游玩外壳与体感实验室
+  about.css / themes.css   关于页面与主题色
+  motion.css               页面微动效与减少动态效果偏好
+public/platform/           需要在应用启动前直接加载的公共运行资源
+  theme-init.js            首次绘制前恢复主题，兼容严格 CSP
+  portal.css               初始加载屏与共用前景特效样式
+```
+
+组件样式回到所属模块维护，不再在单一大文件末尾叠加补丁。旧果切首页样式不留在大厅中；游戏自身的样式仍由各自 iframe 加载。
+
+主题切换只重绘一次实际页面，前景星轨通过静态 SVG 的变换和透明度完成，避免整页截图与逐帧 Canvas 重绘；连续选择会取消前一个特效。首次入场屏在 HTML 中提供，页面准备好即揭幕，支持原生跳过按钮、减少动态效果和加载失败时的自动退场，不等待游戏 iframe 内部资源。
 
 ## 3. Manifest 是唯一游戏目录
 

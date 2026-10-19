@@ -36,7 +36,7 @@ export function siteFooter(): string {
       <div class="site-footer-content">
         <div class="site-footer-brand">
           <strong>雨晴游戏厅</strong>
-          <p>私享复古未来游戏舱 · 56 款经典与联机游戏收录</p>
+          <p>私享复古未来游戏舱 · 经典与联机游戏收录</p>
         </div>
         <div class="site-footer-links">
           <span>局域 / 公网极速对战</span>

@@ -1,0 +1,56 @@
+/* Loading and portal effects must paint before the application bundle arrives. */
+.entry-screen {
+  --entry-bg: #090b10;
+  --entry-ink: #f8fafc;
+  --entry-accent: #8ca9dc;
+  --entry-muted: #8491a8;
+  position: fixed;
+  box-sizing: border-box;
+  inset: 0;
+  z-index: 1000;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 24px;
+  border: 0;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 44%, color-mix(in srgb, var(--entry-accent) 10%, var(--entry-bg)), var(--entry-bg) 70%);
+  color: var(--entry-ink);
+  font-family: "Microsoft YaHei UI", "PingFang SC", system-ui, sans-serif;
+  animation: entry-fail-open 300ms 5s forwards;
+}
+.entry-screen[open] { display: grid; place-items: center; }
+html[data-theme="light"] .entry-screen { --entry-bg: #f4eddf; --entry-ink: #172018; --entry-accent: #a17c45; --entry-muted: #737565; }
+html[data-theme="pink"] .entry-screen { --entry-bg: #fff0f5; --entry-ink: #492d40; --entry-accent: #b45d8a; --entry-muted: #927187; }
+.entry-content { position: relative; display: grid; justify-items: center; width: min(440px, 100%); text-align: center; }
+.entry-orbit { position: relative; display: grid; place-items: center; width: 172px; height: 172px; margin-bottom: 28px; }
+.entry-orbit::before, .entry-orbit::after { content: ""; position: absolute; inset: 0; border: 1px solid color-mix(in srgb, var(--entry-accent) 24%, transparent); border-radius: 50%; }
+.entry-orbit::before { border-top-color: var(--entry-accent); border-right-color: transparent; animation: entry-orbit 2.8s linear infinite; }
+.entry-orbit::after { inset: 14px; border-style: dashed; opacity: .45; animation: entry-orbit 8s linear reverse infinite; }
+.entry-mark { position: relative; display: block; width: 66px; height: 66px; border: 1px solid color-mix(in srgb, var(--entry-accent) 25%, transparent); border-radius: 20px; background: color-mix(in srgb, var(--entry-accent) 8%, var(--entry-bg)); transform: rotate(-8deg); }
+.entry-mark i { position: absolute; left: 16px; width: 34px; height: 10px; border-radius: 4px; transform: rotate(-32deg); }
+.entry-mark i:nth-child(1) { top: 15px; background: #ff8064; }
+.entry-mark i:nth-child(2) { top: 27px; background: #a5a1f4; }
+.entry-mark i:nth-child(3) { top: 39px; background: #66d6a5; }
+.entry-wordmark { margin: 0; font-size: clamp(25px, 5vw, 34px); font-weight: 700; letter-spacing: .12em; }
+.entry-caption { margin: 12px 0 0; color: var(--entry-accent); font-size: 9px; letter-spacing: .32em; }
+.entry-status { margin: 30px 0 14px; color: var(--entry-muted); font-size: 12px; letter-spacing: .12em; }
+.entry-scan { width: 144px; height: 2px; overflow: hidden; background: color-mix(in srgb, var(--entry-accent) 15%, transparent); }
+.entry-scan::after { content: ""; display: block; width: 50%; height: 100%; background: var(--entry-accent); animation: entry-scan 1.3s ease-in-out infinite; }
+.entry-skip { position: absolute; right: 28px; bottom: max(24px, env(safe-area-inset-bottom)); margin: 0; }
+.entry-skip button { min-height: 40px; padding: 0 16px; border: 1px solid color-mix(in srgb, var(--entry-accent) 30%, transparent); border-radius: 99px; background: transparent; color: var(--entry-muted); font: inherit; font-size: 12px; cursor: pointer; }
+.entry-skip button:focus-visible { outline: 2px solid var(--entry-accent); outline-offset: 4px; }
+.portal-effect { position: fixed; inset: 0; z-index: 1100; overflow: clip; pointer-events: none; contain: strict; }
+.portal-wash, .portal-rays { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; }
+.portal-wash { background: radial-gradient(ellipse at var(--portal-x) var(--portal-y), color-mix(in srgb, var(--portal-accent) 32%, #090b10), #090b10 65%); }
+.portal-rays { color: var(--portal-accent); transform-origin: var(--portal-x) var(--portal-y); }
+.portal-lens { position: absolute; left: var(--portal-x); top: var(--portal-y); width: 300px; height: 300px; border: 1px solid var(--portal-accent); border-radius: 50%; box-shadow: 0 0 0 9px color-mix(in srgb, var(--portal-accent) 7%, transparent); opacity: 0; }
+@keyframes entry-orbit { to { transform: rotate(360deg); } }
+@keyframes entry-scan { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
+@keyframes entry-fail-open { to { opacity: 0; visibility: hidden; pointer-events: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .entry-orbit::before, .entry-orbit::after, .entry-scan::after { animation: none; }
+  .portal-effect { display: none; }
+}

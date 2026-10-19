@@ -1,0 +1,143 @@
+/* Page microinteractions and reduced-motion preferences. Portal effects live in
+ * public/platform/portal.css so the entry screen can render before the bundle. */
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  50% {
+    opacity: .35;
+    transform: scale(.75);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+
+  #app *,
+  #app *::before,
+  #app *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+@keyframes status-pulse {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.9);
+  }
+
+  50% {
+    opacity: 0.4;
+    box-shadow: 0 0 4px rgba(16, 185, 129, 0.25);
+  }
+}
+
+@keyframes featured-slide-in {
+  from {
+    opacity: 0.65;
+    transform: translateY(2px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-pulse-dot {
+    animation: none !important;
+  }
+
+  .arcade-featured-slide {
+    animation: none !important;
+  }
+
+  .arcade-game-card-library,
+    .arcade-game-card-trending,
+    .arcade-featured-art-frame {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+::view-transition-old(root),
+  ::view-transition-new(root) {
+  animation-duration: 0.24s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes heroSlideFadeIn {
+  from {
+    opacity: 0.35;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes heroCopyRise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heroArtFloatIn {
+  from {
+    opacity: 0;
+    transform: perspective(1200px) rotateY(-12deg) rotateX(4deg) translateY(10px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: perspective(1200px) rotateY(-6deg) rotateX(2deg) translateY(0) scale(1);
+  }
+}
+
+@keyframes featuredDotProgress {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes cardStaggerReveal {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-switcher .theme-choice {
+    transition: none;
+  }
+
+  ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
