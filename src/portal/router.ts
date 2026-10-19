@@ -14,15 +14,29 @@ export function startPortal(app: HTMLDivElement): void {
     const revision = ++renderRevision;
     cleanup?.();
     cleanup = undefined;
-    app.innerHTML = `<div class="route-loader" role="status"><i></i><span>正在打开雨晴游戏厅…</span></div>`;
     const path = normalizePath(window.location.pathname);
 
     try {
       const loader = resolvePortalRoute(path);
       if (revision !== renderRevision) return;
-      if (loader) cleanup = await loader(app);
-      else renderNotFound(app);
-      restoreScroll(path, revision, () => renderRevision);
+      const applyPage = async (): Promise<void> => {
+        if (loader) cleanup = await loader(app);
+        else renderNotFound(app);
+        restoreScroll(path, revision, () => renderRevision);
+      };
+
+      const docWithTransition = document as Document & {
+        startViewTransition?: (callback: () => Promise<void> | void) => { finished: Promise<void> };
+      };
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (typeof docWithTransition.startViewTransition === "function" && !prefersReducedMotion && app.childElementCount > 0) {
+        await docWithTransition.startViewTransition(() => applyPage()).finished.catch(() => undefined);
+      } else {
+        if (app.childElementCount === 0) {
+          app.innerHTML = `<div class="route-loader" role="status"><i></i><span>正在打开雨晴游戏厅…</span></div>`;
+        }
+        await applyPage();
+      }
     } catch (error) {
       if (revision !== renderRevision) return;
       console.error(error);

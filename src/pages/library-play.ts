@@ -21,21 +21,37 @@ export function renderLibraryPlay(root: HTMLElement, slug: string): () => void {
   const startPath = game.startPath ?? game.localPath;
 
   root.innerHTML = `
-    <div class="library-player">
+    <div class="library-player" style="--game-accent:${game.accent};--game-dark:${game.dark}">
       <header class="library-player-toolbar">
-        <a href="/library/${game.slug}" data-nav><b>←</b><span><strong>${game.title}</strong><small>${game.mode}</small></span></a>
-        <p><i></i> 雨晴游戏厅 · 即刻开玩</p>
-        <div class="library-player-tools"><button type="button" data-retry>重新载入</button><button type="button" data-fullscreen>全屏游玩</button></div>
+        <a href="/library/${game.slug}" data-nav><b>←</b><span><strong>${game.title}</strong><small>${game.mode} · ${game.players}</small></span></a>
+        <p class="library-player-status"><i></i> <span>${game.controls}</span></p>
+        <div class="library-player-tools">
+          <button type="button" data-cinema-toggle title="收起或展开顶部控制栏">沉浸宽屏</button>
+          <button type="button" data-retry>重新载入</button>
+          <button type="button" class="is-primary" data-fullscreen>全屏游玩 ⛶</button>
+        </div>
       </header>
+      <button type="button" class="library-cinema-restore" data-cinema-restore hidden aria-label="展开顶部工具栏" title="退出沉浸宽屏">▾ 展开控制栏</button>
       <div class="library-frame-wrap">
         <iframe src="${startPath}" title="${game.title}" allow="${iframeAllowPolicy(game)}"></iframe>
-        <div class="library-frame-loading" role="status"><i></i><strong data-loading-title>正在打开 ${game.title}</strong><span data-loading-copy>游戏马上就好，准备进入游玩画面。</span><div class="library-frame-actions" hidden><button type="button" data-overlay-retry>重新载入</button><a href="${startPath}" target="_blank" rel="noreferrer">独立页面打开</a></div></div>
+        <div class="library-frame-loading" role="status">
+          <div class="library-loading-emblem"><span>${game.mark}</span><i></i></div>
+          <strong data-loading-title>正在打开 ${game.title}</strong>
+          <span data-loading-copy>游戏马上就好，准备进入游玩画面 · 操作：${game.controls}</span>
+          <div class="library-frame-actions" hidden>
+            <button type="button" data-overlay-retry>重新载入</button>
+            <a href="${startPath}" target="_blank" rel="noreferrer">独立页面打开</a>
+          </div>
+        </div>
       </div>
     </div>`;
 
+  const playerRoot = root.querySelector<HTMLElement>(".library-player");
   const frame = root.querySelector<HTMLIFrameElement>("iframe");
   const loading = root.querySelector<HTMLElement>(".library-frame-loading");
   const fullscreenButton = root.querySelector<HTMLButtonElement>("[data-fullscreen]");
+  const cinemaToggle = root.querySelector<HTMLButtonElement>("[data-cinema-toggle]");
+  const cinemaRestore = root.querySelector<HTMLButtonElement>("[data-cinema-restore]");
   const retryButtons = root.querySelectorAll<HTMLButtonElement>("[data-retry], [data-overlay-retry]");
   const loadingTitle = root.querySelector<HTMLElement>("[data-loading-title]");
   const loadingCopy = root.querySelector<HTMLElement>("[data-loading-copy]");
@@ -46,6 +62,14 @@ export function renderLibraryPlay(root: HTMLElement, slug: string): () => void {
     loading?.setAttribute("hidden", "");
   };
   const onFullscreen = (): void => { void frame?.requestFullscreen(); };
+  const toggleCinema = (active?: boolean): void => {
+    if (!playerRoot || !cinemaRestore) return;
+    const nextState = active ?? !playerRoot.classList.contains("is-cinema");
+    playerRoot.classList.toggle("is-cinema", nextState);
+    cinemaRestore.hidden = !nextState;
+  };
+  const onCinemaToggle = (): void => toggleCinema();
+  const onCinemaRestore = (): void => toggleCinema(false);
   const onRetry = (): void => {
     if (!frame) return;
     loaded = false;
@@ -61,6 +85,8 @@ export function renderLibraryPlay(root: HTMLElement, slug: string): () => void {
   };
   frame?.addEventListener("load", onLoad);
   fullscreenButton?.addEventListener("click", onFullscreen);
+  cinemaToggle?.addEventListener("click", onCinemaToggle);
+  cinemaRestore?.addEventListener("click", onCinemaRestore);
   retryButtons.forEach((button) => button.addEventListener("click", onRetry));
   window.addEventListener("message", onReadyMessage);
   const slowTimer = window.setTimeout(() => {
@@ -74,6 +100,8 @@ export function renderLibraryPlay(root: HTMLElement, slug: string): () => void {
     window.clearTimeout(slowTimer);
     frame?.removeEventListener("load", onLoad);
     fullscreenButton?.removeEventListener("click", onFullscreen);
+    cinemaToggle?.removeEventListener("click", onCinemaToggle);
+    cinemaRestore?.removeEventListener("click", onCinemaRestore);
     retryButtons.forEach((button) => button.removeEventListener("click", onRetry));
     window.removeEventListener("message", onReadyMessage);
     if (frame) frame.src = "about:blank";

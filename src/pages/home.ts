@@ -7,7 +7,16 @@ export function renderHome(root: HTMLElement): () => void {
   const games = featuredGames(GAME_CATALOG);
   const featured = games;
   if (featured.length === 0) throw new Error("没有可展示的游戏资料。");
-  const availableTags = [...new Set(games.flatMap((game) => game.presentation.tags))].sort((left, right) => left.localeCompare(right, "zh-CN"));
+  const tagCounts = new Map<string, number>();
+  for (const game of games) {
+    for (const tag of game.presentation.tags) {
+      if (["单人", "多人", "本地双人", "1–4 人"].includes(tag)) continue;
+      tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+    }
+  }
+  const availableTags = [...tagCounts.entries()]
+    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0], "zh-CN"))
+    .slice(0, 12);
 
   document.title = "雨晴游戏厅 · 找一款现在想玩的游戏";
   document.body.dataset.page = "site";
@@ -17,7 +26,18 @@ export function renderHome(root: HTMLElement): () => void {
       <main class="arcade-main">
         <section class="arcade-featured" data-featured-carousel aria-label="精选推荐">
           <div class="arcade-featured-stage" data-featured-stage></div>
-          ${featured.length > 1 ? `<div class="arcade-featured-controls"><button type="button" data-featured-step="previous" aria-label="上一款精选游戏">←</button><div class="arcade-featured-dots" data-featured-dots></div><button type="button" data-featured-step="next" aria-label="下一款精选游戏">→</button></div>` : ""}
+          ${featured.length > 1 ? `
+            <div class="arcade-featured-controls">
+              <span class="arcade-featured-counter" data-featured-counter aria-live="polite">01 / ${String(featured.length).padStart(2, "0")}</span>
+              <button type="button" data-featured-step="previous" aria-label="上一款精选游戏">←</button>
+              <div class="arcade-featured-dots" data-featured-dots></div>
+              <button type="button" data-featured-step="next" aria-label="下一款精选游戏">→</button>
+            </div>` : ""}
+        </section>
+
+        <section class="arcade-recent-bar" data-recent-section hidden aria-label="最近探索">
+          <div class="arcade-recent-label"><span>⏱</span><strong>继续探索</strong></div>
+          <div class="arcade-recent-list" data-recent-list></div>
         </section>
 
         <section class="arcade-section arcade-trending" aria-labelledby="trending-title">
@@ -26,14 +46,15 @@ export function renderHome(root: HTMLElement): () => void {
         </section>
 
         <section class="arcade-section arcade-all-games" id="all-games" aria-labelledby="all-games-title">
-          ${sectionHeading("🎮", "全部游戏", "56 款精选游戏收录 · 支持触屏与多人开黑", `<div class="arcade-heading-actions"><span class="arcade-heading-note">实时筛选</span><span class="arcade-result-count" data-result-count></span></div>`, "all-games-title")}
+          ${sectionHeading("🎮", "全部游戏", `${games.length} 款精选游戏收录 · 支持触屏与多人开黑`, `<div class="arcade-heading-actions"><button type="button" class="arcade-random-btn" data-random-launch title="随机挑选一款游戏立即开玩">🎲 随机开一局</button><span class="arcade-heading-note">实时筛选</span><span class="arcade-result-count" data-result-count></span></div>`, "all-games-title")}
           <div class="arcade-filter-bar" aria-label="筛选游戏">
             <div class="arcade-filter-pills" role="group" aria-label="按人数筛选">
-              <button class="is-active" type="button" data-audience="all" aria-pressed="true">全部</button>
+              <button class="is-active" type="button" data-audience="all" aria-pressed="true">全部 <em>${games.length}</em></button>
               <button type="button" data-audience="single" aria-pressed="false">单人</button>
               <button type="button" data-audience="duo" aria-pressed="false">双人</button>
               <button type="button" data-audience="multi" aria-pressed="false">多人</button>
-              ${availableTags.filter((tag) => !["单人", "多人", "本地双人", "1–4 人"].includes(tag)).slice(0, 7).map((tag) => `<button type="button" data-tag-pill="${escapeHtml(tag)}" aria-pressed="false">${escapeHtml(tag)}</button>`).join("")}
+              <span class="arcade-filter-divider" aria-hidden="true"></span>
+              ${availableTags.map(([tag, count]) => `<button type="button" data-tag-pill="${escapeHtml(tag)}" aria-pressed="false">${escapeHtml(tag)} <em>${count}</em></button>`).join("")}
             </div>
             <div class="arcade-select" data-sort-control>
               <span>排序</span>
@@ -47,7 +68,15 @@ export function renderHome(root: HTMLElement): () => void {
             </div>
           </div>
           <div class="arcade-library-grid" data-game-list></div>
-          <p class="arcade-empty" data-empty hidden>没有找到匹配的游戏，试试换个关键词或分类条件。</p>
+          <div class="arcade-empty-state" data-empty hidden>
+            <span class="arcade-empty-icon" aria-hidden="true">⌕</span>
+            <strong>没有找到匹配的游戏</strong>
+            <p>试试换个关键词，或者清除当前筛选条件查看全部收录。</p>
+            <div class="arcade-empty-actions">
+              <button type="button" class="arcade-primary-action" data-reset-filters>重置全部筛选</button>
+              <button type="button" class="arcade-secondary-action" data-random-launch>🎲 随机挑一款</button>
+            </div>
+          </div>
         </section>
 
         <a class="arcade-vision-card" href="/vision-lab" data-nav>
@@ -62,6 +91,9 @@ export function renderHome(root: HTMLElement): () => void {
   const carousel = root.querySelector<HTMLElement>("[data-featured-carousel]");
   const featuredStage = root.querySelector<HTMLElement>("[data-featured-stage]");
   const featuredDots = root.querySelector<HTMLElement>("[data-featured-dots]");
+  const featuredCounter = root.querySelector<HTMLElement>("[data-featured-counter]");
+  const recentSection = root.querySelector<HTMLElement>("[data-recent-section]");
+  const recentList = root.querySelector<HTMLElement>("[data-recent-list]");
   const trendingGrid = root.querySelector<HTMLElement>("[data-trending-grid]");
   const gameList = root.querySelector<HTMLElement>("[data-game-list]");
   const resultCount = root.querySelector<HTMLElement>("[data-result-count]");
@@ -72,6 +104,7 @@ export function renderHome(root: HTMLElement): () => void {
   const sortLabel = root.querySelector<HTMLElement>("[data-sort-label]");
   const sortOptions = root.querySelectorAll<HTMLButtonElement>("[data-sort-option]");
   const searchInputs = root.querySelectorAll<HTMLInputElement>("[data-game-search]");
+  const searchClearButtons = root.querySelectorAll<HTMLButtonElement>("[data-search-clear]");
   const audienceButtons = root.querySelectorAll<HTMLButtonElement>("[data-audience]");
   const tagButtons = root.querySelectorAll<HTMLButtonElement>("[data-tag-pill]");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -84,17 +117,56 @@ export function renderHome(root: HTMLElement): () => void {
   let carouselTimer: number | undefined;
   let trendingTimer: number | undefined;
 
+  const syncSearchClear = (): void => {
+    searchClearButtons.forEach((btn) => {
+      btn.hidden = query.length === 0;
+    });
+  };
+
+  const renderRecent = (): void => {
+    if (!recentSection || !recentList) return;
+    const engagement = readSessionEngagement();
+    const recentIds = Object.entries(engagement)
+      .filter(([, counts]) => counts.launch > 0 || counts.detail > 0)
+      .sort((left, right) => (right[1].launch * 10 + right[1].detail) - (left[1].launch * 10 + left[1].detail))
+      .slice(0, 6)
+      .map(([id]) => id);
+    const recentGames = recentIds
+      .map((id) => games.find((g) => g.id === id))
+      .filter((g): g is GameManifest => Boolean(g));
+    if (recentGames.length === 0) {
+      recentSection.hidden = true;
+      return;
+    }
+    recentSection.hidden = false;
+    recentList.innerHTML = recentGames.map((game) => {
+      const targetHref = game.platform.launch.kind === "iframe" ? `/play/${game.id}` : `/library/${game.id}`;
+      return `<a class="arcade-recent-pill" href="${targetHref}" data-nav style="--game-accent:${game.theme.accent}">
+        <span class="arcade-recent-mark">${escapeHtml(game.presentation.mark)}</span>
+        <strong>${escapeHtml(game.presentation.title)}</strong>
+        <small>${escapeHtml(game.presentation.category)}</small>
+      </a>`;
+    }).join("");
+  };
+
   const renderFeatured = (): void => {
     const game = featured[featuredIndex];
+    if (carousel) {
+      carousel.style.setProperty("--game-accent", game.theme.accent);
+      carousel.style.setProperty("--game-dark", game.theme.dark);
+    }
     if (featuredStage) featuredStage.innerHTML = featureSlide(game, featuredIndex, featured.length);
+    if (featuredCounter) {
+      featuredCounter.textContent = `${String(featuredIndex + 1).padStart(2, "0")} / ${String(featured.length).padStart(2, "0")}`;
+    }
     const dotStart = Math.floor(featuredIndex / 5) * 5;
     if (featuredDots) featuredDots.innerHTML = featured.slice(dotStart, dotStart + 5).map((item, offset) => {
       const index = dotStart + offset;
-      return `<button type="button" data-featured-index="${index}" aria-label="切换到 ${escapeHtml(item.presentation.title)}" aria-current="${index === featuredIndex ? "true" : "false"}"></button>`;
+      return `<button type="button" data-featured-index="${index}" title="${escapeHtml(item.presentation.title)}" aria-label="切换到 ${escapeHtml(item.presentation.title)}" aria-current="${index === featuredIndex ? "true" : "false"}"></button>`;
     }).join("");
   };
   const renderTrending = (): void => {
-    if (trendingGrid) trendingGrid.innerHTML = trendingGames(games, readSessionEngagement(), { limit: 4, cycle: trendCycle }).map((game) => gameCard(game, "trending")).join("");
+    if (trendingGrid) trendingGrid.innerHTML = trendingGames(games, readSessionEngagement(), { limit: 4, cycle: trendCycle }).map((game, idx) => gameCard(game, "trending", idx)).join("");
   };
   const updateList = (): void => {
     const matched = games
@@ -102,16 +174,18 @@ export function renderHome(root: HTMLElement): () => void {
       .filter((game) => !selectedTag || game.presentation.tags.includes(selectedTag))
       .filter((game) => matchesSearch(game, query))
       .sort(sortGames(sortValue));
-    if (gameList) gameList.innerHTML = matched.map((game) => gameCard(game, "library")).join("");
+    if (gameList) gameList.innerHTML = matched.map((game, idx) => gameCard(game, "library", idx)).join("");
     if (resultCount) resultCount.textContent = `${matched.length} 款`;
     empty?.toggleAttribute("hidden", matched.length > 0);
   };
   const pauseCarousel = (): void => {
     if (carouselTimer !== undefined) window.clearInterval(carouselTimer);
     carouselTimer = undefined;
+    carousel?.classList.add("is-paused");
   };
   const playCarousel = (): void => {
     pauseCarousel();
+    carousel?.classList.remove("is-paused");
     if (!reduceMotion && featured.length > 1) carouselTimer = window.setInterval(() => {
       featuredIndex = (featuredIndex + 1) % featured.length;
       renderFeatured();
@@ -120,10 +194,82 @@ export function renderHome(root: HTMLElement): () => void {
   const onSearch = (event: Event): void => {
     query = (event.currentTarget as HTMLInputElement).value.trim();
     searchInputs.forEach((input) => { if (input !== event.currentTarget) input.value = query; });
+    syncSearchClear();
     updateList();
+  };
+  const resetAllFilters = (): void => {
+    query = "";
+    audience = "all";
+    selectedTag = "";
+    searchInputs.forEach((input) => { input.value = ""; });
+    syncSearchClear();
+    audienceButtons.forEach((button) => {
+      const active = button.dataset.audience === "all";
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+    tagButtons.forEach((button) => {
+      button.classList.remove("is-active");
+      button.setAttribute("aria-pressed", "false");
+    });
+    updateList();
+  };
+  const onKeyDown = (event: KeyboardEvent): void => {
+    if (event.key === "/" && document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "TEXTAREA") {
+      event.preventDefault();
+      const firstInput = searchInputs[0];
+      firstInput?.focus();
+      firstInput?.select();
+      return;
+    }
+    if (event.key === "Escape" && document.activeElement instanceof HTMLInputElement) {
+      if (query) {
+        query = "";
+        searchInputs.forEach((input) => { input.value = ""; });
+        syncSearchClear();
+        updateList();
+      } else {
+        document.activeElement.blur();
+      }
+      return;
+    }
+    if (carousel?.contains(document.activeElement)) {
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        featuredIndex = (featuredIndex - 1 + featured.length) % featured.length;
+        renderFeatured();
+        playCarousel();
+      } else if (event.key === "ArrowRight") {
+        event.preventDefault();
+        featuredIndex = (featuredIndex + 1) % featured.length;
+        renderFeatured();
+        playCarousel();
+      }
+    }
   };
   const onRootClick = (event: MouseEvent): void => {
     const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest("[data-search-clear]")) {
+      query = "";
+      searchInputs.forEach((input) => { input.value = ""; });
+      syncSearchClear();
+      updateList();
+      searchInputs[0]?.focus();
+      return;
+    }
+    if (target?.closest("[data-reset-filters]")) {
+      resetAllFilters();
+      return;
+    }
+    if (target?.closest("[data-random-launch]")) {
+      const randomGame = games[Math.floor(Math.random() * games.length)];
+      if (randomGame) {
+        recordSessionEngagement(randomGame.id, "detail");
+        window.history.pushState({}, "", `/library/${randomGame.id}`);
+        window.dispatchEvent(new PopStateEvent("popstate"));
+      }
+      return;
+    }
     if (sortMenu && !target?.closest("[data-sort-control]")) {
       sortMenu.hidden = true;
       sortTrigger?.setAttribute("aria-expanded", "false");
@@ -162,6 +308,7 @@ export function renderHome(root: HTMLElement): () => void {
     const interest = target?.closest<HTMLElement>("[data-game-interest]");
     if (interest?.dataset.gameInterest && (interest.dataset.interestKind === "detail" || interest.dataset.interestKind === "launch")) {
       recordSessionEngagement(interest.dataset.gameInterest, interest.dataset.interestKind);
+      renderRecent();
     }
   };
   const onAudienceClick = (event: Event): void => {
@@ -194,6 +341,7 @@ export function renderHome(root: HTMLElement): () => void {
     updateList();
   };
   root.addEventListener("click", onRootClick);
+  window.addEventListener("keydown", onKeyDown);
   carousel?.addEventListener("pointerenter", pauseCarousel);
   carousel?.addEventListener("pointerleave", playCarousel);
   carousel?.addEventListener("focusin", pauseCarousel);
@@ -202,6 +350,7 @@ export function renderHome(root: HTMLElement): () => void {
   audienceButtons.forEach((button) => button.addEventListener("click", onAudienceClick));
   tagButtons.forEach((button) => button.addEventListener("click", onTagClick));
   renderFeatured();
+  renderRecent();
   renderTrending();
   updateList();
   if (!reduceMotion) trendingTimer = window.setInterval(() => { trendCycle += 1; renderTrending(); }, 18000);
@@ -211,6 +360,7 @@ export function renderHome(root: HTMLElement): () => void {
     pauseCarousel();
     if (trendingTimer !== undefined) window.clearInterval(trendingTimer);
     root.removeEventListener("click", onRootClick);
+    window.removeEventListener("keydown", onKeyDown);
     carousel?.removeEventListener("pointerenter", pauseCarousel);
     carousel?.removeEventListener("pointerleave", playCarousel);
     carousel?.removeEventListener("focusin", pauseCarousel);
@@ -255,13 +405,13 @@ function sectionHeading(icon: string, title: string, lead: string, aside: string
   return `<div class="arcade-section-heading"><div class="arcade-section-title"><span class="arcade-section-icon" aria-hidden="true">${icon}</span><div><h2 id="${id}">${title}</h2><p>${lead}</p></div></div>${aside}</div>`;
 }
 
-function gameCard(game: GameManifest, variant: "trending" | "people" | "library"): string {
+function gameCard(game: GameManifest, variant: "trending" | "people" | "library", index = 0): string {
   const presentation = game.presentation;
   const launch = game.platform.launch;
   const label = actionLabel(game, launch.kind === "external" ? "前往" : "进入");
   const isMobile = game.presentation.play.devices.includes("mobile") || game.presentation.play.inputs.includes("touch");
   const isMulti = game.discovery.audiences.includes("multi") || game.discovery.audiences.includes("duo");
-  return `<article class="arcade-game-card arcade-game-card-${variant}" style="--game-accent:${game.theme.accent};--game-dark:${game.theme.dark}">
+  return `<article class="arcade-game-card arcade-game-card-${variant}" style="--game-accent:${game.theme.accent};--game-dark:${game.theme.dark};--card-index:${Math.min(index, 15)}">
     <a class="arcade-game-art" href="/library/${game.id}" data-nav data-game-interest="${game.id}" data-interest-kind="detail" aria-label="查看 ${escapeHtml(presentation.title)}">
       ${gameArt(game, "cover")}
       <div class="arcade-card-badges">

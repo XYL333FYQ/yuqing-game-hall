@@ -3091,3 +3091,1016 @@ body[data-page="library-game"] { overflow: hidden; background: #07090e; }
   }
 }
 
+/* ==========================================================================
+   OBSIDIAN ARCADE LOUNGE 2.0 — 高定视觉质感与丝滑交互升级
+   ========================================================================== */
+
+/* 1. 全局滚动条与 View Transitions 平滑过渡 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #090b10;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.26);
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.24s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* 2. 顶部搜索框升级：快捷键角标与一键清除 */
+.arcade-shell .site-search {
+  position: relative;
+  width: min(296px, 24vw);
+  padding: 0 12px 0 14px;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: width 0.28s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+.arcade-shell .site-search:focus-within {
+  width: min(336px, 28vw);
+  background: rgba(15, 20, 32, 0.92);
+  border-color: rgba(99, 102, 241, 0.65);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2), 0 12px 28px rgba(0, 0, 0, 0.45);
+}
+.site-search-clear {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+.site-search-clear:hover {
+  background: rgba(244, 63, 94, 0.35);
+  color: #fff;
+  transform: scale(1.08);
+}
+.site-search-kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #64748b;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+.arcade-shell .site-search:focus-within .site-search-kbd {
+  opacity: 0;
+  width: 0;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+}
+
+/* 3. Hero 精选轮播：动态主题光晕、丝滑入场与流光进度条 */
+.arcade-featured {
+  --game-accent: #6366f1;
+  --game-dark: #0f172a;
+}
+.arcade-featured-stage {
+  background:
+    radial-gradient(circle at 82% 38%, color-mix(in srgb, var(--game-accent) 26%, transparent), transparent 58%),
+    radial-gradient(circle at 16% 85%, color-mix(in srgb, var(--game-accent) 14%, transparent), transparent 52%),
+    linear-gradient(135deg, rgba(20, 26, 42, 0.88) 0%, rgba(10, 13, 22, 0.96) 100%);
+  border: 1px solid color-mix(in srgb, var(--game-accent) 28%, rgba(255, 255, 255, 0.1));
+  box-shadow:
+    0 28px 64px -16px rgba(0, 0, 0, 0.72),
+    0 0 48px -12px color-mix(in srgb, var(--game-accent) 22%, transparent),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.16);
+  transition: border-color 0.45s ease, box-shadow 0.45s ease;
+}
+.arcade-featured-slide {
+  animation: heroSlideFadeIn 0.48s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.arcade-featured-copy {
+  animation: heroCopyRise 0.52s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.arcade-featured-art-frame {
+  animation: heroArtFloatIn 0.56s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes heroSlideFadeIn {
+  from { opacity: 0.35; }
+  to { opacity: 1; }
+}
+@keyframes heroCopyRise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes heroArtFloatIn {
+  from { opacity: 0; transform: perspective(1200px) rotateY(-12deg) rotateX(4deg) translateY(10px) scale(0.97); }
+  to { opacity: 1; transform: perspective(1200px) rotateY(-6deg) rotateX(2deg) translateY(0) scale(1); }
+}
+
+.arcade-featured-counter {
+  padding: 0 8px 0 4px;
+  color: #94a3b8;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+.arcade-featured-dots button[aria-current="true"],
+.arcade-featured-dots button.is-active {
+  position: relative;
+  width: 34px;
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--game-accent) 65%, transparent);
+  overflow: hidden;
+}
+.arcade-featured-dots button[aria-current="true"]::after,
+.arcade-featured-dots button.is-active::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--arcade-accent), var(--game-accent, #06b6d4));
+  transform-origin: left center;
+  animation: featuredDotProgress 7s linear forwards;
+}
+.arcade-featured.is-paused .arcade-featured-dots button[aria-current="true"]::after,
+.arcade-featured.is-paused .arcade-featured-dots button.is-active::after {
+  animation-play-state: paused;
+}
+@keyframes featuredDotProgress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* 4. “继续探索”最近常玩快捷栏 */
+.arcade-recent-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 24px;
+  padding: 12px 18px;
+  border-radius: 18px;
+  background: rgba(17, 22, 35, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+}
+.arcade-recent-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 14px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.arcade-recent-label span {
+  color: #06b6d4;
+  font-size: 14px;
+}
+.arcade-recent-list {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.arcade-recent-list::-webkit-scrollbar {
+  display: none;
+}
+.arcade-recent-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px 0 8px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.arcade-recent-pill:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: color-mix(in srgb, var(--game-accent, #6366f1) 55%, rgba(255, 255, 255, 0.2));
+  box-shadow: 0 8px 20px -4px color-mix(in srgb, var(--game-accent, #6366f1) 35%, transparent);
+}
+.arcade-recent-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--game-accent, #6366f1) 25%, rgba(255, 255, 255, 0.08));
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+}
+.arcade-recent-pill strong {
+  color: #f8fafc;
+  font-size: 12px;
+  font-weight: 700;
+}
+.arcade-recent-pill small {
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* 5. 吸顶式磨砂玻璃筛选栏、数量角标与随机按钮 */
+.arcade-random-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 99px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(6, 182, 212, 0.14));
+  border: 1px solid rgba(99, 102, 241, 0.38);
+  color: #e0e7ff;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.arcade-random-btn:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.32), rgba(6, 182, 212, 0.24));
+  border-color: rgba(99, 102, 241, 0.65);
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.28);
+  color: #fff;
+}
+
+.arcade-filter-bar {
+  position: sticky;
+  top: 84px;
+  z-index: 30;
+  padding: 12px 16px;
+  margin-bottom: 24px;
+  border-radius: 18px;
+  background: rgba(12, 16, 26, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+.arcade-filter-pills {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+.arcade-filter-pills::-webkit-scrollbar {
+  display: none;
+}
+.arcade-filter-pills button {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.arcade-filter-pills button em {
+  font-style: normal;
+  padding: 1px 6px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 10px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.arcade-filter-pills button.is-active em {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+.arcade-filter-divider {
+  width: 1px;
+  height: 20px;
+  flex: 0 0 auto;
+  margin: 0 4px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* 6. 游戏卡片专属主题色霓虹光效与错落入场动画 */
+.arcade-game-card {
+  --game-accent: #6366f1;
+  --card-index: 0;
+  box-shadow:
+    0 10px 30px -10px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+  animation: cardStaggerReveal 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--card-index, 0) * 28ms);
+}
+.arcade-game-card:hover {
+  border-color: color-mix(in srgb, var(--game-accent) 58%, rgba(255, 255, 255, 0.22));
+  box-shadow:
+    0 22px 44px -12px rgba(0, 0, 0, 0.75),
+    0 0 32px -6px color-mix(in srgb, var(--game-accent) 36%, transparent),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.22);
+}
+.arcade-game-card:hover .arcade-card-action {
+  background: linear-gradient(135deg, var(--game-accent), color-mix(in srgb, var(--game-accent) 72%, #4f46e5));
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--game-accent) 42%, transparent);
+}
+@keyframes cardStaggerReveal {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 7. 搜索无结果精致空状态 */
+.arcade-empty-state {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 56px 24px;
+  margin-top: 16px;
+  border-radius: 24px;
+  background: rgba(15, 20, 32, 0.68);
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  text-align: center;
+}
+.arcade-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.28);
+  color: #818cf8;
+  font-size: 26px;
+}
+.arcade-empty-state strong {
+  font-size: 18px;
+  font-weight: 800;
+  color: #f8fafc;
+}
+.arcade-empty-state p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 13px;
+}
+.arcade-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+/* 8. 详情页：截图放大灯箱与相似游戏推荐 */
+.library-screenshot-trigger {
+  position: relative;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+  border-radius: 16px;
+  overflow: hidden;
+}
+.library-screenshot-trigger::after {
+  content: "⛶ 放大";
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  padding: 5px 10px;
+  border-radius: 99px;
+  background: rgba(9, 11, 16, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #f8fafc;
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+}
+.library-screenshot-trigger:hover::after {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.library-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  background: rgba(5, 7, 12, 0.88);
+  backdrop-filter: blur(20px);
+  animation: heroSlideFadeIn 0.2s ease both;
+}
+.library-lightbox img {
+  max-width: min(1160px, 92vw);
+  max-height: 86vh;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.85);
+  object-fit: contain;
+}
+.library-lightbox-close {
+  position: absolute;
+  top: 24px;
+  right: 28px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.library-lightbox-close:hover {
+  background: rgba(244, 63, 94, 0.35);
+  border-color: rgba(244, 63, 94, 0.6);
+  transform: scale(1.08);
+}
+
+.library-related {
+  margin-top: 32px;
+  padding: 32px;
+  border-radius: 28px;
+  background: rgba(15, 20, 32, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(18px);
+}
+.library-related-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+.library-related-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.library-related-card:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--game-accent, #6366f1) 55%, rgba(255, 255, 255, 0.2));
+  box-shadow:
+    0 16px 32px rgba(0, 0, 0, 0.6),
+    0 0 24px -6px color-mix(in srgb, var(--game-accent, #6366f1) 35%, transparent);
+}
+.library-related-art {
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: #090b10;
+}
+.library-related-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.35s ease;
+}
+.library-related-card:hover .library-related-art img {
+  transform: scale(1.06);
+}
+.library-related-copy {
+  padding: 14px 16px 16px;
+}
+.library-related-copy small {
+  display: block;
+  color: color-mix(in srgb, var(--game-accent, #818cf8) 75%, #cbd5e1);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.library-related-copy h3 {
+  margin: 4px 0 6px;
+  color: #f8fafc;
+  font-size: 15px;
+  font-weight: 800;
+}
+.library-related-copy p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 9. 游玩页（/play/:slug）：重构为沉浸式黑曜石暗夜剧场 HUD */
+body[data-page="library-game"] {
+  background: #05070b;
+  color: #f8fafc;
+}
+.library-player {
+  --game-accent: #6366f1;
+  --game-dark: #0f172a;
+  position: relative;
+  display: grid;
+  grid-template-rows: 54px minmax(0, 1fr);
+  height: 100vh;
+  height: 100dvh;
+  background: #05070b;
+  color: #f8fafc;
+}
+.library-player.is-cinema {
+  grid-template-rows: 0px minmax(0, 1fr);
+}
+.library-player.is-cinema .library-player-toolbar {
+  opacity: 0;
+  transform: translateY(-100%);
+  pointer-events: none;
+}
+.library-player-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--game-accent) 12%, rgba(9, 11, 16, 0.94)), rgba(9, 11, 16, 0.96) 45%);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(20px);
+  transition: transform 0.25s ease, opacity 0.25s ease;
+  z-index: 20;
+}
+.library-player-toolbar > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: #f8fafc;
+}
+.library-player-toolbar > a b {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+  transition: all 0.18s ease;
+}
+.library-player-toolbar > a:hover b {
+  background: color-mix(in srgb, var(--game-accent) 30%, rgba(255, 255, 255, 0.1));
+  border-color: var(--game-accent);
+  color: #fff;
+  transform: translateX(-2px);
+}
+.library-player-toolbar strong {
+  font-size: 14px;
+  font-weight: 800;
+  color: #f8fafc;
+}
+.library-player-toolbar small {
+  color: #94a3b8;
+  font-size: 11px;
+}
+.library-player-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 5px 12px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 600;
+  max-width: 42vw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.library-player-status i {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 10px #10b981;
+}
+.library-player-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.library-player-tools button {
+  height: 32px;
+  padding: 0 13px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.library-player-tools button:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.24);
+  color: #fff;
+}
+.library-player-tools button.is-primary {
+  background: linear-gradient(135deg, var(--game-accent, #6366f1), color-mix(in srgb, var(--game-accent, #6366f1) 65%, #4f46e5));
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--game-accent, #6366f1) 40%, transparent);
+}
+.library-player-tools button.is-primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.library-cinema-restore {
+  position: fixed;
+  top: 10px;
+  right: 16px;
+  z-index: 50;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 99px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(9, 11, 16, 0.78);
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  transition: all 0.2s ease;
+}
+.library-cinema-restore:hover {
+  background: rgba(99, 102, 241, 0.85);
+  border-color: transparent;
+  color: #fff;
+}
+
+.library-frame-wrap {
+  background: #05070b;
+}
+.library-frame-loading {
+  background:
+    radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--game-accent, #6366f1) 24%, transparent), transparent 55%),
+    rgba(6, 8, 14, 0.94);
+  color: #f8fafc;
+  backdrop-filter: blur(16px);
+}
+.library-loading-emblem {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  margin-bottom: 6px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--game-accent, #6366f1) 32%, #111827), #090b10);
+  border: 1px solid color-mix(in srgb, var(--game-accent, #6366f1) 50%, rgba(255, 255, 255, 0.16));
+  box-shadow: 0 16px 36px color-mix(in srgb, var(--game-accent, #6366f1) 28%, rgba(0, 0, 0, 0.6));
+}
+.library-loading-emblem span {
+  font-family: "YQ Display", system-ui, sans-serif;
+  font-size: 22px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 0.04em;
+}
+.library-loading-emblem i {
+  position: absolute;
+  inset: -6px;
+  width: auto;
+  height: auto;
+  border-radius: 24px;
+  border: 2px solid transparent;
+  border-top-color: var(--game-accent, #6366f1);
+  border-right-color: rgba(6, 182, 212, 0.6);
+  animation: spin 1.15s linear infinite;
+}
+.library-frame-loading span[data-loading-copy] {
+  color: #94a3b8;
+  max-width: 420px;
+}
+
+/* 10. 统一深色提示条（Desktop Gate）与错误页（Error Card / 404） */
+.library-player-gate {
+  width: min(760px, calc(100% - 32px));
+  margin: 48px auto;
+}
+.desktop-gate {
+  background: rgba(15, 20, 32, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 22px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+  backdrop-filter: blur(20px);
+}
+.desktop-gate strong {
+  color: #fff;
+}
+.desktop-gate p {
+  color: #94a3b8;
+}
+.desktop-gate-icon {
+  background: rgba(99, 102, 241, 0.16);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  border-radius: 14px;
+  color: #818cf8;
+}
+.error-card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  background: rgba(15, 20, 32, 0.85);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+  backdrop-filter: blur(20px);
+}
+.error-card h1 {
+  color: #fff;
+}
+.error-card p:not(.kicker) {
+  color: #94a3b8;
+}
+
+@media (max-width: 960px) {
+  .library-related-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .arcade-filter-bar {
+    top: 68px;
+  }
+}
+@media (max-width: 640px) {
+  .library-related-grid {
+    grid-template-columns: 1fr;
+  }
+  .arcade-recent-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .arcade-recent-label {
+    border-right: 0;
+    padding-right: 0;
+  }
+}
+
+/* ==========================================================================
+   LIVE VISUAL AUDIT FIXES — 真实验收视觉与布局精修补丁
+   ========================================================================== */
+
+/* 1. 清除旧版 body[data-page="site"] 浅色变量污染，恢复 Sticky 吸顶与锚点偏移 */
+body[data-page="site"] {
+  --ink: #f8fafc;
+  --muted: #94a3b8;
+  --line: rgba(255, 255, 255, 0.08);
+  --surface: #101422;
+  --canvas: #090b10;
+  background: #090b10;
+  color: #f8fafc;
+}
+.site-shell,
+.arcade-shell {
+  overflow: visible;
+  overflow-x: clip;
+}
+#all-games {
+  scroll-margin-top: 100px;
+}
+
+/* 2. 修复筛选栏右侧“排序 · 热门优先”文字挤压换行 */
+.arcade-filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.arcade-filter-pills {
+  flex: 1 1 0%;
+  min-width: 0;
+}
+.arcade-select {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.arcade-select > span,
+.arcade-select-trigger,
+.arcade-select-trigger span {
+  white-space: nowrap;
+}
+
+/* 3. 修复 Hero 轮播右下角控制器与 3D 展示画框重叠问题 */
+.arcade-featured-art {
+  padding: 20px 32px 76px;
+}
+@media (min-width: 1200px) {
+  .arcade-featured-art-frame {
+    height: 320px;
+  }
+}
+.arcade-featured-controls {
+  right: 24px;
+  bottom: 16px;
+  padding: 5px 8px 5px 14px;
+  border-radius: 99px;
+  background: rgba(9, 11, 16, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(16px);
+}
+.arcade-featured-controls > button {
+  width: 30px;
+  height: 30px;
+  font-size: 13px;
+}
+
+/* 4. 修复“热门对局”横向卡片简介文字第二行被截断问题 */
+.arcade-game-card-trending {
+  height: 192px;
+  min-height: 192px;
+  max-height: 192px;
+}
+.arcade-game-card-trending .arcade-game-copy {
+  justify-content: flex-start;
+  gap: 3px;
+  padding: 13px 14px 12px 12px;
+}
+.arcade-game-card-trending h3 {
+  margin: 2px 0;
+}
+.arcade-game-card-trending p {
+  line-height: 1.42;
+  max-height: 2.84em;
+}
+
+/* 5. 修复详情页标签米白残留、四格信息栏暗绿边框残留与标题栏间距 */
+.arcade-detail-shell .tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+.arcade-detail-shell .tag {
+  padding: 5px 12px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 700;
+}
+.arcade-detail-shell .library-facts {
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+.arcade-detail-shell .library-screenshots img {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  background: #090b10;
+}
+.library-highlights-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.library-highlights-heading .kicker {
+  margin: 0 0 6px;
+  color: #818cf8;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+.library-highlights-heading h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 900;
+  color: #f8fafc;
+  letter-spacing: -0.02em;
+}
+
+/* 6. 修复体感实验室（/vision-lab）右侧数据面板米黄背景残留 */
+.arcade-vision-shell .metrics-grid {
+  background: transparent;
+  border: 0;
+  gap: 10px;
+}
+.arcade-vision-shell .metrics-grid div {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+}
+.arcade-vision-shell .landmark-counts span {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  color: #94a3b8;
+}
+.arcade-vision-shell .landmark-counts b {
+  color: #f8fafc;
+}
+
+/* 7. 修复移动端窄屏（<= 768px）顶栏品牌名、导航与搜索框挤压折行问题 */
+@media (max-width: 768px) {
+  .arcade-shell .site-header {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px 14px;
+  }
+  .arcade-shell .site-brand {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  .arcade-shell .site-brand strong {
+    font-size: 15px;
+    white-space: nowrap;
+  }
+  .arcade-shell .site-header-actions {
+    flex: 1 1 auto;
+    justify-content: flex-end;
+    gap: 8px;
+    min-width: 0;
+  }
+  .arcade-shell .site-nav {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  .arcade-shell .site-nav a {
+    white-space: nowrap;
+    padding: 6px 10px;
+  }
+  .arcade-shell .site-search,
+  .arcade-shell .site-search:focus-within {
+    width: 100%;
+    order: 3;
+    height: 36px;
+  }
+  .arcade-featured-controls {
+    position: static;
+    margin: 0 20px 20px;
+    justify-content: center;
+  }
+  .arcade-game-card-trending {
+    height: auto;
+    min-height: 148px;
+    max-height: none;
+  }
+  .arcade-section-heading {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .arcade-heading-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .arcade-heading-link,
+  .arcade-refresh,
+  .arcade-random-btn,
+  .arcade-result-count,
+  .arcade-heading-note {
+    white-space: nowrap;
+  }
+}
+
+

@@ -12,7 +12,13 @@ export function siteHeader(active: "home" | "games" | "vision" | "none" = "none"
           <a href="/vision-lab" data-nav ${active === "vision" ? 'aria-current="page"' : ""}>体感实验室</a>
           <a href="/third-party-notices" data-nav>关于</a>
         </nav>
-        ${options.search ? `<label class="site-search"><span aria-hidden="true">⌕</span><input type="search" data-game-search placeholder="快速查找游戏…" autocomplete="off" aria-label="搜索游戏"></label>` : ""}
+        ${options.search ? `
+          <label class="site-search">
+            <span class="site-search-icon" aria-hidden="true">⌕</span>
+            <input type="search" data-game-search placeholder="搜索游戏、类型或标签…" autocomplete="off" aria-label="搜索游戏">
+            <button type="button" class="site-search-clear" data-search-clear hidden aria-label="清空搜索">×</button>
+            <kbd class="site-search-kbd" aria-hidden="true" title="按 / 键快速搜索">/</kbd>
+          </label>` : ""}
         <div class="site-header-status" title="自建联机网关与穿透服务就绪">
           <span class="status-pulse-dot" aria-hidden="true"></span>
           <span>服务在线</span>
