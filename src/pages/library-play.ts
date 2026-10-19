@@ -1,4 +1,5 @@
 import { canPlayGame } from "../platform/device";
+import { themeSwitcher } from "../platform/theme";
 import { bindCopyUrl, desktopGate } from "../platform/shell";
 import { findLibraryGame, iframeAllowPolicy } from "../data/gameLibrary";
 
@@ -26,6 +27,7 @@ export function renderLibraryPlay(root: HTMLElement, slug: string): () => void {
         <a href="/library/${game.slug}" data-nav><b>←</b><span><strong>${game.title}</strong><small>${game.mode} · ${game.players}</small></span></a>
         <p class="library-player-status"><i></i> <span>${game.controls}</span></p>
         <div class="library-player-tools">
+          ${themeSwitcher()}
           <button type="button" data-cinema-toggle title="收起或展开顶部控制栏">沉浸宽屏</button>
           <button type="button" data-retry>重新载入</button>
           <button type="button" class="is-primary" data-fullscreen>全屏游玩 ⛶</button>

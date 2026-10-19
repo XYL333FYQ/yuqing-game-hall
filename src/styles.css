@@ -807,8 +807,8 @@ body[data-page="library-game"] { overflow: hidden; background: #07090e; }
 .library-player-toolbar button { min-height: 32px; padding: 0 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); color: #e2e8f0; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.18s ease; }
 .library-player-toolbar button:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.25); }
 .library-player-tools { display: flex; justify-self: end; gap: 8px; }
-.library-player-tools button:last-child { border-color: rgba(99, 102, 241, 0.4); background: rgba(99, 102, 241, 0.15); color: #c7d2fe; }
-.library-player-tools button:last-child:hover { background: rgba(99, 102, 241, 0.28); color: #fff; }
+.library-player-tools > button:last-child { border-color: rgba(99, 102, 241, 0.4); background: rgba(99, 102, 241, 0.15); color: #c7d2fe; }
+.library-player-tools > button:last-child:hover { background: rgba(99, 102, 241, 0.28); color: #fff; }
 .library-frame-wrap { position: relative; min-width: 0; min-height: 0; }
 .library-frame-wrap iframe { display: block; width: 100%; height: 100%; border: 0; background: #080b09; }
 .library-frame-loading { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 10px; padding: 24px; background: #090c14; color: #d9ddd8; font-size: 11px; text-align: center; }
@@ -842,7 +842,7 @@ body[data-page="library-game"] { overflow: hidden; background: #07090e; }
   .library-player-toolbar { grid-template-columns: 1fr auto; padding: 0 10px; }
   .library-player-toolbar > p { display: none; }
   .library-player-toolbar small { max-width: 180px; }
-  .library-player-tools button:first-child { display: none; }
+  .library-player-tools > button[data-cinema-toggle] { display: none; }
 }
 
 

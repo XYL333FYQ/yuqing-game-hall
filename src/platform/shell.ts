@@ -1,3 +1,5 @@
+import { themeSwitcher } from "./theme";
+
 export function siteHeader(active: "home" | "games" | "vision" | "none" = "none", options: { search?: boolean } = {}): string {
   return `
     <header class="site-header">
@@ -19,6 +21,7 @@ export function siteHeader(active: "home" | "games" | "vision" | "none" = "none"
             <button type="button" class="site-search-clear" data-search-clear hidden aria-label="清空搜索">×</button>
             <kbd class="site-search-kbd" aria-hidden="true" title="按 / 键快速搜索">/</kbd>
           </label>` : ""}
+        ${themeSwitcher()}
         <div class="site-header-status" title="自建联机网关与穿透服务就绪">
           <span class="status-pulse-dot" aria-hidden="true"></span>
           <span>服务在线</span>

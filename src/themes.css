@@ -1,0 +1,255 @@
+/* Themes only change the palette. The Gemini layout remains in styles.css. */
+:root {
+  --theme-canvas: #090b10;
+  --theme-surface: #101422;
+  --theme-ink: #f8fafc;
+  --theme-muted: #94a3b8;
+  --theme-dim: #64748b;
+  --theme-border: rgba(255, 255, 255, .1);
+  --theme-soft: rgba(255, 255, 255, .045);
+  --theme-accent: #a5b4fc;
+  --theme-accent-fill: rgba(99, 102, 241, .2);
+  --theme-primary: #6366f1;
+  --theme-primary-dark: #4f46e5;
+  --theme-shadow: 0 16px 40px rgba(0, 0, 0, .35);
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+  --theme-canvas: #f4eddf;
+  --theme-surface: #fffcf5;
+  --theme-glass: rgba(255, 252, 245, .88);
+  --theme-ink: #172018;
+  --theme-muted: #626b60;
+  --theme-dim: #74796b;
+  --theme-border: #dcd5c6;
+  --theme-soft: #eee8dc;
+  --theme-accent: #286d55;
+  --theme-accent-fill: #e1ebde;
+  --theme-primary: #e85f2c;
+  --theme-primary-dark: #c8471c;
+  --theme-shadow: 0 14px 36px rgba(71, 60, 34, .09);
+  --theme-glow: #e2eacb;
+  --theme-hero-end: #eee9d9;
+}
+
+html[data-theme="pink"] {
+  color-scheme: light;
+  --theme-canvas: #fff0f5;
+  --theme-surface: #fffafd;
+  --theme-glass: rgba(255, 250, 253, .9);
+  --theme-ink: #492d40;
+  --theme-muted: #88677c;
+  --theme-dim: #927187;
+  --theme-border: #f0d5e2;
+  --theme-soft: #fbe6ef;
+  --theme-accent: #a93772;
+  --theme-accent-fill: #f9d5e7;
+  --theme-primary: #b83f7d;
+  --theme-primary-dark: #953064;
+  --theme-shadow: 0 14px 36px rgba(144, 58, 104, .09);
+  --theme-glow: #f8d1e5;
+  --theme-hero-end: #f9e3f0;
+}
+
+html[data-theme], html[data-theme] body {
+  background-color: var(--theme-canvas);
+}
+html[data-theme] body {
+  --ink: var(--theme-ink);
+  --muted: var(--theme-muted);
+  --line: var(--theme-border);
+  --surface: var(--theme-surface);
+  --canvas: var(--theme-canvas);
+  color: var(--theme-ink);
+}
+
+/* Three direct choices, with the active palette as a small illuminated capsule. */
+.theme-switcher {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 3px;
+  padding: 4px;
+  border: 1px solid var(--theme-border);
+  border-radius: 13px;
+  background: var(--theme-soft);
+}
+.theme-switcher .theme-choice {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  min-width: 39px;
+  min-height: 34px;
+  padding: 0 9px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--theme-muted);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 180ms ease, background-color 180ms ease;
+}
+.theme-choice svg { width: 16px; height: 16px; flex: 0 0 auto; }
+.theme-switcher .theme-choice:hover { background: var(--theme-accent-fill); color: var(--theme-accent); transform: translateY(-1px); }
+.theme-switcher .theme-choice[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--theme-accent) 30%, transparent);
+  background: var(--theme-accent-fill);
+  color: var(--theme-accent);
+}
+.theme-switcher .theme-choice:focus-visible { outline: 2px solid var(--theme-accent); outline-offset: 3px; }
+.theme-announcement { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* Light palettes recolor the shell, never the games or their cover images. */
+html[data-theme="light"], html[data-theme="pink"] {
+  --arcade-bg-dark: var(--theme-canvas);
+  --arcade-bg-card: var(--theme-surface);
+  --arcade-bg-card-hover: var(--theme-soft);
+  --arcade-border: var(--theme-border);
+  --arcade-border-bright: var(--theme-accent);
+  --arcade-text-main: var(--theme-ink);
+  --arcade-text-muted: var(--theme-muted);
+  --arcade-text-dim: var(--theme-dim);
+  --arcade-accent-cyan: var(--theme-accent);
+  --arcade-accent-indigo: var(--theme-primary);
+}
+html:is([data-theme="light"], [data-theme="pink"]) body {
+  --primary: var(--theme-primary);
+  --primary-dark: var(--theme-primary-dark);
+}
+html:is([data-theme="light"], [data-theme="pink"]) .arcade-shell {
+  background: radial-gradient(ellipse 80% 40% at 70% 0%, var(--theme-glow), transparent 75%), var(--theme-canvas);
+}
+html:is([data-theme="light"], [data-theme="pink"]) .arcade-shell::before { opacity: .25; background-image: linear-gradient(var(--theme-border) 1px, transparent 1px), linear-gradient(90deg, var(--theme-border) 1px, transparent 1px); }
+html:is([data-theme="light"], [data-theme="pink"]) :is(
+  .arcade-shell .site-header, .arcade-filter-bar, .arcade-featured-controls,
+  .library-player-toolbar
+) { background: var(--theme-glass); border-color: var(--theme-border); box-shadow: var(--theme-shadow); }
+html:is([data-theme="light"], [data-theme="pink"]) :is(
+  .arcade-featured, .arcade-game-card, .arcade-info-hero, .arcade-notice-card,
+  .arcade-legal-card, .arcade-stat-card, .arcade-vision-promo,
+  .library-detail-hero, .library-facts > div, .library-meta-grid, .library-description, .library-screenshots,
+  .library-highlights, .library-highlights-grid article, .library-related,
+  .vision-preview-card, .vision-panel, .vision-status-card, .vision-control-card,
+  .arcade-info-guide-grid article, .arcade-notice-panel, .desktop-gate, .error-card
+) { background: var(--theme-surface); border-color: var(--theme-border); box-shadow: var(--theme-shadow); }
+html:is([data-theme="light"], [data-theme="pink"]) .arcade-featured-stage {
+  background: radial-gradient(ellipse at 78% 35%, color-mix(in srgb, var(--game-accent) 12%, transparent), transparent 70%), linear-gradient(135deg, var(--theme-surface), var(--theme-hero-end));
+  border-color: var(--theme-border);
+  box-shadow: var(--theme-shadow);
+}
+html:is([data-theme="light"], [data-theme="pink"]) :is(
+  .arcade-shell .site-brand, .arcade-shell .site-brand strong, .arcade-section-heading h2,
+  .arcade-game-card h3, .arcade-featured h1, .arcade-featured h2,
+  .arcade-info-hero h1, .arcade-notice-card h3, .arcade-notice-section h2,
+  .arcade-legal-card h2, .arcade-vision-promo h2, .arcade-info-section-heading h2, .arcade-info-guide-grid h3,
+  .library-detail-copy h1, .library-highlights h2, .library-highlights-heading h2,
+  .library-facts strong, .library-meta-grid strong, .library-description h2, .library-screenshots h2,
+  .library-related-copy h3, .vision-heading h1, .vision-panel h2, .vision-panel strong,
+  .arcade-select-trigger, .arcade-recent-pill strong, .arcade-vision-shell .landmark-counts b,
+  .lab-mode strong, .desktop-gate strong, .error-card h1, .arcade-shell .site-footer strong,
+  .library-player-toolbar > a, .library-player-toolbar strong
+) { color: var(--theme-ink); }
+html:is([data-theme="light"], [data-theme="pink"]) :is(
+  .arcade-featured-description, .arcade-featured-copy > p, .arcade-featured-counter,
+  .arcade-info-hero-copy > p, .arcade-notice-card p, .arcade-notice-card li,
+  .arcade-legal-card p, .arcade-vision-promo p, .arcade-sort-label,
+  .arcade-recent-label, .arcade-recent-pill, .library-detail-copy > p,
+  .arcade-info-guide-grid p, .arcade-notice-footer, .arcade-info-section-heading p,
+  .library-description p, .library-highlights-grid p, .library-related-copy p,
+  .library-meta-grid span, .vision-heading > div > p, .vision-panel p, .vision-panel label,
+  .lab-mode small, .metric-note, .metrics-grid dt, .landmark-counts span, .runtime-dot,
+  .desktop-gate p, .error-card p:not(.kicker), .arcade-shell .site-footer,
+  .library-player-toolbar small
+) { color: var(--theme-muted); }
+html:is([data-theme="light"], [data-theme="pink"]) :is(
+  .arcade-shell .site-nav, .arcade-shell .site-search, .arcade-filter-pills button,
+  .arcade-refresh, .arcade-section-icon, .arcade-card-action, .arcade-recent-pill,
+  .arcade-recent-label span, .library-related-card, .library-player-status,
+  .library-player-toolbar > a b, .library-player-tools > button,
+  .arcade-featured-controls > button, .library-meta-grid > div, .arcade-tag,
+  .arcade-detail-shell .back-link, .lab-mode, .lab-mode-icon, .metrics-grid > div,
+  .arcade-vision-shell .landmark-counts span, .arcade-vision-shell .metrics-grid div,
+  .arcade-select, .arcade-sort-menu, .arcade-sort-menu button, .vision-livebar,
+  .vision-panel select, .vision-panel button:not(.primary), .vision-data div
+) { background: var(--theme-soft); border-color: var(--theme-border); color: var(--theme-muted); box-shadow: none; }
+html:is([data-theme="light"], [data-theme="pink"]) :is(
+  .arcade-shell .site-search input, .arcade-shell .site-nav a:hover,
+  .arcade-shell .site-nav a[aria-current="page"], .arcade-refresh:hover
+) { color: var(--theme-ink); }
+html:is([data-theme="light"], [data-theme="pink"]) .arcade-shell .site-nav a { color: var(--theme-muted); }
+html:is([data-theme="light"], [data-theme="pink"]) .arcade-featured-copy h1 { text-shadow: none; }
+html:is([data-theme="light"], [data-theme="pink"]) .metrics-grid dd { color: var(--theme-accent); }
+html:is([data-theme="light"], [data-theme="pink"]) .arcade-sort-menu button:hover { background: var(--theme-accent-fill); color: var(--theme-accent); }
+html:is([data-theme="light"], [data-theme="pink"]) .arcade-shell .site-search:focus-within { background: var(--theme-surface); border-color: var(--theme-accent); box-shadow: 0 0 0 3px var(--theme-accent-fill); }
+html:is([data-theme="light"], [data-theme="pink"]) .arcade-shell .site-search input::placeholder { color: var(--theme-dim); }
+html:is([data-theme="light"], [data-theme="pink"]) :is(.site-search-kbd, .site-search-clear, .arcade-filter-pills button em) { color: var(--theme-muted); background: var(--theme-surface); border-color: var(--theme-border); }
+html:is([data-theme="light"], [data-theme="pink"]) :is(
+  .arcade-shell .site-nav a[aria-current="page"], .arcade-filter-pills button.is-active,
+  .arcade-featured-kicker, .arcade-info-hero-copy .arcade-featured-kicker,
+  .arcade-random-btn, .tag, .arcade-recent-pill:hover
+) { color: var(--theme-accent); background: var(--theme-accent-fill); border-color: var(--theme-border); }
+html:is([data-theme="light"], [data-theme="pink"]) :is(.arcade-filter-pills button.is-active em, .arcade-random-btn:hover) { color: var(--theme-accent); }
+html:is([data-theme="light"], [data-theme="pink"]) :is(.arcade-primary-action, .arcade-detail-shell .library-actions .button.primary, .library-player-tools button.is-primary) { background: linear-gradient(135deg, var(--theme-primary), var(--theme-primary-dark)); color: #fff; border-color: transparent; box-shadow: 0 8px 20px color-mix(in srgb, var(--theme-primary) 20%, transparent); }
+html:is([data-theme="light"], [data-theme="pink"]) :is(.arcade-secondary-action, .button.secondary) { background: var(--theme-surface); color: var(--theme-ink); border-color: var(--theme-border); }
+html:is([data-theme="light"], [data-theme="pink"]) .arcade-game-card:hover .arcade-card-action { background: var(--theme-primary); border-color: transparent; color: #fff; }
+html:is([data-theme="light"], [data-theme="pink"]) .arcade-game-card-trending .arcade-game-art::after { background: linear-gradient(90deg, transparent 65%, var(--theme-surface) 100%); }
+html:is([data-theme="light"], [data-theme="pink"]) .arcade-game-card-library .arcade-game-art::after { background: linear-gradient(180deg, transparent 85%, var(--theme-surface) 100%); }
+html:is([data-theme="light"], [data-theme="pink"]) :is(.site-header-status, .privacy-chip, .vision-heading .kicker, .arcade-detail-shell .library-status, .lab-mode.selected) { color: #237151; background: #e8f3e8; border-color: #c5dec8; }
+html:is([data-theme="light"], [data-theme="pink"]) .arcade-badge-pill.multi { color: #845014; background: #fbecd3; border-color: #e8cc9e; }
+html:is([data-theme="light"], [data-theme="pink"]) .arcade-badge-pill.mobile { color: #256778; background: #ddf0f3; border-color: #b4d7dd; }
+html:is([data-theme="light"], [data-theme="pink"]) .arcade-featured-dots button { background: var(--theme-border); }
+html:is([data-theme="light"], [data-theme="pink"]) :is(.arcade-shell .site-footer, .arcade-featured-counter, .vision-heading, .library-meta-grid > div) { border-color: var(--theme-border); }
+html:is([data-theme="light"], [data-theme="pink"]) .library-player { background: var(--theme-canvas); }
+html:is([data-theme="light"], [data-theme="pink"]) ::-webkit-scrollbar-track { background: var(--theme-canvas); }
+html:is([data-theme="light"], [data-theme="pink"]) ::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--theme-ink) 22%, transparent); }
+
+/* The canvas gets its own live snapshot above the circular page reveal. */
+.theme-portal-particles { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 10000; pointer-events: none; view-transition-name: theme-particles; }
+html[data-theme-transition="portal"]::view-transition { pointer-events: none; }
+html[data-theme-transition="portal"]::view-transition-group(root) { animation: none; z-index: 1; }
+html[data-theme-transition="portal"]::view-transition-old(root),
+html[data-theme-transition="portal"]::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+html[data-theme-transition="portal"]::view-transition-old(root) { z-index: 1; }
+html[data-theme-transition="portal"]::view-transition-new(root) { z-index: 2; }
+html[data-theme-transition="portal"]::view-transition-group(theme-particles) { z-index: 3; animation: none; }
+html[data-theme-transition="portal"]::view-transition-old(theme-particles) { display: none; }
+html[data-theme-transition="portal"]::view-transition-new(theme-particles) { animation: none; mix-blend-mode: normal; }
+
+/* Keep existing navigation and search usable on tablet and phone widths. */
+@media (max-width: 1280px) {
+  .arcade-shell .site-header-actions { gap: 10px; }
+  .theme-choice span { display: none; }
+  .arcade-shell .site-nav a { padding-inline: 10px; }
+}
+@media (max-width: 1100px) {
+  .library-player-toolbar .library-player-status { display: none; }
+}
+@media (max-width: 960px) and (min-width: 769px) {
+  .arcade-shell .site-header { flex-wrap: wrap; gap: 10px; }
+  .arcade-shell .site-header-actions { flex: 1; justify-content: flex-end; }
+  .arcade-shell .site-search { width: 150px; }
+  .site-header-status { display: none; }
+}
+@media (max-width: 768px) {
+  .arcade-shell .site-header { gap: 10px; }
+  .arcade-shell .site-header-actions { display: contents; }
+  .arcade-shell .site-brand { order: 0; }
+  .arcade-shell .site-header .theme-switcher { order: 1; margin-left: auto; }
+  .arcade-shell .site-nav { order: 2; }
+  .theme-switcher { gap: 1px; padding: 3px; border-radius: 11px; }
+  .theme-switcher .theme-choice { min-width: 32px; min-height: 34px; padding: 0 7px; }
+  .arcade-shell .site-search, .arcade-shell .site-search:focus-within { order: 3; flex: 1 1 130px; width: auto; }
+  .library-player-tools .theme-switcher { display: none; }
+  #all-games { scroll-margin-top: 138px; }
+  .arcade-filter-bar { top: 118px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .theme-switcher .theme-choice { transition: none; }
+  .theme-portal-particles { display: none; }
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}
