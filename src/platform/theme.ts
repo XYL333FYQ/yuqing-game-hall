@@ -1,4 +1,4 @@
-import { playPortalEffect, type PortalEffect } from "./portal-effect";
+import { cancelPortal, revealPortal, type PortalTransition } from "./portal-transition";
 
 export type Theme = "dark" | "light" | "pink";
 const STORAGE_KEY = "yuqing:theme";
@@ -37,7 +37,7 @@ export function installThemeSwitcher(): void {
   status.setAttribute("role", "status");
   document.body.append(status);
   let desired: Theme = isTheme(root.dataset.theme) ? root.dataset.theme : "dark";
-  let active: PortalEffect | undefined;
+  let active: PortalTransition | undefined;
   const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
   const updateControls = (theme: Theme): void => {
@@ -55,10 +55,9 @@ export function installThemeSwitcher(): void {
     status.textContent = `已切换到${palette.label}主题`;
   };
   const settle = (): void => {
-    active?.cancel();
+    cancelPortal();
     active = undefined;
     if (root.dataset.theme !== desired) apply(desired);
-    delete root.dataset.themeTransition;
   };
 
   document.addEventListener("click", (event) => {
@@ -69,28 +68,26 @@ export function installThemeSwitcher(): void {
     if (!button || !isTheme(theme)) return;
     desired = theme;
     try { localStorage.setItem(STORAGE_KEY, theme); } catch { /* Restricted storage. */ }
-    active?.cancel();
+    cancelPortal();
     active = undefined;
     updateControls(theme);
     if (root.dataset.theme === theme || motion.matches || typeof button.animate !== "function") {
       apply(theme);
-      delete root.dataset.themeTransition;
       return;
     }
     const bounds = button.getBoundingClientRect();
-    root.dataset.themeTransition = "portal";
-    const effect = playPortalEffect({
+    const accent = THEMES.find((item) => item.id === theme)!.accent;
+    const effect = revealPortal({
       x: bounds.left + bounds.width / 2,
       y: bounds.top + bounds.height / 2,
-      accent: THEMES.find((item) => item.id === theme)!.accent,
-      onSwap: () => apply(theme),
+      colors: [accent, theme === "light" ? "#68a991" : "#67d6eb", theme === "dark" ? "#e0e7ff" : accent],
+      update: () => apply(theme),
     });
     active = effect;
     void effect.finished.then(() => {
       if (active !== effect) return;
       if (root.dataset.theme !== desired) apply(desired);
       active = undefined;
-      delete root.dataset.themeTransition;
     });
   });
   window.addEventListener("popstate", settle);

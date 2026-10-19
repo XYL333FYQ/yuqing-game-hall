@@ -1,29 +1,40 @@
-import { playPortalEffect } from "./portal-effect";
+import { revealPortal, type PortalTransition } from "./portal-transition";
 
-/** Initial navigation only; no artificial minimum loading duration. */
+/** Allow the opening to read, then travel through its center into the ready page. */
 export function finishEntry(): void {
   const screen = document.querySelector<HTMLDialogElement>("#entry-screen");
   if (!screen) return;
+  const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
   if (!screen.open || getComputedStyle(screen).visibility === "hidden"
-    || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    || motion.matches) {
     screen.remove();
     return;
   }
-  screen.style.pointerEvents = "none";
-  const effect = playPortalEffect({
-    x: window.innerWidth / 2,
-    y: window.innerHeight * 0.45,
-    accent: document.documentElement.dataset.theme === "pink" ? "#f472b6" : "#8ca9dc",
-  });
-  const exit = screen.animate([
-    { opacity: 1, transform: "scale(1)" },
-    { opacity: 0, transform: "scale(1.04)" },
-  ], { duration: 430, easing: "cubic-bezier(0.16, 1, 0.3, 1)", fill: "forwards" });
-  screen.addEventListener("close", () => { effect.cancel(); exit.cancel(); screen.remove(); }, { once: true });
-  void exit.finished.catch(() => undefined).then(() => screen.remove());
-  const onPageHide = (): void => { effect.cancel(); exit.cancel(); screen.remove(); };
-  window.addEventListener("pagehide", onPageHide, { once: true });
-  void Promise.allSettled([exit.finished, effect.finished]).then(() => {
-    window.removeEventListener("pagehide", onPageHide);
-  });
+  let effect: PortalTransition | undefined;
+  const cleanup = (): void => {
+    window.clearTimeout(timer);
+    effect?.cancel();
+    screen.remove();
+    window.removeEventListener("pagehide", cleanup);
+    motion.removeEventListener("change", onMotionChange);
+  };
+  const onMotionChange = (): void => { if (motion.matches) cleanup(); };
+  const firstAnimation = screen.getAnimations()[0];
+  const elapsed = Number(document.timeline.currentTime ?? 0) - Number(firstAnimation?.startTime ?? document.timeline.currentTime ?? 0);
+  const timer = window.setTimeout(() => {
+    if (!screen.open || getComputedStyle(screen).visibility === "hidden") { cleanup(); return; }
+    screen.querySelector<HTMLElement>(".entry-status")!.textContent = "准备就绪，即刻启程";
+    const orbit = screen.querySelector(".entry-orbit")!.getBoundingClientRect();
+    effect = revealPortal({
+      x: innerWidth / 2,
+      y: orbit.y + orbit.height / 2,
+      colors: document.documentElement.dataset.theme === "pink"
+        ? ["#f472b6", "#c4b5fd", "#fff1f8"] : ["#8ca9dc", "#67d6eb", "#e0e7ff"],
+      update: () => screen.remove(),
+    });
+    void effect.finished.then(cleanup);
+  }, Math.max(0, 1050 - elapsed));
+  screen.addEventListener("close", cleanup, { once: true });
+  window.addEventListener("pagehide", cleanup, { once: true });
+  motion.addEventListener("change", onMotionChange);
 }
