@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 185 600 490">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#98613b"/>
+      <stop offset="100%" stop-color="#352b23"/>
+    </radialGradient>
+  </defs>
+  <rect y="185" width="600" height="490" fill="url(#bg)"/>
+  <g transform="translate(0, 0)">
+    <rect x="106" y="236" width="388" height="388" rx="14" fill="#d6b887" stroke="#a28253" stroke-width="4"/>
+    <g stroke="#775832" stroke-width="1.5" opacity="0.85">
+      <path d="M134 264H466M134 297H466M134 330H466M134 363H466M134 396H466M134 430H466M134 463H466M134 496H466M134 529H466M134 562H466M134 596H466"/>
+      <path d="M134 264V596M167 264V596M200 264V596M233 264V596M266 264V596M300 264V596M333 264V596M366 264V596M399 264V596M432 264V596M466 264V596"/>
+    </g>
+    <circle cx="266" cy="396" r="14" fill="#25302b" stroke="#111c18" stroke-width="2"/>
+    <circle cx="266" cy="430" r="14" fill="#f5efde" stroke="#baa98b" stroke-width="2"/>
+    <circle cx="300" cy="430" r="14" fill="#25302b" stroke="#111c18" stroke-width="2"/>
+    <circle cx="233" cy="396" r="14" fill="#f5efde" stroke="#baa98b" stroke-width="2"/>
+    <circle cx="333" cy="463" r="14" fill="#25302b" stroke="#111c18" stroke-width="2"/>
+    <circle cx="266" cy="363" r="14" fill="#f5efde" stroke="#baa98b" stroke-width="2"/>
+    <circle cx="366" cy="496" r="14" fill="#25302b" stroke="#111c18" stroke-width="2"/>
+    <circle cx="233" cy="363" r="14" fill="#f5efde" stroke="#baa98b" stroke-width="2"/>
+    <circle cx="200" cy="330" r="14" fill="#25302b" stroke="#111c18" stroke-width="2"/>
+  </g>
+</svg>

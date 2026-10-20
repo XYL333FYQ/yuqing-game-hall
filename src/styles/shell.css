@@ -471,10 +471,10 @@
 .arcade-shell .site-brand small {
   margin-top: 2px;
   color: var(--arcade-accent-cyan);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.14em;
-  opacity: 0.85;
+  letter-spacing: 0.12em;
+  opacity: 0.9;
 }
 
 .arcade-shell .site-header-actions {
@@ -565,6 +565,7 @@
 }
 
 .arcade-shell .site-footer {
+  width: min(var(--arcade-shell-max-width), calc(100% - var(--arcade-shell-padding-inline)));
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   padding: 40px 0 50px;
   margin-top: 60px;
@@ -575,7 +576,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: min(var(--arcade-shell-max-width), calc(100% - var(--arcade-shell-padding-inline)));
+  width: 100%;
   margin: 0 auto;
 }
 

@@ -76,7 +76,7 @@
   min-height: 24px;
   padding: 0 9px;
   border-radius: 999px;
-  font-size: 10px;
+  font-size: 11.5px;
   font-weight: 700;
 }
 
@@ -211,12 +211,12 @@
   background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--game-accent, #6366f1) 22%, transparent), #0d1017 80%);
   border: 1px solid rgba(255, 255, 255, 0.16);
   box-shadow: 0 24px 55px rgba(0, 0, 0, 0.75), 0 0 32px color-mix(in srgb, var(--game-accent, #6366f1) 28%, transparent);
-  transform: perspective(900px) rotateY(-6deg) rotateX(2deg);
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: perspective(1200px) rotateY(-6deg) rotateX(2deg);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, border-color 0.4s ease;
 }
 
-.arcade-featured:hover .arcade-featured-art-frame {
-  transform: perspective(900px) rotateY(-2deg) rotateX(1deg) scale(1.02);
+.arcade-featured-art:hover .arcade-featured-art-frame {
+  transform: perspective(1200px) translateY(-8px) rotateY(-2deg) rotateX(1deg) scale(1.035);
   border-color: rgba(255, 255, 255, 0.28);
   box-shadow: 0 32px 65px rgba(0, 0, 0, 0.85), 0 0 45px color-mix(in srgb, var(--game-accent, #6366f1) 40%, transparent);
 }
@@ -1074,7 +1074,8 @@
 }
 
 .arcade-featured-art-frame {
-  animation: heroArtFloatIn 0.56s cubic-bezier(0.16, 1, 0.3, 1) both;
+  /* Release transform after entry so pointer hover can take over. */
+  animation: heroArtFloatIn 0.56s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
 .arcade-featured-counter {
@@ -1284,7 +1285,7 @@
   --card-index: 0;
   box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.55),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
-  animation: cardStaggerReveal 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: cardStaggerReveal 0.42s cubic-bezier(0.16, 1, 0.3, 1) backwards;
   animation-delay: calc(var(--card-index, 0) * 28ms);
 }
 

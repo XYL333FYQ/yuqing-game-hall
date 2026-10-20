@@ -3,9 +3,9 @@ import { cancelPortal, revealPortal, type PortalTransition } from "./portal-tran
 export type Theme = "dark" | "light" | "pink";
 const STORAGE_KEY = "yuqing:theme";
 const THEMES = [
-  { id: "dark", label: "黑夜", color: "#090b10", accent: "#a5b4fc", particles: ["#a5b4fc", "#67d6eb", "#e0e7ff"], icon: '<path d="M20.7 13a9 9 0 0 1-9.7-9.7A9 9 0 1 0 20.7 13Z"/>' },
-  { id: "light", label: "白天", color: "#f4eddf", accent: "#d4a657", particles: ["#d4a657", "#68a991", "#e85f2c"], icon: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4m0-14.2-1.4 1.4M6.3 17.7l-1.4 1.4"/>' },
-  { id: "pink", label: "粉色", color: "#fff0f5", accent: "#f472b6", particles: ["#f472b6", "#e879f9", "#fb7185"], icon: '<path d="M12 21s-9-5.5-9-12a5 5 0 0 1 9-3 5 5 0 0 1 9 3c0 6.5-9 12-9 12Z"/>' },
+  { id: "dark", label: "黑夜", color: "#090b10", accent: "#a5b4fc", particles: ["#a5b4fc", "#67d6eb", "#e7b778"], icon: '<path d="M20.7 13a9 9 0 0 1-9.7-9.7A9 9 0 1 0 20.7 13Z"/>' },
+  { id: "light", label: "白天", color: "#f7f8fa", accent: "#52748b", particles: ["#52748b", "#69a793", "#d88a72"], icon: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4m0-14.2-1.4 1.4M6.3 17.7l-1.4 1.4"/>' },
+  { id: "pink", label: "粉色", color: "#f7f5f3", accent: "#f472b6", particles: ["#cc87a4", "#86a496", "#ada0cd"], icon: '<path d="M12 21s-9-5.5-9-12a5 5 0 0 1 9-3 5 5 0 0 1 9 3c0 6.5-9 12-9 12Z"/>' },
 ] as const;
 
 function isTheme(value: unknown): value is Theme {
@@ -84,6 +84,7 @@ export function installThemeSwitcher(): void {
       x: bounds.left + bounds.width / 2,
       y: bounds.top + bounds.height / 2,
       colors: themeParticles(theme),
+      theme,
       update: () => apply(theme),
     });
     active = effect;

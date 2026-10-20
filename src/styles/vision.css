@@ -591,7 +591,7 @@
 
 .lab-mode em {
   font-style: normal;
-  font-size: 10px;
+  font-size: 11.5px;
   font-weight: 700;
   color: #64748b;
   font-family: ui-monospace, SFMono-Regular, monospace;
@@ -647,7 +647,7 @@
 
 .metrics-grid dt {
   color: #64748b;
-  font-size: 10px;
+  font-size: 11.5px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -673,7 +673,7 @@
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
   color: #94a3b8;
-  font-size: 10px;
+  font-size: 11.5px;
   text-align: center;
 }
 

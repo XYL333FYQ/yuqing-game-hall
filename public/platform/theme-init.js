@@ -6,7 +6,7 @@
     const saved = localStorage.getItem("yuqing:theme");
     if (saved === "dark" || saved === "light" || saved === "pink") theme = saved;
   } catch {}
-  const color = { dark: "#090b10", light: "#f4eddf", pink: "#fff0f5" }[theme];
+  const color = { dark: "#090b10", light: "#f7f8fa", pink: "#f7f5f3" }[theme];
   document.documentElement.dataset.theme = theme;
   document.documentElement.style.colorScheme = theme === "dark" ? "dark" : "light";
   document.documentElement.style.backgroundColor = color;

@@ -11,12 +11,13 @@ export function cancelPortal(): void {
   active?.cancel();
 }
 
-/** Capture each palette once, then reveal it through a moving circular aperture. */
+/** Peel the static old snapshot away through a growing circular aperture. */
 export function revealPortal(options: {
   x: number;
   y: number;
   colors: readonly string[];
   update: () => void;
+  theme?: string;
 }): PortalTransition {
   cancelPortal();
   const root = document.documentElement;
@@ -25,7 +26,7 @@ export function revealPortal(options: {
   let cancelled = false;
   let transition: ViewTransition | undefined;
   let reveal: Animation | undefined;
-  const particles = createPortalParticles({ x, y, colors, duration });
+  const particles = createPortalParticles({ x, y, colors, duration, theme: options.theme });
   root.style.setProperty("--portal-x", `${x}px`);
   root.style.setProperty("--portal-y", `${y}px`);
   root.dataset.themeTransition = "portal";
@@ -69,14 +70,17 @@ export function revealPortal(options: {
       }
       await transition.ready;
       if (cancelled) return;
-      const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+      const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)) + 2;
+      // Reveal through a gradient mask on the static old bitmap. Animated vector
+      // clips can leave stale rectangular raster tiles on Windows Chromium.
+      // Keep the live page's glass and 3D layers on an unclipped surface throughout.
       reveal = root.animate({
-        clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`],
+        "--portal-radius": ["0px", `${radius}px`],
       }, {
         duration,
         easing: "cubic-bezier(0.4, 0, 0.16, 1)",
         fill: "both",
-        pseudoElement: "::view-transition-new(root)",
+        pseudoElement: "::view-transition-old(root)",
       });
       particles.start();
       await Promise.all([reveal.finished, transition.finished, particles.finished]);

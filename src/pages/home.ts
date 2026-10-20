@@ -2,6 +2,7 @@ import { GAME_CATALOG } from "../platform/game-catalog";
 import { featuredGames, readSessionEngagement, recordSessionEngagement, trendingGames } from "../platform/game-discovery";
 import type { GameAudience, GameManifest } from "../platform/game-manifest";
 import { siteFooter, siteHeader } from "../platform/shell";
+import { GALLERY_ART } from "../platform/gallery-art";
 
 export function renderHome(root: HTMLElement): () => void {
   const games = featuredGames(GAME_CATALOG);
@@ -21,10 +22,11 @@ export function renderHome(root: HTMLElement): () => void {
   document.title = "雨晴游戏厅 · 找一款现在想玩的游戏";
   document.body.dataset.page = "site";
   root.innerHTML = `
-    <div class="site-shell arcade-shell">
+    <div class="site-shell arcade-shell arcade-home">
       ${siteHeader("home", { search: true })}
       <main class="arcade-main">
         <section class="arcade-featured" data-featured-carousel aria-label="精选推荐">
+          <div class="gallery-hero-object" aria-hidden="true"><img src="/platform/gallery/arcade-console.webp" alt="" width="1536" height="1024" fetchpriority="high"></div>
           <div class="arcade-featured-stage" data-featured-stage></div>
           ${featured.length > 1 ? `
             <div class="arcade-featured-controls">
@@ -41,12 +43,22 @@ export function renderHome(root: HTMLElement): () => void {
         </section>
 
         <section class="arcade-section arcade-trending" aria-labelledby="trending-title">
-          ${sectionHeading("🔥", "热门对局", "精选高频游玩与好友对战项目", `<div class="arcade-heading-actions"><a class="arcade-heading-link" href="#all-games" data-nav>浏览全部 <span>→</span></a><button type="button" class="arcade-refresh" data-trending-refresh>换一批 <span>↻</span></button></div>`, "trending-title")}
+          ${sectionHeading("正在流行", `<div class="arcade-heading-actions"><span class="arcade-heading-note">实时热度与轮换推荐</span><button type="button" class="arcade-refresh" data-trending-refresh>换一批 <span>↻</span></button></div>`, "trending-title", "TRENDING NOW")}
           <div class="arcade-trending-grid" data-trending-grid></div>
         </section>
 
+        <a class="gallery-vision" href="/vision-lab" data-nav>
+          <img src="/platform/gallery/vision-hand.jpg" alt="" loading="lazy" width="2172" height="724">
+          <span class="gallery-vision-copy">
+            <span class="gallery-vision-kicker"><i></i> 浏览器本地识别 · 视频不上传</span>
+            <strong>体感实验室</strong>
+            <small>无需外设，使用摄像头在浏览器本地实时追踪双手 21 个关键点与全身姿态，用手势开启体感交互体验。</small>
+          </span>
+          <span class="gallery-vision-action">进入实验室 <b aria-hidden="true">↗</b></span>
+        </a>
+
         <section class="arcade-section arcade-all-games" id="all-games" aria-labelledby="all-games-title">
-          ${sectionHeading("🎮", "全部游戏", `${games.length} 款精选游戏收录 · 支持触屏与多人开黑`, `<div class="arcade-heading-actions"><button type="button" class="arcade-random-btn" data-random-launch title="随机挑选一款游戏立即开玩">🎲 随机开一局</button><span class="arcade-heading-note">实时筛选</span><span class="arcade-result-count" data-result-count></span></div>`, "all-games-title")}
+          ${sectionHeading("游戏库", `<div class="arcade-heading-actions"><span class="arcade-result-count" data-result-count></span><button type="button" class="arcade-random-btn" data-random-launch title="随机挑选一款游戏">🎲 随机开一局 <span aria-hidden="true">↗</span></button></div>`, "all-games-title", "GAME LIBRARY")}
           <div class="arcade-filter-bar" aria-label="筛选游戏">
             <div class="arcade-filter-pills" role="group" aria-label="按人数筛选">
               <button class="is-active" type="button" data-audience="all" aria-pressed="true">全部 <em>${games.length}</em></button>
@@ -68,6 +80,7 @@ export function renderHome(root: HTMLElement): () => void {
             </div>
           </div>
           <div class="arcade-library-grid" data-game-list></div>
+          <button type="button" class="gallery-more" data-library-more hidden></button>
           <div class="arcade-empty-state" data-empty hidden>
             <span class="arcade-empty-icon" aria-hidden="true">⌕</span>
             <strong>没有找到匹配的游戏</strong>
@@ -79,16 +92,17 @@ export function renderHome(root: HTMLElement): () => void {
           </div>
         </section>
 
-        <a class="arcade-vision-card" href="/vision-lab" data-nav>
-          <span class="arcade-vision-icon" aria-hidden="true">◌</span>
-          <span><b>体感实验室 · Vision Lab</b><small>基于 MediaPipe 计算机视觉 · 摄像头免接触手势互动</small></span>
-          <em>进入工坊 →</em>
-        </a>
       </main>
       ${siteFooter()}
     </div>`;
 
   const carousel = root.querySelector<HTMLElement>("[data-featured-carousel]");
+  const home = root.querySelector<HTMLElement>(".arcade-home");
+  const header = root.querySelector<HTMLElement>(".site-header");
+  const headerObserver = typeof ResizeObserver === "function" ? new ResizeObserver(() => {
+    if (header) home?.style.setProperty("--gallery-header-height", `${header.getBoundingClientRect().height}px`);
+  }) : undefined;
+  if (header) headerObserver?.observe(header);
   const featuredStage = root.querySelector<HTMLElement>("[data-featured-stage]");
   const featuredDots = root.querySelector<HTMLElement>("[data-featured-dots]");
   const featuredCounter = root.querySelector<HTMLElement>("[data-featured-counter]");
@@ -96,6 +110,7 @@ export function renderHome(root: HTMLElement): () => void {
   const recentList = root.querySelector<HTMLElement>("[data-recent-list]");
   const trendingGrid = root.querySelector<HTMLElement>("[data-trending-grid]");
   const gameList = root.querySelector<HTMLElement>("[data-game-list]");
+  const libraryMore = root.querySelector<HTMLButtonElement>("[data-library-more]");
   const resultCount = root.querySelector<HTMLElement>("[data-result-count]");
   const empty = root.querySelector<HTMLElement>("[data-empty]");
   const sortSelect = root.querySelector<HTMLSelectElement>("[data-sort]");
@@ -114,7 +129,9 @@ export function renderHome(root: HTMLElement): () => void {
   let selectedTag = "";
   let query = "";
   let sortValue = "popular";
+  let libraryLimit = 12;
   let carouselTimer: number | undefined;
+  let featureExitTimer: number | undefined;
   let trendingTimer: number | undefined;
 
   const syncSearchClear = (): void => {
@@ -155,7 +172,23 @@ export function renderHome(root: HTMLElement): () => void {
       carousel.style.setProperty("--game-accent", game.theme.accent);
       carousel.style.setProperty("--game-dark", game.theme.dark);
     }
-    if (featuredStage) featuredStage.innerHTML = featureSlide(game, featuredIndex, featured.length);
+    if (featuredStage) {
+      if (featureExitTimer !== undefined) window.clearTimeout(featureExitTimer);
+      featuredStage.querySelector(".feature-slide-previous")?.remove();
+      const previous = featuredStage.querySelector<HTMLElement>(".arcade-featured-slide");
+      const snapshot = previous && !reduceMotion ? previous.cloneNode(true) as HTMLElement : undefined;
+      featuredStage.innerHTML = featureSlide(game, featuredIndex, featured.length);
+      if (snapshot) {
+        snapshot.classList.add("feature-slide-previous");
+        snapshot.setAttribute("aria-hidden", "true");
+        snapshot.inert = true;
+        featuredStage.append(snapshot);
+        featureExitTimer = window.setTimeout(() => {
+          snapshot.remove();
+          featureExitTimer = undefined;
+        }, 580);
+      }
+    }
     if (featuredCounter) {
       featuredCounter.textContent = `${String(featuredIndex + 1).padStart(2, "0")} / ${String(featured.length).padStart(2, "0")}`;
     }
@@ -174,7 +207,11 @@ export function renderHome(root: HTMLElement): () => void {
       .filter((game) => !selectedTag || game.presentation.tags.includes(selectedTag))
       .filter((game) => matchesSearch(game, query))
       .sort(sortGames(sortValue));
-    if (gameList) gameList.innerHTML = matched.map((game, idx) => gameCard(game, "library", idx)).join("");
+    if (gameList) gameList.innerHTML = matched.slice(0, libraryLimit).map((game, idx) => gameCard(game, "library", idx)).join("");
+    if (libraryMore) {
+      libraryMore.hidden = matched.length <= libraryLimit;
+      libraryMore.textContent = `继续浏览 ${Math.max(0, matched.length - libraryLimit)} 款游戏 ↓`;
+    }
     if (resultCount) resultCount.textContent = `${matched.length} 款`;
     empty?.toggleAttribute("hidden", matched.length > 0);
   };
@@ -185,6 +222,7 @@ export function renderHome(root: HTMLElement): () => void {
   };
   const playCarousel = (): void => {
     pauseCarousel();
+    if (carousel?.matches(":hover, :focus-within")) return;
     carousel?.classList.remove("is-paused");
     if (!reduceMotion && featured.length > 1) carouselTimer = window.setInterval(() => {
       if (document.documentElement.dataset.themeTransition === "portal") return;
@@ -193,12 +231,14 @@ export function renderHome(root: HTMLElement): () => void {
     }, 7000);
   };
   const onSearch = (event: Event): void => {
+    libraryLimit = 12;
     query = (event.currentTarget as HTMLInputElement).value.trim();
     searchInputs.forEach((input) => { if (input !== event.currentTarget) input.value = query; });
     syncSearchClear();
     updateList();
   };
   const resetAllFilters = (): void => {
+    libraryLimit = 12;
     query = "";
     audience = "all";
     selectedTag = "";
@@ -216,6 +256,10 @@ export function renderHome(root: HTMLElement): () => void {
     updateList();
   };
   const onKeyDown = (event: KeyboardEvent): void => {
+    if (event.key === "Enter" && document.activeElement instanceof HTMLInputElement && document.activeElement.hasAttribute("data-game-search")) {
+      root.querySelector("#all-games")?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+      return;
+    }
     if (event.key === "/" && document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "TEXTAREA") {
       event.preventDefault();
       const firstInput = searchInputs[0];
@@ -262,6 +306,13 @@ export function renderHome(root: HTMLElement): () => void {
       resetAllFilters();
       return;
     }
+    if (target?.closest("[data-library-more]")) {
+      const previousCount = gameList?.children.length ?? 0;
+      libraryLimit = games.length;
+      updateList();
+      gameList?.querySelectorAll<HTMLAnchorElement>(".arcade-game-art")[previousCount]?.focus({ preventScroll: true });
+      return;
+    }
     if (target?.closest("[data-random-launch]")) {
       const randomGame = games[Math.floor(Math.random() * games.length)];
       if (randomGame) {
@@ -277,6 +328,7 @@ export function renderHome(root: HTMLElement): () => void {
     }
     const sortOption = target?.closest<HTMLButtonElement>("[data-sort-option]");
     if (sortOption) {
+      libraryLimit = 12;
       sortValue = sortOption.dataset.sortOption ?? "popular";
       if (sortSelect) sortSelect.value = sortValue;
       if (sortLabel) sortLabel.textContent = sortOption.textContent ?? "热门优先";
@@ -313,6 +365,7 @@ export function renderHome(root: HTMLElement): () => void {
     }
   };
   const onAudienceClick = (event: Event): void => {
+    libraryLimit = 12;
     audience = (event.currentTarget as HTMLButtonElement).dataset.audience as GameAudience | "all";
     selectedTag = "";
     tagButtons.forEach((button) => {
@@ -327,6 +380,7 @@ export function renderHome(root: HTMLElement): () => void {
     updateList();
   };
   const onTagClick = (event: Event): void => {
+    libraryLimit = 12;
     const button = event.currentTarget as HTMLButtonElement;
     audience = "all";
     selectedTag = button.dataset.tagPill ?? "";
@@ -362,6 +416,8 @@ export function renderHome(root: HTMLElement): () => void {
   playCarousel();
 
   return () => {
+    headerObserver?.disconnect();
+    if (featureExitTimer !== undefined) window.clearTimeout(featureExitTimer);
     pauseCarousel();
     if (trendingTimer !== undefined) window.clearInterval(trendingTimer);
     root.removeEventListener("click", onRootClick);
@@ -379,19 +435,26 @@ export function renderHome(root: HTMLElement): () => void {
 function featureSlide(game: GameManifest, index: number, total: number): string {
   const presentation = game.presentation;
   const launch = game.platform.launch;
-  const isMobile = game.presentation.play.devices.includes("mobile") || game.presentation.play.inputs.includes("touch");
-  const isMulti = game.discovery.audiences.includes("multi") || game.discovery.audiences.includes("duo");
+  const isMultiplayer = game.discovery.audiences.includes("multi") || game.discovery.audiences.includes("duo");
+  const isMobileReady = presentation.play.devices.includes("mobile") || presentation.play.inputs.includes("touch");
   return `<article class="arcade-featured-slide arcade-featured-slide-${escapeHtml(game.id)}" style="--game-accent:${game.theme.accent};--game-dark:${game.theme.dark}" aria-roledescription="slide" aria-label="第 ${index + 1} / ${total} 个精选游戏">
+    <div class="feature-backdrop" aria-hidden="true">${gameArt(game, "hero", true)}</div>
     <div class="arcade-featured-copy">
       <div class="arcade-featured-eyebrow">
-        <span class="arcade-featured-kicker">★ 焦点特选</span>
-        ${isMobile ? '<span class="arcade-badge-pill mobile">📱 手机畅玩</span>' : ""}
-        ${isMulti ? '<span class="arcade-badge-pill multi">👥 好友对战</span>' : ""}
+        <span class="arcade-featured-kicker">✦ 精选推荐</span>
+        ${isMultiplayer ? `<span class="arcade-badge-pill multi">${escapeHtml(presentation.play.players)}</span>` : `<span class="arcade-badge-pill single">${escapeHtml(presentation.play.players)}</span>`}
+        ${isMobileReady ? `<span class="arcade-badge-pill mobile">支持触屏</span>` : ""}
       </div>
       <p class="arcade-overline">${escapeHtml(presentation.category)}</p>
       <h1>${escapeHtml(presentation.title)}</h1>
       <p>${escapeHtml(presentation.tagline)}</p>
-      <div class="arcade-tag-row">${presentation.tags.slice(0, 3).map(tagPill).join("")}</div>
+      <div class="arcade-tag-row">
+        ${presentation.tags.slice(0, 4).map((tag) => `<span class="arcade-tag">${escapeHtml(tag)}</span>`).join("")}
+      </div>
+      <dl class="arcade-meta">
+        <div><dt>玩法模式</dt><dd>${escapeHtml(presentation.play.modes)}</dd></div>
+        <div><dt>操作方式</dt><dd>${escapeHtml(presentation.play.controls)}</dd></div>
+      </dl>
       <div class="arcade-featured-actions">
         ${launchAction(game, actionLabel(game, launch.kind === "external" ? "前往体验" : "立即进入"), "arcade-primary-action")}
         <a class="arcade-secondary-action" href="/library/${game.id}" data-nav data-game-interest="${game.id}" data-interest-kind="detail">玩法详情 <span>→</span></a>
@@ -399,43 +462,46 @@ function featureSlide(game: GameManifest, index: number, total: number): string 
     </div>
     <div class="arcade-featured-art">
       <div class="arcade-art-glow" aria-hidden="true"></div>
-      <div class="arcade-featured-art-frame">
-        ${gameArt(game, "hero", true)}
-      </div>
+      <a class="feature-preview-link" href="/library/${game.id}" data-nav data-game-interest="${game.id}" data-interest-kind="detail" aria-label="查看 ${escapeHtml(presentation.title)}">
+        <div class="arcade-featured-art-frame">
+          <div class="feature-art-ambient" aria-hidden="true">${gameArt(game, "hero", true)}</div>
+          ${gameArt(game, "hero", true)}
+          <span class="feature-frame-caption">
+            <strong>${escapeHtml(presentation.title)}</strong>
+            <small>${escapeHtml(presentation.play.modes)}</small>
+          </span>
+          <span class="feature-play-cue" aria-hidden="true">↗</span>
+        </div>
+      </a>
     </div>
   </article>`;
 }
 
-function sectionHeading(icon: string, title: string, lead: string, aside: string, id: string): string {
-  return `<div class="arcade-section-heading"><div class="arcade-section-title"><span class="arcade-section-icon" aria-hidden="true">${icon}</span><div><h2 id="${id}">${title}</h2><p>${lead}</p></div></div>${aside}</div>`;
+function sectionHeading(title: string, aside: string, id: string, kicker = ""): string {
+  return `<div class="arcade-section-heading"><div class="arcade-section-title">${kicker ? `<span class="arcade-section-kicker">${kicker}</span>` : ""}<h2 id="${id}">${title}</h2></div>${aside}</div>`;
 }
 
 function gameCard(game: GameManifest, variant: "trending" | "people" | "library", index = 0): string {
   const presentation = game.presentation;
-  const launch = game.platform.launch;
-  const label = actionLabel(game, launch.kind === "external" ? "前往" : "进入");
-  const isMobile = game.presentation.play.devices.includes("mobile") || game.presentation.play.inputs.includes("touch");
-  const isMulti = game.discovery.audiences.includes("multi") || game.discovery.audiences.includes("duo");
+  const visibleTags = presentation.tags.filter((t) => t !== "单人").slice(0, 2);
   return `<article class="arcade-game-card arcade-game-card-${variant}" style="--game-accent:${game.theme.accent};--game-dark:${game.theme.dark};--card-index:${Math.min(index, 15)}">
     <a class="arcade-game-art" href="/library/${game.id}" data-nav data-game-interest="${game.id}" data-interest-kind="detail" aria-label="查看 ${escapeHtml(presentation.title)}">
       ${gameArt(game, "cover")}
-      <div class="arcade-card-badges">
-        ${isMobile ? '<span class="badge-icon-pill" title="支持手机/触屏">📱</span>' : ""}
-        ${isMulti ? '<span class="badge-icon-pill" title="支持好友对战">👥</span>' : ""}
-      </div>
+      ${variant === "trending" ? `<span class="arcade-card-rank">HOT 0${index + 1}</span>` : ""}
+      <span class="arcade-card-players">${escapeHtml(presentation.play.players)}</span>
+      <span class="gallery-card-open" aria-hidden="true">↗</span>
     </a>
     <div class="arcade-game-copy">
-      <div class="arcade-card-meta">
-        <span>${audienceSummary(game.discovery.audiences)}</span>
-        <small>${escapeHtml(presentation.category)}</small>
+      <div class="arcade-card-header">
+        <span class="gallery-game-category">${escapeHtml(presentation.category)}</span>
+        <a href="/library/${game.id}" data-nav data-game-interest="${game.id}" data-interest-kind="detail"><h3>${escapeHtml(presentation.title)}</h3></a>
       </div>
-      <a href="/library/${game.id}" data-nav data-game-interest="${game.id}" data-interest-kind="detail">
-        <h3>${escapeHtml(presentation.title)}</h3>
-      </a>
-      <p>${escapeHtml(presentation.tagline)}</p>
-      <div class="arcade-card-bottom">
-        <div class="arcade-tag-row">${presentation.tags.slice(0, 2).map(tagPill).join("")}</div>
-        ${launchAction(game, label, "arcade-card-action")}
+      <div class="gallery-card-hover">
+        <p>${escapeHtml(presentation.tagline)}</p>
+        <div class="arcade-card-footer">
+          <div class="arcade-card-tags">${visibleTags.map((tag) => `<span class="arcade-tag">${escapeHtml(tag)}</span>`).join("")}</div>
+          ${launchAction(game, actionLabel(game, "进入游戏"), "arcade-card-action")}
+        </div>
       </div>
     </div>
   </article>`;
@@ -444,7 +510,7 @@ function gameCard(game: GameManifest, variant: "trending" | "people" | "library"
 function gameArt(game: GameManifest, variant: "hero" | "cover", hero = false): string {
   const presentation = game.presentation;
   const art = presentation.art;
-  const source = variant === "hero" ? art.hero ?? art.cover ?? art.icon : art.cover ?? art.icon ?? art.hero;
+  const source = GALLERY_ART[game.id] ?? (variant === "hero" ? art.hero ?? art.cover ?? art.icon : art.cover ?? art.icon ?? art.hero);
   if (source) return `<img src="${escapeHtml(source)}" alt="${escapeHtml(presentation.title)} 展示图" ${hero ? "fetchpriority=\"high\"" : "loading=\"lazy\""}>`;
   return `<div class="arcade-art-fallback ${hero ? "arcade-art-fallback-hero" : ""}" aria-label="${escapeHtml(presentation.title)} 街机经典收录">
     <div class="arcade-cartridge-pattern" aria-hidden="true"></div>
@@ -462,13 +528,6 @@ function launchAction(game: GameManifest, label: string, className: string): str
 
 function actionLabel(game: GameManifest, fallback: string): string {
   return game.presentation.actionLabel || fallback;
-}
-
-function tagPill(tag: string): string { return `<span class="arcade-tag">${escapeHtml(tag)}</span>`; }
-
-function audienceSummary(audiences: readonly GameAudience[]): string {
-  const labels: Record<GameAudience, string> = { single: "单人", duo: "双人", multi: "多人" };
-  return audiences.map((audience) => labels[audience]).join(" · ");
 }
 
 function matchesSearch(game: GameManifest, query: string): boolean {

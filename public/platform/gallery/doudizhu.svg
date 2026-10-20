@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 175 600 450">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#c2543d"/>
+      <stop offset="100%" stop-color="#153627"/>
+    </radialGradient>
+  </defs>
+  <rect y="175" width="600" height="450" fill="url(#bg)"/>
+  <circle cx="300" cy="400" r="210" fill="#ffffff" fill-opacity="0.05"/>
+  <g transform="translate(108,298) rotate(-11 66 100)">
+    <rect x="0" y="8" width="132" height="204" rx="12" fill="#000" opacity=".24"/>
+    <rect width="132" height="204" rx="12" fill="#fff3d9" stroke="#d6bc86" stroke-width="3"/>
+    <text x="14" y="39" font-family="Georgia,serif" font-size="30" fill="#26372f">A</text>
+    <text x="66" y="132" text-anchor="middle" font-size="72" fill="#26372f">♠</text>
+  </g>
+  <g transform="translate(221,268) rotate(0 66 100)">
+    <rect x="0" y="8" width="132" height="204" rx="12" fill="#000" opacity=".24"/>
+    <rect width="132" height="204" rx="12" fill="#fff3d9" stroke="#d6bc86" stroke-width="3"/>
+    <text x="14" y="39" font-family="Georgia,serif" font-size="30" fill="#b43d30">K</text>
+    <text x="66" y="132" text-anchor="middle" font-size="72" fill="#b43d30">♥</text>
+  </g>
+  <g transform="translate(334,298) rotate(11 66 100)">
+    <rect x="0" y="8" width="132" height="204" rx="12" fill="#000" opacity=".24"/>
+    <rect width="132" height="204" rx="12" fill="#fff3d9" stroke="#d6bc86" stroke-width="3"/>
+    <text x="14" y="39" font-family="Georgia,serif" font-size="30" fill="#26372f">Q</text>
+    <text x="66" y="132" text-anchor="middle" font-size="72" fill="#26372f">♠</text>
+  </g>
+</svg>

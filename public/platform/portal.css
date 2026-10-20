@@ -27,7 +27,7 @@ body { margin: 0; background-color: inherit; }
 .entry-screen::before, .entry-screen::after { content: ""; position: absolute; inset: -20%; pointer-events: none; }
 .entry-screen::before { background-image: radial-gradient(1px 1px at 15% 25%, var(--entry-accent) 90%, transparent), radial-gradient(1px 1px at 70% 60%, var(--entry-ink) 90%, transparent), radial-gradient(2px 2px at 85% 15%, var(--entry-accent) 90%, transparent), radial-gradient(1px 1px at 35% 80%, var(--entry-ink) 90%, transparent); background-size: 173px 191px, 251px 223px, 391px 337px, 131px 151px; opacity: .45; animation: entry-depth 6s ease-out both; }
 .entry-screen::after { inset: 0; background: linear-gradient(transparent 49.8%, color-mix(in srgb, var(--entry-accent) 5%, transparent) 50%, transparent 50.2%); background-size: 100% 6px; opacity: .5; }
-html[data-theme="light"] .entry-screen { --entry-bg: #f4eddf; --entry-ink: #172018; --entry-accent: #a17c45; --entry-muted: #737565; }
+html[data-theme="light"] .entry-screen { --entry-bg: #f7f8fa; --entry-ink: #1c2530; --entry-accent: #52748b; --entry-muted: #76818d; }
 html[data-theme="pink"] .entry-screen { --entry-bg: #fff0f5; --entry-ink: #492d40; --entry-accent: #b45d8a; --entry-muted: #927187; }
 .entry-content { position: relative; z-index: 1; display: grid; justify-items: center; width: min(520px, 100%); text-align: center; }
 .entry-orbit { position: relative; display: grid; place-items: center; width: min(320px, 66vw); height: auto; aspect-ratio: 1; margin-bottom: 38px; border: 1px solid color-mix(in srgb, var(--entry-accent) 16%, transparent); border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--entry-accent) 14%, transparent), transparent 68%); box-shadow: 0 0 100px color-mix(in srgb, var(--entry-accent) 12%, transparent), inset 0 0 60px color-mix(in srgb, var(--entry-accent) 8%, transparent); animation: entry-form 900ms cubic-bezier(.16,1,.3,1) both; }
@@ -61,9 +61,9 @@ html[data-theme-transition="portal"] #app *,
 html[data-theme-transition="portal"] #app *::before,
 html[data-theme-transition="portal"] #app *::after {
   transition: none !important;
-  animation: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+  /* Preserve each animation's identity and progress across the snapshot.
+   * Removing animations here restarts their opacity-from-zero entry on cleanup. */
+  animation-play-state: paused !important;
 }
 html[data-theme-transition="portal"]::view-transition { pointer-events: none; }
 html[data-theme-transition="portal"]::view-transition-group(root),
@@ -71,11 +71,18 @@ html[data-theme-transition="portal"]::view-transition-group(portal-particles) { 
 html[data-theme-transition="portal"]::view-transition-old(root),
 html[data-theme-transition="portal"]::view-transition-new(root),
 html[data-theme-transition="portal"]::view-transition-new(portal-particles) { animation: none; mix-blend-mode: normal; }
-html[data-theme-transition="portal"]::view-transition-old(root) { z-index: 1; }
-html[data-theme-transition="portal"]::view-transition-new(root) {
-  z-index: 2;
-  clip-path: circle(0px at var(--portal-x, 50%) var(--portal-y, 50%));
+@property --portal-radius {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
 }
+/* Mask only the old bitmap; avoid animated vector clips and keep the live page's
+ * glass/3D compositing surface stable through the final handoff. */
+html[data-theme-transition="portal"]::view-transition-old(root) {
+  z-index: 2;
+  mask-image: radial-gradient(circle at var(--portal-x, 50%) var(--portal-y, 50%), transparent var(--portal-radius), #000 calc(var(--portal-radius) + 1px));
+}
+html[data-theme-transition="portal"]::view-transition-new(root) { z-index: 1; }
 html[data-theme-transition="portal"]::view-transition-group(portal-particles) { z-index: 3; }
 html[data-theme-transition="portal"]::view-transition-old(portal-particles) { display: none; }
 @keyframes entry-orbit { to { transform: rotate(360deg); } }
@@ -84,17 +91,202 @@ html[data-theme-transition="portal"]::view-transition-old(portal-particles) { di
 @keyframes entry-copy { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 @keyframes entry-scan { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
 @keyframes entry-fail-open { to { opacity: 0; visibility: hidden; pointer-events: none; } }
+
+/* The rings, reticle, stars and scanner stay intact; themed materials frame them. */
+.entry-orbit { isolation: isolate; }
+.entry-chassis {
+  position: absolute;
+  z-index: -1;
+  inset: -22px;
+  border: 1px solid color-mix(in srgb, var(--entry-accent) 20%, transparent);
+  border-radius: 18px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--entry-accent) 5%, transparent), transparent 60%);
+  box-shadow: inset 0 1px 0 #ffffff0d, 0 20px 70px #0002;
+  transform: rotate(-6deg);
+}
+.entry-chassis::before, .entry-chassis::after {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border: solid color-mix(in srgb, var(--entry-accent) 50%, transparent);
+  border-width: 1px 0 0 1px;
+  border-radius: 4px 0 0;
+  width: 18px;
+  height: 18px;
+}
+.entry-chassis::after { inset: auto 12px 12px auto; transform: rotate(180deg); }
+.entry-satellite {
+  --satellite-angle: -10deg;
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 78px;
+  border: 1px solid color-mix(in srgb, var(--entry-accent) 32%, transparent);
+  border-radius: 10px;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--entry-accent) 15%, var(--entry-bg)), var(--entry-bg));
+  color: var(--entry-accent);
+  box-shadow: 0 12px 26px #0003, inset 0 1px 0 #ffffff24;
+  animation: entry-tile-arrive 800ms cubic-bezier(.16, 1, .3, 1) backwards,
+    entry-tile-drift 5s 800ms ease-in-out infinite;
+}
+.entry-satellite svg { width: 34px; height: 34px; }
+.entry-satellite::after {
+  content: "";
+  position: absolute;
+  bottom: 10px;
+  width: 18px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: .35;
+}
+.entry-satellite-play { top: 4px; right: -12px; animation-delay: 60ms, 860ms; }
+.entry-satellite-pad { --satellite-angle: 12deg; bottom: 8px; left: -22px; animation-delay: 160ms, 960ms; }
+.entry-satellite-star { --satellite-angle: 8deg; right: -6px; bottom: -12px; width: 48px; height: 58px; animation-delay: 260ms, 1060ms; }
+.entry-mark { z-index: 3; }
+.entry-edition { margin: 4px 0 14px; font: 9px/1.6 Consolas, monospace; letter-spacing: .14em; color: var(--entry-accent); }
+.entry-edition > span { display: none; }
+html[data-theme="dark"] .entry-edition-dark,
+html[data-theme="light"] .entry-edition-light,
+html[data-theme="pink"] .entry-edition-pink { display: inline; }
+html[data-theme="dark"] .entry-chassis {
+  background-image: linear-gradient(135deg, #9bbcff0d, transparent 55%),
+    repeating-linear-gradient(0deg, transparent 0 23px, #9bbcff06 23px 24px);
+}
+html[data-theme="dark"] .entry-satellite { border-radius: 5px; }
+html[data-theme="light"] .entry-screen {
+  background-image: radial-gradient(ellipse at 50% 42%, #e6eef5, transparent 55%),
+    linear-gradient(135deg, #fff, var(--entry-bg));
+}
+html[data-theme="light"] .entry-chassis {
+  border-color: #fff;
+  background-image: linear-gradient(135deg, #ffffffb3, #f8fafb33);
+  box-shadow: 0 24px 60px -20px #34475e20, inset 0 0 0 6px #ffffff80;
+  border-radius: 8px;
+  transform: rotate(-8deg);
+}
+html[data-theme="light"] .entry-satellite {
+  background-image: linear-gradient(140deg, #fff, #f3f7fa);
+  border-color: #d5e1eb;
+  border-radius: 4px;
+  box-shadow: 0 10px 24px #34475e12, inset 0 1px 0 #fff;
+}
+html[data-theme="light"] .entry-mark { background: linear-gradient(140deg, #fff, #edf2f7); box-shadow: 0 12px 28px #34475e12; }
+html[data-theme="pink"] .entry-screen {
+  background-image: radial-gradient(ellipse at 30% 30%, #fffafd, transparent 58%),
+    radial-gradient(ellipse at 70% 60%, #f4d6e7, transparent 65%), linear-gradient(135deg, #fff6fa, var(--entry-bg));
+}
+html[data-theme="pink"] .entry-chassis {
+  border-color: #ffffffc0;
+  border-radius: 38px 38px 38px 10px;
+  background-image: linear-gradient(145deg, #ffffffa6, #f7dbea59);
+  box-shadow: 0 5px 0 -1px #f3d4e4, 0 6px 0 #e8bed4, 0 24px 60px -20px #a1507426;
+  transform: rotate(-10deg);
+}
+html[data-theme="pink"] .entry-satellite {
+  border-color: #fff;
+  border-radius: 14px 14px 14px 4px;
+  background-image: linear-gradient(140deg, #fff, #fbe7f1);
+  box-shadow: 0 3px 0 #e7bcd2, 0 14px 26px #a150741a;
+}
+html[data-theme="pink"] .entry-mark { background: linear-gradient(140deg, #fff, #f9dfed); box-shadow: 0 4px 0 #e7bcd2, 0 14px 32px #a1507426; }
+html[data-theme="pink"] .entry-edition { padding: 4px 12px; border: 1px solid #e9c5d9; border-radius: 99px; background: #fff8; }
+@keyframes entry-tile-arrive {
+  from { opacity: 0; transform: translateY(22px) rotate(calc(var(--satellite-angle) - 12deg)) scale(.8); }
+  to { opacity: 1; transform: translateY(0) rotate(var(--satellite-angle)) scale(1); }
+}
+@keyframes entry-tile-drift {
+  0%, 100% { transform: translateY(0) rotate(var(--satellite-angle)); }
+  50% { transform: translateY(-6px) rotate(calc(var(--satellite-angle) + 3deg)); }
+}
+.portal-sparkles, .portal-signature { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transform-origin: var(--portal-x) var(--portal-y); }
+.portal-effect[data-theme="light"] .portal-wave { box-shadow: 0 0 20px #91b1cb26, 0 0 0 6px #e1edf533, inset 0 0 0 3px #ffffff59; }
+.portal-effect[data-theme="pink"] .portal-wave { box-shadow: 0 0 20px #e4a3cb33, 0 0 0 6px #f7dae833, inset 0 0 0 3px #ffffff59; }
+
+/* Three compositions, not three tints of the same loading screen. */
+.entry-scenery { display: none; position: absolute; inset: -36px; width: calc(100% + 72px); height: calc(100% + 72px); z-index: 0; overflow: visible; pointer-events: none; }
+.entry-reticle { z-index: 1; }
+html[data-theme="dark"] .entry-constellation,
+html[data-theme="light"] .entry-prism,
+html[data-theme="pink"] .entry-flower { display: block; }
+html[data-theme="dark"] .entry-screen {
+  background-image: radial-gradient(ellipse at 32% 36%, #19313c80, transparent 52%),
+    radial-gradient(ellipse at 75% 65%, #32293c60, transparent 48%), linear-gradient(135deg, #0a1019, #090b10);
+}
+html[data-theme="dark"] .entry-orbit { animation-name: entry-warp-arrive; }
+html[data-theme="dark"] .entry-constellation { animation: entry-constellation-in 1s ease-out both; }
+html[data-theme="dark"] .entry-satellite-play { color: #83c6cb; }
+html[data-theme="dark"] .entry-satellite-star { color: #e7b778; }
+html[data-theme="light"] .entry-screen {
+  background-image: radial-gradient(ellipse at 25% 38%, #dcece980, transparent 46%),
+    radial-gradient(ellipse at 80% 68%, #f2dfd580, transparent 42%),
+    linear-gradient(120deg, #f5f8f8, #f4f6fa 60%, #f6f3f0);
+}
+html[data-theme="light"] .entry-orbit { animation-name: entry-prism-form; background: radial-gradient(circle, #ffffff80, transparent 68%); }
+html[data-theme="light"] .entry-orbit::before { scale: 1 .48; rotate: -25deg; border-top-color: #739eaf; }
+html[data-theme="light"] .entry-orbit::after { scale: 1 .65; rotate: 32deg; border-color: #8bb6a8; }
+html[data-theme="light"] .entry-chassis { transform: rotate(0deg); background: linear-gradient(140deg, #ffffff80, #eff5f733); }
+html[data-theme="light"] .entry-prism { animation: entry-prism-refract 900ms cubic-bezier(.16,1,.3,1) both; }
+html[data-theme="light"] .entry-satellite { animation-name: entry-prism-arrive, entry-prism-drift; }
+html[data-theme="light"] .entry-satellite-play { background: linear-gradient(135deg, #f8fcfb, #e3efea); color: #527f70; }
+html[data-theme="light"] .entry-satellite-star { background: linear-gradient(135deg, #fffaf6, #f3e2d8); color: #ae745e; }
+html[data-theme="pink"] .entry-screen {
+  --entry-bg: #f7f5f3;
+  --entry-ink: #413b45;
+  --entry-muted: #746e79;
+  background-image: radial-gradient(ellipse at 28% 28%, #e3ebe580, transparent 47%),
+    radial-gradient(ellipse at 76% 56%, #eddae580, transparent 50%), linear-gradient(140deg, #f9f7f5, #f5f2f6);
+}
+html[data-theme="pink"] .entry-orbit { animation-name: entry-garden-form; background: radial-gradient(circle, #fff9, transparent 65%); }
+html[data-theme="pink"] .entry-orbit::before { scale: 1 .85; rotate: -15deg; border-top-color: #a1b5a8; border-bottom-color: #c89bb1; }
+html[data-theme="pink"] .entry-orbit::after { border-color: #c2b7d3; }
+html[data-theme="pink"] .entry-chassis { border-radius: 50%; transform: rotate(0deg); background: #fff5; box-shadow: 0 6px 0 -1px #dfe6df80, 0 24px 60px -20px #86687b24; }
+html[data-theme="pink"] .entry-flower { opacity: .4; animation: entry-garden-bloom 900ms cubic-bezier(.16,1,.3,1) both; }
+html[data-theme="pink"] .entry-flower path { stroke: #fff9; stroke-width: 1; }
+html[data-theme="pink"] .entry-satellite { animation-name: entry-petal-arrive, entry-petal-drift; }
+html[data-theme="pink"] .entry-satellite-pad { background: linear-gradient(140deg, #fbfdf9, #e2eae1); border-color: #cad8cb; color: #65806e; }
+html[data-theme="pink"] .entry-satellite-star { background: linear-gradient(140deg, #fffaf5, #f3e4d5); border-color: #e2cfbc; color: #a07756; }
+html[data-theme="pink"] .entry-mark { background: linear-gradient(140deg, #fff, #edf0ea); box-shadow: 0 4px 0 #d9d1db, 0 14px 32px #86687b26; }
+.portal-effect[data-theme="light"] .portal-stars { fill: #a0bfb020; }
+.portal-effect[data-theme="pink"] .portal-stars { fill: #cdb7cc24; }
+@keyframes entry-warp-arrive { from { transform: perspective(800px) rotateX(18deg) scale(.6); opacity: 0; } to { transform: perspective(800px) rotateX(0) scale(1); opacity: 1; } }
+@keyframes entry-constellation-in { from { stroke-dasharray: 10 200; opacity: 0; scale: .8; } to { stroke-dasharray: 200 0; opacity: 1; scale: 1; } }
+@keyframes entry-prism-form { from { transform: translateX(-24px) rotate(-6deg); opacity: 0; } to { transform: translateX(0) rotate(0deg); opacity: 1; } }
+@keyframes entry-prism-refract { from { transform: translateX(-45px) rotate(-8deg); opacity: 0; } to { transform: translateX(0) rotate(0); opacity: 1; } }
+@keyframes entry-prism-arrive { from { transform: translateX(-30px) rotate(-12deg); opacity: 0; } to { transform: translateX(0) rotate(var(--satellite-angle)); opacity: 1; } }
+@keyframes entry-prism-drift { 0%,100% { transform: translateX(0) rotate(var(--satellite-angle)); } 50% { transform: translateX(8px) rotate(calc(var(--satellite-angle) + 2deg)); } }
+@keyframes entry-garden-form { from { transform: scale(.7) rotate(12deg); opacity: 0; } to { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes entry-garden-bloom { from { transform: scale(.5) rotate(-24deg); opacity: 0; } to { transform: scale(1) rotate(0); opacity: .4; } }
+@keyframes entry-petal-arrive { from { transform: translateY(35px) rotate(28deg) scale(.7); opacity: 0; } to { transform: translateY(0) rotate(var(--satellite-angle)) scale(1); opacity: 1; } }
+@keyframes entry-petal-drift { 0%,100% { transform: translateY(0) rotate(var(--satellite-angle)); } 50% { transform: translateY(-8px) rotate(calc(var(--satellite-angle) - 6deg)); } }
+
 @media (max-width: 600px) {
   .entry-sector { display: none; }
   .entry-coordinate { top: 22px; left: 22px; font-size: 9px; }
+  .entry-orbit { width: min(260px, 58vw); }
+  .entry-satellite { width: 48px; height: 60px; }
+  .entry-satellite svg { width: 28px; height: 28px; }
+  .entry-chassis { inset: -16px; }
 }
 @media (max-height: 600px) {
   .entry-orbit { width: min(220px, 38vh); margin-bottom: 18px; }
   .entry-wordmark { font-size: 28px; }
   .entry-status { margin-top: 18px; }
   .entry-sector { display: none; }
+  .entry-satellite { width: 38px; height: 48px; }
+  .entry-satellite svg { width: 24px; height: 24px; }
+  .entry-chassis { inset: -10px; }
+}
+@media (max-height: 420px) {
+  .entry-screen { padding-bottom: 80px; }
+  .entry-orbit { width: min(160px, 25vh); margin-bottom: 14px; }
+  .entry-status { margin: 12px 0 10px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .entry-orbit, .entry-orbit::before, .entry-orbit::after, .entry-scan::after, .entry-screen::before, .entry-wordmark { animation: none; }
   .portal-effect { display: none; }
+  html[data-theme] .entry-satellite { animation: none; transform: rotate(var(--satellite-angle)); }
+  html[data-theme] .entry-scenery, html[data-theme] .entry-orbit { animation: none; }
 }

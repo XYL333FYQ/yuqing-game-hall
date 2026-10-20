@@ -1,6 +1,6 @@
 import { themeSwitcher } from "./theme";
 
-export function siteHeader(active: "home" | "games" | "vision" | "none" = "none", options: { search?: boolean } = {}): string {
+export function siteHeader(active: "home" | "games" | "vision" | "about" | "none" = "none", options: { search?: boolean } = {}): string {
   return `
     <header class="site-header">
       <a class="site-brand" href="/" data-nav aria-label="返回雨晴游戏厅首页">
@@ -12,7 +12,7 @@ export function siteHeader(active: "home" | "games" | "vision" | "none" = "none"
           <a href="/" data-nav ${active === "home" ? 'aria-current="page"' : ""}>首页</a>
           <a href="/#all-games" data-nav ${active === "games" ? 'aria-current="page"' : ""}>游戏库</a>
           <a href="/vision-lab" data-nav ${active === "vision" ? 'aria-current="page"' : ""}>体感实验室</a>
-          <a href="/third-party-notices" data-nav>关于</a>
+          <a href="/third-party-notices" data-nav ${active === "about" ? 'aria-current="page"' : ""}>关于</a>
         </nav>
         ${options.search ? `
           <label class="site-search">

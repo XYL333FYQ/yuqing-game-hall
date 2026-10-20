@@ -22,7 +22,7 @@ export function renderThirdPartyNotices(root: HTMLElement): () => void {
 
   root.innerHTML = `
     <div class="site-shell arcade-shell arcade-info-shell">
-      ${siteHeader("none")}
+      ${siteHeader("about")}
       <main class="arcade-main arcade-info-main">
         <section class="arcade-info-hero" aria-labelledby="about-title">
           <div class="arcade-info-hero-copy">

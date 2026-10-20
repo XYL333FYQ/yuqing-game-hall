@@ -1,3 +1,4 @@
+import { GALLERY_ART } from "../platform/gallery-art";
 import { siteFooter, siteHeader } from "../platform/shell";
 import { findLibraryGame, LIBRARY_GAMES, type LibraryGame } from "../data/gameLibrary";
 
@@ -15,6 +16,8 @@ export function renderLibraryGame(root: HTMLElement, slug: string): () => void {
     .sort((left, right) => similarityScore(game, right) - similarityScore(game, left))
     .slice(0, 4);
 
+  const hasCover = Boolean(GALLERY_ART[game.slug] ?? game.hero ?? game.cover ?? game.icon);
+
   root.innerHTML = `
     <div class="site-shell arcade-shell arcade-detail-shell">
       ${siteHeader("games")}
@@ -22,7 +25,7 @@ export function renderLibraryGame(root: HTMLElement, slug: string): () => void {
         <a class="back-link" href="/#all-games" data-nav>← 返回游戏厅</a>
         <section class="library-detail-hero" style="--game-accent:${game.accent};--game-dark:${game.dark}">
           <div class="library-detail-copy">
-            <div class="library-status-row"><span class="library-status ${game.status}">${game.statusLabel}</span><span>精选游戏 ${String(game.order).padStart(2, "0")}</span></div>
+            <div class="library-status-row"><span class="library-status ${game.status}">${game.statusLabel}</span><span>精选收录 #${String(game.order).padStart(2, "0")}</span></div>
             <p class="detail-index">${game.genre}</p>
             <h1>${game.title}</h1>
             ${game.originalTitle ? `<p class="original-title">${game.originalTitle}</p>` : ""}
@@ -30,10 +33,15 @@ export function renderLibraryGame(root: HTMLElement, slug: string): () => void {
             <div class="tag-row">${game.tags.map((tag) => `<span class="tag">${tag}</span>`).join("")}</div>
             <div class="library-actions">${actionMarkup(game)}</div>
           </div>
-          <div class="library-detail-cover" aria-hidden="true">
-            <img src="${artwork(game)}" alt="">
-            <span class="cover-grid"></span><span class="cover-orbit orbit-one"></span><span class="cover-orbit orbit-two"></span>
-            <strong>${game.mark}</strong><small>${game.originalTitle ?? game.title}</small>
+          <div class="library-detail-cover ${hasCover ? "has-artwork" : "is-fallback"}" aria-hidden="true">
+            <div class="library-cover-frame">
+              <img src="${artwork(game)}" alt="">
+              <span class="library-cover-badge">${game.players} · ${game.mode}</span>
+            </div>
+            ${hasCover ? "" : `
+              <span class="cover-grid"></span><span class="cover-orbit orbit-one"></span><span class="cover-orbit orbit-two"></span>
+              <strong>${game.mark}</strong><small>${game.originalTitle ?? game.title}</small>
+            `}
           </div>
         </section>
 
@@ -126,7 +134,7 @@ function similarityScore(target: LibraryGame, candidate: LibraryGame): number {
 }
 
 function artwork(game: LibraryGame): string {
-  return game.hero ?? game.cover ?? game.icon ?? FALLBACK_ART;
+  return GALLERY_ART[game.slug] ?? game.hero ?? game.cover ?? game.icon ?? FALLBACK_ART;
 }
 
 function actionMarkup(game: LibraryGame): string {

@@ -30,21 +30,21 @@
 
 html[data-theme="light"] {
   color-scheme: light;
-  --theme-canvas: #f4eddf;
-  --theme-surface: #fffcf5;
-  --theme-glass: rgba(255, 252, 245, .88);
-  --theme-ink: #172018;
-  --theme-muted: #626b60;
-  --theme-dim: #74796b;
-  --theme-border: #dcd5c6;
-  --theme-soft: #eee8dc;
+  --theme-canvas: #f7f8fa;
+  --theme-surface: #ffffff;
+  --theme-glass: rgba(255, 255, 255, .9);
+  --theme-ink: #1c2530;
+  --theme-muted: #626d7a;
+  --theme-dim: #76818d;
+  --theme-border: #e0e5eb;
+  --theme-soft: #f0f3f6;
   --theme-accent: #286d55;
   --theme-accent-fill: #e1ebde;
   --theme-primary: #e85f2c;
   --theme-primary-dark: #c8471c;
-  --theme-shadow: 0 14px 36px rgba(71, 60, 34, .09);
-  --theme-glow: #e2eacb;
-  --theme-hero-end: #eee9d9;
+  --theme-shadow: 0 14px 36px rgba(36, 50, 70, .08);
+  --theme-glow: #edf3f8;
+  --theme-hero-end: #f0f3f7;
   --theme-status-fg: #237151;
   --theme-status-bg: #e8f3e8;
   --theme-status-border: #c5dec8;
@@ -59,21 +59,21 @@ html[data-theme="light"] {
 
 html[data-theme="pink"] {
   color-scheme: light;
-  --theme-canvas: #fff0f5;
-  --theme-surface: #fffafd;
-  --theme-glass: rgba(255, 250, 253, .9);
-  --theme-ink: #492d40;
-  --theme-muted: #88677c;
-  --theme-dim: #927187;
-  --theme-border: #f0d5e2;
-  --theme-soft: #fbe6ef;
+  --theme-canvas: #f7f5f3;
+  --theme-surface: #fffcfa;
+  --theme-glass: rgba(255, 253, 250, .9);
+  --theme-ink: #413b45;
+  --theme-muted: #706c75;
+  --theme-dim: #746e79;
+  --theme-border: #e4dcdf;
+  --theme-soft: #f0e9ee;
   --theme-accent: #a93772;
   --theme-accent-fill: #f9d5e7;
   --theme-primary: #d6458b;
   --theme-primary-dark: #ad2f6c;
   --theme-shadow: 0 14px 36px rgba(144, 58, 104, .09);
-  --theme-glow: #f8d1e5;
-  --theme-hero-end: #f9e3f0;
+  --theme-glow: #ede1e6;
+  --theme-hero-end: #eef0ec;
   --theme-status-fg: #a93772;
   --theme-status-bg: #fce4f0;
   --theme-status-border: #f3bfd8;
@@ -232,6 +232,16 @@ html:is([data-theme="light"], [data-theme="pink"]) .arcade-featured-stage {
   background: radial-gradient(ellipse at 78% 35%, color-mix(in srgb, var(--game-accent) 12%, transparent), transparent 70%), linear-gradient(135deg, var(--theme-surface), var(--theme-hero-end));
   border-color: var(--theme-border);
   box-shadow: var(--theme-shadow);
+}
+
+html[data-theme="light"] .arcade-featured-art-frame {
+  border-color: var(--theme-border);
+  box-shadow: 0 20px 40px -12px rgba(36, 50, 70, .26), 0 0 28px color-mix(in srgb, var(--game-accent) 12%, transparent);
+}
+
+html[data-theme="light"] .arcade-featured-art:hover .arcade-featured-art-frame {
+  border-color: color-mix(in srgb, var(--game-accent) 40%, var(--theme-border));
+  box-shadow: 0 30px 50px -14px rgba(36, 50, 70, .32), 0 0 36px color-mix(in srgb, var(--game-accent) 18%, transparent);
 }
 
 html:is([data-theme="light"], [data-theme="pink"]) .arcade-vision-card {
@@ -614,6 +624,29 @@ html:is([data-theme="light"], [data-theme="pink"]) ::-webkit-scrollbar-track {
 
 html:is([data-theme="light"], [data-theme="pink"]) ::-webkit-scrollbar-thumb {
   background: color-mix(in srgb, var(--theme-ink) 22%, transparent);
+}
+
+html:is([data-theme="light"], [data-theme="pink"]) .vision-media {
+  background: var(--theme-soft);
+}
+
+html:is([data-theme="light"], [data-theme="pink"]) .vision-placeholder {
+  color: var(--theme-muted);
+}
+
+html:is([data-theme="light"], [data-theme="pink"]) .vision-placeholder strong {
+  color: var(--theme-ink);
+}
+
+html:is([data-theme="light"], [data-theme="pink"]) .vision-placeholder small {
+  color: var(--theme-muted);
+}
+
+html:is([data-theme="light"], [data-theme="pink"]) .vision-placeholder > span {
+  background: var(--theme-surface);
+  border-color: var(--theme-border);
+  color: var(--theme-accent);
+  box-shadow: var(--theme-shadow);
 }
 
 @media (max-width: 1280px) {

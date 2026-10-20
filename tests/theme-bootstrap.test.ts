@@ -20,8 +20,8 @@ function beforeFirstPaint(saved: string | null, blocked = false) {
 describe("theme before first paint", () => {
   it.each([
     ["dark", "dark", "#090b10"],
-    ["light", "light", "#f4eddf"],
-    ["pink", "light", "#fff0f5"],
+    ["light", "light", "#f7f8fa"],
+    ["pink", "light", "#f7f5f3"],
   ])("restores %s before the application loads", (theme, scheme, color) => {
     const { root, meta } = beforeFirstPaint(theme);
     expect(root.dataset.theme).toBe(theme);

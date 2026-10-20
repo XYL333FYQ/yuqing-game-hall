@@ -30,6 +30,7 @@ export function finishEntry(): void {
       x: innerWidth / 2,
       y: orbit.y + orbit.height / 2,
       colors: themeParticles(document.documentElement.dataset.theme),
+      theme: document.documentElement.dataset.theme,
       update: () => screen.remove(),
     });
     void effect.finished.then(cleanup);

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 175 600 450">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#6e9569"/>
+      <stop offset="100%" stop-color="#163731"/>
+    </radialGradient>
+  </defs>
+  <rect y="175" width="600" height="450" fill="url(#bg)"/>
+  <circle cx="300" cy="400" r="210" fill="#ffffff" fill-opacity="0.05"/>
+  <g transform="translate(86,314) rotate(-9 48 85)">
+    <rect x="0" y="8" width="98" height="173" rx="13" fill="#1e6456"/>
+    <rect width="98" height="163" rx="13" fill="#faf0d6" stroke="#dfd0b1" stroke-width="3"/>
+    <text x="49" y="94" text-anchor="middle" font-family="KaiTi,serif" font-size="45" fill="#b34332">一萬</text>
+  </g>
+  <g transform="translate(190,292) rotate(-3 48 85)">
+    <rect x="0" y="8" width="98" height="173" rx="13" fill="#1e6456"/>
+    <rect width="98" height="163" rx="13" fill="#faf0d6" stroke="#dfd0b1" stroke-width="3"/>
+    <text x="49" y="94" text-anchor="middle" font-family="KaiTi,serif" font-size="45" fill="#b34332">二萬</text>
+  </g>
+  <g transform="translate(294,292) rotate(3 48 85)">
+    <rect x="0" y="8" width="98" height="173" rx="13" fill="#1e6456"/>
+    <rect width="98" height="163" rx="13" fill="#faf0d6" stroke="#dfd0b1" stroke-width="3"/>
+    <text x="49" y="94" text-anchor="middle" font-family="KaiTi,serif" font-size="45" fill="#b34332">三萬</text>
+  </g>
+  <g transform="translate(398,314) rotate(9 48 85)">
+    <rect x="0" y="8" width="98" height="173" rx="13" fill="#1e6456"/>
+    <rect width="98" height="163" rx="13" fill="#faf0d6" stroke="#dfd0b1" stroke-width="3"/>
+    <text x="49" y="94" text-anchor="middle" font-family="KaiTi,serif" font-size="45" fill="#205643">東</text>
+  </g>
+</svg>
