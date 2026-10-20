@@ -2,8 +2,16 @@
 export type PageCleanup = () => void;
 
 export function navigate(path: string): void {
-  if (window.location.pathname === path) return;
-  window.history.pushState({}, "", path);
+  const url = new URL(path, window.location.origin);
+  if (url.pathname === window.location.pathname && url.search === window.location.search) {
+    if (url.hash !== window.location.hash) window.history.pushState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    const targetId = decodeURIComponent(url.hash.slice(1));
+    const hashTarget = targetId ? document.getElementById(targetId) : null;
+    if (hashTarget) hashTarget.scrollIntoView({ block: "start", behavior: "smooth" });
+    else if (!url.hash) window.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
+  window.history.pushState({}, "", `${url.pathname}${url.search}${url.hash}`);
   window.dispatchEvent(new PopStateEvent("popstate"));
 }
 

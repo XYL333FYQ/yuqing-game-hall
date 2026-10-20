@@ -634,10 +634,6 @@
     font-size: 12px;
   }
 
-  .arcade-shell .site-nav a:not(:first-child):not(:nth-child(2)) {
-    display: none;
-  }
-
   .arcade-shell .site-search {
     width: 110px;
     height: 34px;
@@ -768,12 +764,5 @@
   .arcade-shell .site-nav a {
     white-space: nowrap;
     padding: 6px 10px;
-  }
-
-  .arcade-shell .site-search,
-  .arcade-shell .site-search:focus-within {
-    width: 100%;
-    order: 3;
-    height: 36px;
   }
 }

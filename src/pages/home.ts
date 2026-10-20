@@ -187,6 +187,7 @@ export function renderHome(root: HTMLElement): () => void {
     pauseCarousel();
     carousel?.classList.remove("is-paused");
     if (!reduceMotion && featured.length > 1) carouselTimer = window.setInterval(() => {
+      if (document.documentElement.dataset.themeTransition === "portal") return;
       featuredIndex = (featuredIndex + 1) % featured.length;
       renderFeatured();
     }, 7000);
@@ -353,7 +354,11 @@ export function renderHome(root: HTMLElement): () => void {
   renderRecent();
   renderTrending();
   updateList();
-  if (!reduceMotion) trendingTimer = window.setInterval(() => { trendCycle += 1; renderTrending(); }, 18000);
+  if (!reduceMotion) trendingTimer = window.setInterval(() => {
+    if (document.documentElement.dataset.themeTransition === "portal") return;
+    trendCycle += 1;
+    renderTrending();
+  }, 18000);
   playCarousel();
 
   return () => {

@@ -3,6 +3,7 @@
 :root {
   --theme-canvas: #090b10;
   --theme-surface: #101422;
+  --theme-glass: rgba(13, 17, 27, .82);
   --theme-ink: #f8fafc;
   --theme-muted: #94a3b8;
   --theme-dim: #64748b;
@@ -13,6 +14,18 @@
   --theme-primary: #6366f1;
   --theme-primary-dark: #4f46e5;
   --theme-shadow: 0 16px 40px rgba(0, 0, 0, .35);
+  --theme-glow: rgba(99, 102, 241, .16);
+  --theme-hero-end: #0a0d16;
+  --theme-status-fg: #34d399;
+  --theme-status-bg: rgba(16, 185, 129, .12);
+  --theme-status-border: rgba(16, 185, 129, .28);
+  --theme-status-dot: #10b981;
+  --theme-badge-multi-fg: #fde68a;
+  --theme-badge-multi-bg: rgba(245, 158, 11, .12);
+  --theme-badge-multi-border: rgba(245, 158, 11, .3);
+  --theme-badge-mobile-fg: #67e8f9;
+  --theme-badge-mobile-bg: rgba(6, 182, 212, .12);
+  --theme-badge-mobile-border: rgba(6, 182, 212, .3);
 }
 
 html[data-theme="light"] {
@@ -32,6 +45,16 @@ html[data-theme="light"] {
   --theme-shadow: 0 14px 36px rgba(71, 60, 34, .09);
   --theme-glow: #e2eacb;
   --theme-hero-end: #eee9d9;
+  --theme-status-fg: #237151;
+  --theme-status-bg: #e8f3e8;
+  --theme-status-border: #c5dec8;
+  --theme-status-dot: #1f8a5c;
+  --theme-badge-multi-fg: #845014;
+  --theme-badge-multi-bg: #fbecd3;
+  --theme-badge-multi-border: #e8cc9e;
+  --theme-badge-mobile-fg: #256778;
+  --theme-badge-mobile-bg: #ddf0f3;
+  --theme-badge-mobile-border: #b4d7dd;
 }
 
 html[data-theme="pink"] {
@@ -46,11 +69,21 @@ html[data-theme="pink"] {
   --theme-soft: #fbe6ef;
   --theme-accent: #a93772;
   --theme-accent-fill: #f9d5e7;
-  --theme-primary: #b83f7d;
-  --theme-primary-dark: #953064;
+  --theme-primary: #d6458b;
+  --theme-primary-dark: #ad2f6c;
   --theme-shadow: 0 14px 36px rgba(144, 58, 104, .09);
   --theme-glow: #f8d1e5;
   --theme-hero-end: #f9e3f0;
+  --theme-status-fg: #a93772;
+  --theme-status-bg: #fce4f0;
+  --theme-status-border: #f3bfd8;
+  --theme-status-dot: #e14b95;
+  --theme-badge-multi-fg: #9c3b68;
+  --theme-badge-multi-bg: #fde2ef;
+  --theme-badge-multi-border: #f5bdd8;
+  --theme-badge-mobile-fg: #7b4296;
+  --theme-badge-mobile-bg: #f3e5fa;
+  --theme-badge-mobile-border: #dfc2f0;
 }
 
 html[data-theme],
@@ -141,6 +174,7 @@ html[data-theme="pink"] {
   --arcade-text-main: var(--theme-ink);
   --arcade-text-muted: var(--theme-muted);
   --arcade-text-dim: var(--theme-dim);
+  --arcade-accent: var(--theme-accent);
   --arcade-accent-cyan: var(--theme-accent);
   --arcade-accent-indigo: var(--theme-primary);
 }
@@ -161,7 +195,7 @@ html:is([data-theme="light"], [data-theme="pink"]) .arcade-shell::before {
 
 html:is([data-theme="light"], [data-theme="pink"]) :is(
   .arcade-shell .site-header, .arcade-filter-bar, .arcade-featured-controls,
-  .library-player-toolbar
+  .library-player-toolbar, .library-cinema-restore
 ) {
   background: var(--theme-glass);
   border-color: var(--theme-border);
@@ -170,9 +204,12 @@ html:is([data-theme="light"], [data-theme="pink"]) :is(
 
 html:is([data-theme="light"], [data-theme="pink"]) :is(
   .arcade-featured,
+  .arcade-recent-bar,
   .arcade-game-card,
+  .arcade-empty-state,
   .arcade-info-hero,
   .arcade-notice-card,
+  .arcade-notice-footer,
   .library-detail-hero,
   .library-facts > div,
   .library-screenshots,
@@ -197,6 +234,30 @@ html:is([data-theme="light"], [data-theme="pink"]) .arcade-featured-stage {
   box-shadow: var(--theme-shadow);
 }
 
+html:is([data-theme="light"], [data-theme="pink"]) .arcade-vision-card {
+  background: linear-gradient(135deg, var(--theme-accent-fill) 0%, var(--theme-surface) 58%, var(--theme-hero-end) 100%);
+  border-color: var(--theme-border);
+  box-shadow: var(--theme-shadow);
+  color: var(--theme-ink);
+}
+
+html:is([data-theme="light"], [data-theme="pink"]) .arcade-vision-card:hover {
+  border-color: var(--theme-accent);
+  box-shadow: var(--theme-shadow);
+}
+
+html:is([data-theme="light"], [data-theme="pink"]) .arcade-vision-icon {
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-primary-dark));
+  color: #fff;
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--theme-primary) 26%, transparent);
+}
+
+html:is([data-theme="light"], [data-theme="pink"]) .arcade-vision-card em {
+  color: var(--theme-accent);
+  background: var(--theme-accent-fill);
+  border-color: var(--theme-border);
+}
+
 html:is([data-theme="light"], [data-theme="pink"]) :is(
   .arcade-shell .site-brand,
   .arcade-shell .site-brand strong,
@@ -204,7 +265,10 @@ html:is([data-theme="light"], [data-theme="pink"]) :is(
   .arcade-game-card h3,
   .arcade-featured h1,
   .arcade-featured h2,
+  .arcade-vision-card b,
+  .arcade-empty-state strong,
   .arcade-info-hero h1,
+  .arcade-info-orbit b,
   .arcade-notice-card h3,
   .arcade-info-section-heading h2,
   .arcade-info-guide-grid h3,
@@ -223,7 +287,8 @@ html:is([data-theme="light"], [data-theme="pink"]) :is(
   .error-card h1,
   .arcade-shell .site-footer strong,
   .library-player-toolbar > a,
-  .library-player-toolbar strong
+  .library-player-toolbar strong,
+  .library-cinema-restore
 ) {
   color: var(--theme-ink);
 }
@@ -231,12 +296,16 @@ html:is([data-theme="light"], [data-theme="pink"]) :is(
 html:is([data-theme="light"], [data-theme="pink"]) :is(
   .arcade-featured-copy > p,
   .arcade-featured-counter,
+  .arcade-vision-card small,
+  .arcade-empty-state p,
   .arcade-info-hero-copy > p,
+  .arcade-info-actions .arcade-heading-link,
   .arcade-notice-card p,
   .arcade-notice-card li,
   .arcade-recent-label,
   .arcade-recent-pill,
-  .library-detail-copy > p,
+  .arcade-recent-pill small,
+  .library-detail-copy > p:not(.detail-index),
   .arcade-info-guide-grid p,
   .arcade-notice-footer,
   .arcade-info-section-heading p,
@@ -244,6 +313,7 @@ html:is([data-theme="light"], [data-theme="pink"]) :is(
   .library-related-copy p,
   .vision-heading > div > p,
   .lab-mode small,
+  .lab-mode em,
   .metric-note,
   .metrics-grid dt,
   .landmark-counts span,
@@ -272,6 +342,7 @@ html:is([data-theme="light"], [data-theme="pink"]) :is(
   .arcade-featured-controls > button,
   .arcade-tag,
   .arcade-detail-shell .back-link,
+  .back-link,
   .lab-mode,
   .lab-mode-icon,
   .metrics-grid > div,
@@ -280,7 +351,8 @@ html:is([data-theme="light"], [data-theme="pink"]) :is(
   .arcade-select,
   .arcade-sort-menu,
   .arcade-sort-menu button,
-  .vision-livebar
+  .vision-livebar,
+  .arcade-notice-card a
 ) {
   background: var(--theme-soft);
   border-color: var(--theme-border);
@@ -290,7 +362,9 @@ html:is([data-theme="light"], [data-theme="pink"]) :is(
 
 html:is([data-theme="light"], [data-theme="pink"]) :is(
   .arcade-shell .site-search input, .arcade-shell .site-nav a:hover,
-  .arcade-shell .site-nav a[aria-current="page"], .arcade-refresh:hover
+  .arcade-shell .site-nav a[aria-current="page"], .arcade-refresh:hover,
+  .arcade-info-actions .arcade-heading-link:hover, .back-link:hover,
+  .arcade-detail-shell .back-link:hover
 ) {
   color: var(--theme-ink);
 }
@@ -303,12 +377,27 @@ html:is([data-theme="light"], [data-theme="pink"]) .arcade-featured-copy h1 {
   text-shadow: none;
 }
 
-html:is([data-theme="light"], [data-theme="pink"]) .metrics-grid dd {
+html:is([data-theme="light"], [data-theme="pink"]) :is(
+  .metrics-grid dd,
+  .arcade-detail-shell .detail-index,
+  .library-highlights-heading .kicker,
+  .library-highlights-grid b,
+  .library-related-copy small,
+  .arcade-info-orbit span
+) {
   color: var(--theme-accent);
 }
 
-html:is([data-theme="light"], [data-theme="pink"]) .arcade-sort-menu button:hover {
+html:is([data-theme="light"], [data-theme="pink"]) :is(
+  .arcade-sort-menu button:hover,
+  .arcade-sort-menu button[aria-selected="true"],
+  .arcade-notice-card a:hover,
+  .library-player-toolbar > a:hover b,
+  .library-player-tools > button:not(.is-primary):hover,
+  .arcade-featured-controls > button:hover
+) {
   background: var(--theme-accent-fill);
+  border-color: var(--theme-accent);
   color: var(--theme-accent);
 }
 
@@ -329,36 +418,80 @@ html:is([data-theme="light"], [data-theme="pink"]) :is(.site-search-kbd, .site-s
 }
 
 html:is([data-theme="light"], [data-theme="pink"]) :is(
-  .arcade-shell .site-nav a[aria-current="page"], .arcade-filter-pills button.is-active,
-  .arcade-featured-kicker, .arcade-info-hero-copy .arcade-featured-kicker,
-  .arcade-random-btn, .tag, .arcade-recent-pill:hover
+  .arcade-shell .site-nav a[aria-current="page"],
+  .arcade-filter-pills button.is-active,
+  .arcade-filter-pills button[data-tag-pill].is-active,
+  .arcade-featured-kicker,
+  .arcade-info-hero-copy .arcade-featured-kicker,
+  .arcade-info-guide-grid article b,
+  .arcade-notice-license,
+  .arcade-empty-icon,
+  .desktop-gate-icon,
+  .desktop-gate .button,
+  .desktop-gate [data-copy-url],
+  .arcade-random-btn,
+  .arcade-detail-shell .tag,
+  .tag,
+  .arcade-recent-pill:hover,
+  .lab-mode:hover
 ) {
   color: var(--theme-accent);
   background: var(--theme-accent-fill);
   border-color: var(--theme-border);
+  box-shadow: none;
 }
 
 html:is([data-theme="light"], [data-theme="pink"]) :is(.arcade-filter-pills button.is-active em, .arcade-random-btn:hover) {
   color: var(--theme-accent);
+  background: var(--theme-surface);
 }
 
-html:is([data-theme="light"], [data-theme="pink"]) :is(.arcade-primary-action, .arcade-detail-shell .library-actions .button.primary, .library-player-tools button.is-primary) {
+html:is([data-theme="light"], [data-theme="pink"]) .arcade-recent-mark {
+  background: var(--theme-accent-fill);
+  color: var(--theme-accent);
+}
+
+html:is([data-theme="light"], [data-theme="pink"]) :is(
+  .arcade-primary-action,
+  .arcade-info-actions .arcade-primary-action,
+  .arcade-detail-shell .library-actions .button.primary,
+  .vision-control-card .button.primary.full,
+  .library-player-tools button.is-primary,
+  .button.primary
+) {
   background: linear-gradient(135deg, var(--theme-primary), var(--theme-primary-dark));
   color: #fff;
   border-color: transparent;
-  box-shadow: 0 8px 20px color-mix(in srgb, var(--theme-primary) 20%, transparent);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--theme-primary) 22%, transparent);
 }
 
 html:is([data-theme="light"], [data-theme="pink"]) :is(.arcade-secondary-action, .button.secondary) {
   background: var(--theme-surface);
   color: var(--theme-ink);
   border-color: var(--theme-border);
+  box-shadow: none;
 }
 
-html:is([data-theme="light"], [data-theme="pink"]) .arcade-game-card:hover .arcade-card-action {
+html:is([data-theme="light"], [data-theme="pink"]) :is(.arcade-secondary-action:hover, .button.secondary:hover:not(:disabled)) {
+  background: var(--theme-soft);
+  color: var(--theme-ink);
+  border-color: var(--theme-accent);
+}
+
+html:is([data-theme="light"], [data-theme="pink"]) :is(
+  .arcade-game-card:hover .arcade-card-action,
+  .desktop-gate .button:hover,
+  .desktop-gate [data-copy-url]:hover,
+  .library-cinema-restore:hover
+) {
   background: var(--theme-primary);
   border-color: transparent;
   color: #fff;
+}
+
+html:is([data-theme="light"], [data-theme="pink"]) :is(.arcade-game-card:hover, .library-related-card:hover, .arcade-notice-card:hover) {
+  border-color: color-mix(in srgb, var(--game-accent, var(--theme-accent)) 48%, var(--theme-border));
+  box-shadow: 0 18px 36px -10px color-mix(in srgb, var(--theme-ink) 14%, transparent);
 }
 
 html:is([data-theme="light"], [data-theme="pink"]) .arcade-game-card-trending .arcade-game-art::after {
@@ -369,38 +502,110 @@ html:is([data-theme="light"], [data-theme="pink"]) .arcade-game-card-library .ar
   background: linear-gradient(180deg, transparent 85%, var(--theme-surface) 100%);
 }
 
-html:is([data-theme="light"], [data-theme="pink"]) :is(.site-header-status, .privacy-chip, .vision-heading .kicker, .arcade-detail-shell .library-status, .lab-mode.selected) {
-  color: #237151;
-  background: #e8f3e8;
-  border-color: #c5dec8;
+html:is([data-theme="light"], [data-theme="pink"]) .badge-icon-pill {
+  background: var(--theme-glass);
+  border-color: var(--theme-border);
+  color: var(--theme-ink);
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--theme-ink) 12%, transparent);
+}
+
+html:is([data-theme="light"], [data-theme="pink"]) :is(
+  .site-header-status,
+  .privacy-chip,
+  .vision-heading .kicker,
+  .arcade-detail-shell .library-status,
+  .lab-mode.selected
+) {
+  color: var(--theme-status-fg);
+  background: var(--theme-status-bg);
+  border-color: var(--theme-status-border);
+  box-shadow: none;
+}
+
+html:is([data-theme="light"], [data-theme="pink"]) :is(.status-pulse-dot, .privacy-chip i) {
+  background: var(--theme-status-dot);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--theme-status-dot) 60%, transparent);
+}
+
+html:is([data-theme="light"], [data-theme="pink"]) .lab-mode.selected .lab-mode-icon {
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-primary-dark));
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-primary) 26%, transparent);
 }
 
 html:is([data-theme="light"], [data-theme="pink"]) .arcade-badge-pill.multi {
-  color: #845014;
-  background: #fbecd3;
-  border-color: #e8cc9e;
+  color: var(--theme-badge-multi-fg);
+  background: var(--theme-badge-multi-bg);
+  border-color: var(--theme-badge-multi-border);
 }
 
 html:is([data-theme="light"], [data-theme="pink"]) .arcade-badge-pill.mobile {
-  color: #256778;
-  background: #ddf0f3;
-  border-color: #b4d7dd;
+  color: var(--theme-badge-mobile-fg);
+  background: var(--theme-badge-mobile-bg);
+  border-color: var(--theme-badge-mobile-border);
 }
 
 html:is([data-theme="light"], [data-theme="pink"]) .arcade-featured-dots button {
   background: var(--theme-border);
 }
 
+html:is([data-theme="light"], [data-theme="pink"]) .arcade-featured-dots button:is([aria-current="true"], .is-active) {
+  background: color-mix(in srgb, var(--theme-accent) 22%, var(--theme-border));
+  box-shadow: none;
+}
+
+html:is([data-theme="light"], [data-theme="pink"]) .arcade-info-hero::before {
+  background: radial-gradient(circle, var(--theme-glow), transparent 70%);
+}
+
+html:is([data-theme="light"], [data-theme="pink"]) .arcade-info-hero h1 em {
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+html:is([data-theme="light"], [data-theme="pink"]) .arcade-info-orbit {
+  background: radial-gradient(circle, var(--theme-accent-fill) 0%, var(--theme-soft) 55%, transparent 72%);
+  border-color: var(--theme-border);
+  box-shadow: var(--theme-shadow);
+}
+
+html:is([data-theme="light"], [data-theme="pink"]) .arcade-info-orbit::before {
+  border-color: color-mix(in srgb, var(--theme-accent) 38%, transparent);
+}
+
+html:is([data-theme="light"], [data-theme="pink"]) .arcade-info-orbit i {
+  color: var(--theme-primary);
+}
+
+html:is([data-theme="light"], [data-theme="pink"]) .arcade-info-section-heading > span {
+  color: color-mix(in srgb, var(--theme-ink) 14%, transparent);
+}
+
 html:is([data-theme="light"], [data-theme="pink"]) :is(
   .arcade-shell .site-footer,
   .arcade-featured-counter,
-  .vision-heading
+  .arcade-recent-label,
+  .arcade-info-section-heading,
+  .vision-heading,
+  .arcade-detail-shell .library-screenshots img
 ) {
   border-color: var(--theme-border);
 }
 
-html:is([data-theme="light"], [data-theme="pink"]) .library-player {
+html:is([data-theme="light"], [data-theme="pink"]) .arcade-filter-divider {
+  background: var(--theme-border);
+}
+
+html:is([data-theme="light"], [data-theme="pink"]) :is(
+  body[data-page="library-game"],
+  .library-player,
+  .library-player-gate,
+  .route-loader
+) {
   background: var(--theme-canvas);
+  color: var(--theme-ink);
 }
 
 html:is([data-theme="light"], [data-theme="pink"]) ::-webkit-scrollbar-track {

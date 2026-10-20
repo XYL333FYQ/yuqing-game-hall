@@ -1,4 +1,5 @@
 import { installLinkNavigation, type PageCleanup } from "../platform/navigation";
+import { cancelPortal } from "../platform/portal-transition";
 import { siteFooter, siteHeader } from "../platform/shell";
 
 type PageLoader = (root: HTMLElement) => Promise<PageCleanup>;
@@ -25,6 +26,7 @@ export function startPortal(app: HTMLDivElement): Promise<void> {
         restoreScroll(path, revision, () => renderRevision);
       };
 
+      cancelPortal();
       const docWithTransition = document as Document & {
         startViewTransition?: (callback: () => Promise<void> | void) => { finished: Promise<void> };
       };

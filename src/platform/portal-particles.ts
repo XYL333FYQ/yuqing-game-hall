@@ -56,7 +56,7 @@ export function createPortalParticles(options: {
         { transform: `translate(-50%, -50%) scale(${radius / 150})`, opacity: 0 },
       ], { duration: duration - index * 120, delay: index * 120, easing: "cubic-bezier(0.4, 0, 0.16, 1)", fill: "both" }));
     });
-    void Promise.allSettled(animations.map((animation) => animation.finished)).then(cancel);
+    void Promise.allSettled(animations.map((animation) => animation.finished)).then(() => complete());
   };
   return { start, finished, cancel };
 }

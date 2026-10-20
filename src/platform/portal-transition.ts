@@ -26,8 +26,17 @@ export function revealPortal(options: {
   let transition: ViewTransition | undefined;
   let reveal: Animation | undefined;
   const particles = createPortalParticles({ x, y, colors, duration });
+  root.style.setProperty("--portal-x", `${x}px`);
+  root.style.setProperty("--portal-y", `${y}px`);
   root.dataset.themeTransition = "portal";
 
+  const clearRootTransition = (): void => {
+    delete root.dataset.themeTransition;
+    root.style.removeProperty("--portal-x");
+    root.style.removeProperty("--portal-y");
+  };
+
+  let effect!: PortalTransition;
   const cancel = (): void => {
     cancelled = true;
     transition?.skipTransition();
@@ -35,19 +44,29 @@ export function revealPortal(options: {
     particles.cancel();
     if (active === effect) {
       active = undefined;
-      delete root.dataset.themeTransition;
+      clearRootTransition();
     }
   };
-  const finished = Promise.resolve().then(async (): Promise<void> => {
+
+  if (typeof document.startViewTransition === "function") {
+    try {
+      transition = document.startViewTransition(() => {
+        if (!cancelled) update();
+      });
+    } catch {
+      transition = undefined;
+    }
+  }
+
+  const finished = (async (): Promise<void> => {
     try {
       if (cancelled) return;
-      if (!document.startViewTransition) {
+      if (!transition) {
         update();
         particles.start();
         await particles.finished;
         return;
       }
-      transition = document.startViewTransition(() => { if (!cancelled) update(); });
       await transition.ready;
       if (cancelled) return;
       const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
@@ -70,11 +89,11 @@ export function revealPortal(options: {
       particles.cancel();
       if (active === effect) {
         active = undefined;
-        delete root.dataset.themeTransition;
+        clearRootTransition();
       }
     }
-  });
-  const effect = { finished, cancel };
+  })();
+  effect = { finished, cancel };
   active = effect;
   return effect;
 }

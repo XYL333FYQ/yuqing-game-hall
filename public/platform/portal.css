@@ -1,4 +1,6 @@
 /* Loading and portal effects must paint before the application bundle arrives. */
+html { scrollbar-gutter: stable; }
+body { margin: 0; background-color: inherit; }
 .entry-screen {
   --entry-bg: #090b10;
   --entry-ink: #f8fafc;
@@ -55,6 +57,14 @@ html[data-theme="pink"] .entry-screen { --entry-bg: #fff0f5; --entry-ink: #492d4
 .portal-effect { position: fixed; inset: 0; z-index: 1100; overflow: clip; pointer-events: none; contain: strict; view-transition-name: portal-particles; }
 .portal-stars { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transform-origin: var(--portal-x) var(--portal-y); }
 .portal-wave { position: absolute; left: var(--portal-x); top: var(--portal-y); width: 300px; height: 300px; border: 1.5px solid var(--portal-accent); border-radius: 50%; box-shadow: 0 0 20px color-mix(in srgb, var(--portal-accent) 20%, transparent), 0 0 0 6px color-mix(in srgb, var(--portal-accent) 5%, transparent); opacity: 0; }
+html[data-theme-transition="portal"] #app *,
+html[data-theme-transition="portal"] #app *::before,
+html[data-theme-transition="portal"] #app *::after {
+  transition: none !important;
+  animation: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
 html[data-theme-transition="portal"]::view-transition { pointer-events: none; }
 html[data-theme-transition="portal"]::view-transition-group(root),
 html[data-theme-transition="portal"]::view-transition-group(portal-particles) { animation: none; }
@@ -62,7 +72,10 @@ html[data-theme-transition="portal"]::view-transition-old(root),
 html[data-theme-transition="portal"]::view-transition-new(root),
 html[data-theme-transition="portal"]::view-transition-new(portal-particles) { animation: none; mix-blend-mode: normal; }
 html[data-theme-transition="portal"]::view-transition-old(root) { z-index: 1; }
-html[data-theme-transition="portal"]::view-transition-new(root) { z-index: 2; }
+html[data-theme-transition="portal"]::view-transition-new(root) {
+  z-index: 2;
+  clip-path: circle(0px at var(--portal-x, 50%) var(--portal-y, 50%));
+}
 html[data-theme-transition="portal"]::view-transition-group(portal-particles) { z-index: 3; }
 html[data-theme-transition="portal"]::view-transition-old(portal-particles) { display: none; }
 @keyframes entry-orbit { to { transform: rotate(360deg); } }

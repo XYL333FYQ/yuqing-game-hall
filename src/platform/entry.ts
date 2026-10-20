@@ -1,4 +1,5 @@
 import { revealPortal, type PortalTransition } from "./portal-transition";
+import { themeParticles } from "./theme";
 
 /** Allow the opening to read, then travel through its center into the ready page. */
 export function finishEntry(): void {
@@ -28,8 +29,7 @@ export function finishEntry(): void {
     effect = revealPortal({
       x: innerWidth / 2,
       y: orbit.y + orbit.height / 2,
-      colors: document.documentElement.dataset.theme === "pink"
-        ? ["#f472b6", "#c4b5fd", "#fff1f8"] : ["#8ca9dc", "#67d6eb", "#e0e7ff"],
+      colors: themeParticles(document.documentElement.dataset.theme),
       update: () => screen.remove(),
     });
     void effect.finished.then(cleanup);
