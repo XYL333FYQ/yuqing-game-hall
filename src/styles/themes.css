@@ -244,30 +244,6 @@ html[data-theme="light"] .arcade-featured-art:hover .arcade-featured-art-frame {
   box-shadow: 0 30px 50px -14px rgba(36, 50, 70, .32), 0 0 36px color-mix(in srgb, var(--game-accent) 18%, transparent);
 }
 
-html:is([data-theme="light"], [data-theme="pink"]) .arcade-vision-card {
-  background: linear-gradient(135deg, var(--theme-accent-fill) 0%, var(--theme-surface) 58%, var(--theme-hero-end) 100%);
-  border-color: var(--theme-border);
-  box-shadow: var(--theme-shadow);
-  color: var(--theme-ink);
-}
-
-html:is([data-theme="light"], [data-theme="pink"]) .arcade-vision-card:hover {
-  border-color: var(--theme-accent);
-  box-shadow: var(--theme-shadow);
-}
-
-html:is([data-theme="light"], [data-theme="pink"]) .arcade-vision-icon {
-  background: linear-gradient(135deg, var(--theme-primary), var(--theme-primary-dark));
-  color: #fff;
-  box-shadow: 0 8px 20px color-mix(in srgb, var(--theme-primary) 26%, transparent);
-}
-
-html:is([data-theme="light"], [data-theme="pink"]) .arcade-vision-card em {
-  color: var(--theme-accent);
-  background: var(--theme-accent-fill);
-  border-color: var(--theme-border);
-}
-
 html:is([data-theme="light"], [data-theme="pink"]) :is(
   .arcade-shell .site-brand,
   .arcade-shell .site-brand strong,
@@ -275,7 +251,6 @@ html:is([data-theme="light"], [data-theme="pink"]) :is(
   .arcade-game-card h3,
   .arcade-featured h1,
   .arcade-featured h2,
-  .arcade-vision-card b,
   .arcade-empty-state strong,
   .arcade-info-hero h1,
   .arcade-info-orbit b,
@@ -306,7 +281,6 @@ html:is([data-theme="light"], [data-theme="pink"]) :is(
 html:is([data-theme="light"], [data-theme="pink"]) :is(
   .arcade-featured-copy > p,
   .arcade-featured-counter,
-  .arcade-vision-card small,
   .arcade-empty-state p,
   .arcade-info-hero-copy > p,
   .arcade-info-actions .arcade-heading-link,
@@ -341,7 +315,6 @@ html:is([data-theme="light"], [data-theme="pink"]) :is(
   .arcade-shell .site-search,
   .arcade-filter-pills button,
   .arcade-refresh,
-  .arcade-section-icon,
   .arcade-card-action,
   .arcade-recent-pill,
   .arcade-recent-label span,
@@ -510,13 +483,6 @@ html:is([data-theme="light"], [data-theme="pink"]) .arcade-game-card-trending .a
 
 html:is([data-theme="light"], [data-theme="pink"]) .arcade-game-card-library .arcade-game-art::after {
   background: linear-gradient(180deg, transparent 85%, var(--theme-surface) 100%);
-}
-
-html:is([data-theme="light"], [data-theme="pink"]) .badge-icon-pill {
-  background: var(--theme-glass);
-  border-color: var(--theme-border);
-  color: var(--theme-ink);
-  box-shadow: 0 4px 10px color-mix(in srgb, var(--theme-ink) 12%, transparent);
 }
 
 html:is([data-theme="light"], [data-theme="pink"]) :is(

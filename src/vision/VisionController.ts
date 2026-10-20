@@ -20,6 +20,8 @@ export class VisionController {
   private rafId?: number;
   private generation = 0;
   private lastTimestamp = -1;
+  private lastMediaTime = -1;
+  private cancelInitialization?: () => void;
   private detectionTimes: number[] = [];
   private cameraFrameTimes: number[] = [];
   private cameraWidth?: number;
@@ -44,21 +46,24 @@ export class VisionController {
   async start(mode: VisionMode): Promise<void> {
     const generation = ++this.generation;
     this.mode = mode;
+    this.delegate = "GPU";
     this.ready = false;
     this.processing = false;
     this.lastTimestamp = -1;
+    this.lastMediaTime = -1;
     this.detectionTimes = [];
     this.cameraFrameTimes = [];
     this.cancelFrameLoop();
     this.disposeWorker();
 
     try {
-      await this.ensureCamera();
+      await this.ensureCamera(generation);
       if (generation !== this.generation) return;
       await this.initializeWorker(mode, generation);
       if (generation !== this.generation) return;
       this.scheduleFrame();
     } catch (error) {
+      if (generation !== this.generation) return;
       const message = error instanceof Error ? error.message : String(error);
       this.onStatus({ phase: "error", message });
       throw error;
@@ -86,13 +91,13 @@ export class VisionController {
     return this.mode;
   }
 
-  private async ensureCamera(): Promise<void> {
+  private async ensureCamera(generation: number): Promise<void> {
     if (this.stream?.active) return;
     this.onStatus({ phase: "camera", message: "正在启动摄像头…" });
     if (!navigator.mediaDevices?.getUserMedia) throw new Error("浏览器不支持摄像头访问。");
 
     try {
-      this.stream = await navigator.mediaDevices.getUserMedia({
+      const stream = await navigator.mediaDevices.getUserMedia({
         audio: false,
         video: {
           facingMode: "user",
@@ -101,6 +106,11 @@ export class VisionController {
           frameRate: { ideal: 30, max: 60 },
         },
       });
+      if (generation !== this.generation) {
+        for (const track of stream.getTracks()) track.stop();
+        return;
+      }
+      this.stream = stream;
     } catch (error) {
       if (error instanceof DOMException && error.name === "NotAllowedError") {
         throw new Error("摄像头权限被拒绝。请在浏览器地址栏允许摄像头后重试。");
@@ -114,6 +124,7 @@ export class VisionController {
     this.video.muted = true;
     this.video.playsInline = true;
     await this.video.play();
+    if (generation !== this.generation) return;
     const settings = this.stream.getVideoTracks()[0]?.getSettings();
     this.cameraWidth = settings?.width;
     this.cameraHeight = settings?.height;
@@ -128,6 +139,10 @@ export class VisionController {
 
     await new Promise<void>((resolve, reject) => {
       const timeout = window.setTimeout(() => reject(new Error("视觉模型初始化超时，请刷新后重试。")), 45_000);
+      this.cancelInitialization = () => {
+        window.clearTimeout(timeout);
+        resolve();
+      };
 
       worker.onmessage = (event: MessageEvent<Record<string, unknown>>) => {
         if (generation !== this.generation) return;
@@ -136,6 +151,7 @@ export class VisionController {
 
         if (type === "INIT_DONE") {
           window.clearTimeout(timeout);
+          this.cancelInitialization = undefined;
           this.ready = true;
           this.backend = mode === "hands" ? "hand-landmarker" : "holistic";
           this.onStatus({
@@ -164,6 +180,7 @@ export class VisionController {
           console.warn("视觉帧处理失败:", String(data.error ?? "未知错误"));
         } else if (type === "ERROR") {
           window.clearTimeout(timeout);
+          this.cancelInitialization = undefined;
           const message = String(data.error ?? "视觉模型初始化失败");
           reject(new Error(message));
         }
@@ -171,6 +188,7 @@ export class VisionController {
 
       worker.onerror = (event) => {
         window.clearTimeout(timeout);
+        this.cancelInitialization = undefined;
         reject(new Error(event.message || "视觉 Worker 启动失败"));
       };
 
@@ -216,7 +234,11 @@ export class VisionController {
 
   private async captureFrame(cameraTimestamp: number): Promise<void> {
     if (!this.ready || !this.worker || this.processing || this.video.readyState < 2) return;
+    if (this.video.currentTime === this.lastMediaTime) return;
+    const generation = this.generation;
+    const worker = this.worker;
     this.processing = true;
+    this.lastMediaTime = this.video.currentTime;
 
     try {
       let bitmap: ImageBitmap;
@@ -231,11 +253,16 @@ export class VisionController {
         bitmap = await createImageBitmap(this.captureCanvas);
       }
 
+      // Bitmap creation is asynchronous: stop/switch may have replaced the worker.
+      if (generation !== this.generation || worker !== this.worker || !this.ready) {
+        bitmap.close();
+        return;
+      }
       const timestamp = cameraTimestamp > this.lastTimestamp ? cameraTimestamp : this.lastTimestamp + 1;
       this.lastTimestamp = timestamp;
-      this.worker.postMessage({ type: "DETECT_VIDEO", bitmap, timestampMs: timestamp }, [bitmap]);
+      worker.postMessage({ type: "DETECT_VIDEO", bitmap, timestampMs: timestamp }, [bitmap]);
     } catch {
-      this.processing = false;
+      if (generation === this.generation) this.processing = false;
     }
   }
 
@@ -259,6 +286,9 @@ export class VisionController {
       backend: this.backend,
       delegate: this.delegate,
     });
+    // If a newer camera frame arrived during inference, use it now instead of
+    // waiting up to another camera interval. Never queue or reprocess old frames.
+    void this.captureFrame(performance.now());
   }
 
   private recordCameraFrame(now: number): void {
@@ -300,6 +330,10 @@ export class VisionController {
   }
 
   private disposeWorker(): void {
+    this.ready = false;
+    this.processing = false;
+    this.cancelInitialization?.();
+    this.cancelInitialization = undefined;
     if (!this.worker) return;
     this.worker.postMessage({ type: "CLEANUP" });
     this.worker.terminate();

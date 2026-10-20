@@ -58,6 +58,7 @@ src/styles/index.css       唯一样式入口
   home.css / library.css   首页与游戏介绍
   player.css / vision.css  游玩外壳与体感实验室
   about.css / themes.css   关于页面与主题色
+  atmosphere.css           各主题材质与游戏画廊的视觉表现
   motion.css               页面微动效与减少动态效果偏好
 public/platform/           需要在应用启动前直接加载的公共运行资源
   theme-init.js            首次绘制前恢复主题，兼容严格 CSP
@@ -132,7 +133,17 @@ iframe 负责隔离每款游戏的页面环境：
 
 Cloudflare Pages 不承载 Node、Bun、Go、Colyseus 或常驻 WebSocket 进程。`server-games/` 中的内容不进入静态构建。
 
-果切后端是本仓库当前可直接部署的实现：
+当前维护五个 Node 服务，另有 coturn 负责穿透中继：
+
+| 服务目录 | 职责 | 默认端口 |
+| --- | --- | --- |
+| `fruit-party/` | 果切权威房间与比分 | 8790 |
+| `sanctuarys-end/` | 庇护所状态与聊天中继 | 8787 |
+| `webrtc-gateway/` | PeerJS 信令与短期 TURN 凭据 | 9000 |
+| `card-room/` | 掼蛋、麻将房间与规则 | 8002 |
+| `gobang/` | 五子棋房间、回合与胜负 | 8792 |
+
+其中果切后端的协议入口如下：
 
 ```text
 server-games/fruit-party/src/server.ts
@@ -220,7 +231,7 @@ Cloudflare Pages 部署命令只上传 `dist/`：
 corepack pnpm deploy:cloudflare
 ```
 
-VPS 使用两个服务各自的 Dockerfile 或 `docker-compose.example.yml`，与静态部署完全独立。根目录 `.dockerignore` 会把 `public/`、`dist/` 和上游源码排除在容器构建上下文之外，避免任何静态素材进入 VPS 镜像。部署动作、账号登录、DNS 和证书不由项目构建自动执行。
+VPS 使用各服务自己的 Dockerfile 或 `docker-compose.example.yml`，与静态部署完全独立。根目录 `.dockerignore` 会把 `public/`、`dist/` 和上游源码排除在容器构建上下文之外，避免任何静态素材进入 VPS 镜像。部署动作、账号登录、DNS 和证书不由项目构建自动执行。
 
 ## 10. 结构守卫
 
@@ -247,3 +258,13 @@ VPS 使用两个服务各自的 Dockerfile 或 `docker-compose.example.yml`，�
 ```
 
 新增普通静态游戏时，不修改首页、通用详情页或播放器。只有游戏本身确实需要独特能力时，才新增它自己的构建或服务器代码。
+
+## 12. 维护资料与本地产物
+
+- `docs/games/`：游戏接入批次、来源与联机部署说明；统一从 `docs/README.md` 进入。
+- `docs/maintenance/`：已执行的跨模块修复、清理依据与验证边界。
+- `tests/`：大厅与跨模块回归；游戏和后端自身的测试留在所属模块中，由根目录命令串联。
+- `output/`：被 Git 忽略的本地验收材料和历史辅助脚本，不是应用或构建输入。
+- `licenses/` 和根目录许可/审计文档：维护源；`public/legal/` 为构建同步后的发布副本，不单独编辑。
+
+清理只移除确认可重建的工具缓存、重复基线和测试临时文件。独有脚本、文档引用的证据、上游仓库、依赖锁文件、私有配置和 Wrangler 持久状态应保留；不要对忽略目录执行无差别清空。

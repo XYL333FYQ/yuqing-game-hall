@@ -42,8 +42,8 @@ for game in json.loads((HERE / 'SOURCES.json').read_text(encoding='utf-8')):
         for file in sorted(HERE.rglob('*')):
             if file.is_file() and file.suffix != '.pyc':
                 archive.write(file, 'adaptations/' + file.relative_to(HERE).as_posix())
-        for name in ['COLLECTION12_GAMES.md','THIRD_PARTY_NOTICES.md']:
-            archive.write(ROOT / name, name)
+        archive.write(ROOT / 'docs/games/collection12-games.md', 'COLLECTION12_GAMES.md')
+        archive.write(ROOT / 'THIRD_PARTY_NOTICES.md', 'THIRD_PARTY_NOTICES.md')
         archive.writestr('BUILD.md', f"""# {game['title']}
 
 Upstream: https://github.com/{game['repo']}

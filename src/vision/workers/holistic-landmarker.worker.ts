@@ -61,7 +61,7 @@ class HolisticLandmarkerWorker extends BaseWorker<HolisticLandmarker> {
         const result = this.taskInstance.detect(rest.bitmap);
         self.postMessage({
           type: 'DETECT_RESULT',
-          result,
+          result: this.previewResult(result),
           mode: 'IMAGE',
           inferenceTime: performance.now() - startTimeMs,
         });
@@ -74,13 +74,17 @@ class HolisticLandmarkerWorker extends BaseWorker<HolisticLandmarker> {
         const result = this.taskInstance.detectForVideo(rest.bitmap, rest.timestampMs);
         self.postMessage({
           type: 'DETECT_RESULT',
-          result,
+          result: this.previewResult(result),
           mode: 'VIDEO',
           inferenceTime: performance.now() - startTimeMs,
           timestampMs: rest.timestampMs,
         });
       } catch (e) {
         console.warn('Video detection error', e);
+        self.postMessage({
+          type: 'DETECT_ERROR',
+          error: e instanceof Error ? e.message : String(e),
+        });
       } finally {
         rest.bitmap?.close?.();
       }
@@ -88,6 +92,15 @@ class HolisticLandmarkerWorker extends BaseWorker<HolisticLandmarker> {
       this.taskInstance?.close();
       this.taskInstance = undefined;
     }
+  }
+
+  private previewResult(result: ReturnType<HolisticLandmarker['detect']>) {
+    return {
+      leftHandLandmarks: result.leftHandLandmarks,
+      rightHandLandmarks: result.rightHandLandmarks,
+      poseLandmarks: result.poseLandmarks,
+      faceLandmarks: result.faceLandmarks,
+    };
   }
 }
 

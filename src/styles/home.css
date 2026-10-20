@@ -306,18 +306,6 @@
   gap: 14px;
 }
 
-.arcade-section-icon {
-  display: grid;
-  width: 42px;
-  height: 42px;
-  flex: 0 0 auto;
-  place-items: center;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  font-size: 20px;
-}
-
 .arcade-section-heading h2 {
   margin: 0;
   font-size: 24px;
@@ -426,12 +414,6 @@
   overflow: hidden;
 }
 
-.arcade-game-card-trending .arcade-card-meta {
-  color: var(--arcade-text-dim);
-  font-size: 11px;
-  font-weight: 600;
-}
-
 .arcade-game-card-trending h3 {
   margin: 4px 0;
   font-size: 15px;
@@ -452,11 +434,6 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.arcade-card-bottom {
-  gap: 6px;
-  padding-top: 8px;
 }
 
 .arcade-card-action {
@@ -685,41 +662,11 @@
   transform: scale(1.08) translateZ(0);
 }
 
-.arcade-card-badges {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 3;
-  display: flex;
-  gap: 5px;
-}
-
-.badge-icon-pill {
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
-  background: rgba(11, 14, 22, 0.86);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  font-size: 13px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-}
-
 .arcade-game-card-library .arcade-game-copy {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
   padding: 16px;
-}
-
-.arcade-card-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: var(--arcade-text-dim);
-  font-size: 11px;
-  font-weight: 600;
 }
 
 .arcade-game-card-library h3 {
@@ -739,14 +686,6 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.arcade-card-bottom {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: auto;
-  padding-top: 14px;
 }
 
 .arcade-art-fallback {
@@ -798,64 +737,6 @@
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.12em;
-}
-
-.arcade-vision-card {
-  display: grid;
-  grid-template-columns: 56px 1fr auto;
-  align-items: center;
-  gap: 20px;
-  margin-top: 36px;
-  padding: 22px 30px;
-  border-radius: 20px;
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.14) 0%, rgba(6, 182, 212, 0.08) 45%, rgba(18, 22, 34, 0.95) 100%), #0d121c;
-  border: 1px solid rgba(16, 185, 129, 0.28);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  color: #fff;
-}
-
-.arcade-vision-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(16, 185, 129, 0.45);
-  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.55), 0 0 30px rgba(16, 185, 129, 0.2);
-}
-
-.arcade-vision-icon {
-  display: grid;
-  place-items: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: #fff;
-  font-size: 26px;
-  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
-}
-
-.arcade-vision-card b {
-  font-size: 18px;
-  font-weight: 800;
-  color: #fff;
-  letter-spacing: -0.02em;
-}
-
-.arcade-vision-card small {
-  margin-top: 4px;
-  color: #a7f3d0;
-  font-size: 13px;
-  display: block;
-}
-
-.arcade-vision-card em {
-  font-style: normal;
-  font-weight: 800;
-  font-size: 14px;
-  color: #34d399;
-  padding: 8px 18px;
-  border-radius: 12px;
-  background: rgba(16, 185, 129, 0.15);
-  border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
 @media (min-width: 1440px) {
@@ -1026,10 +907,6 @@
 
   .arcade-game-card-library p {
     display: none;
-  }
-
-  .arcade-card-bottom {
-    margin-top: 8px;
   }
 
   .arcade-card-action {

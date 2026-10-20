@@ -47,4 +47,4 @@
 
 每款在 `/games/<id>/SOURCE.md` 保存原作、固定提交、改动与许可；`source.zip` 提供相应源码，尤其用于 GPL / MPL 游戏的源码分发。不要在部署时删掉这些文件。
 
-本次只完成本地接入与验证，未推送 GitHub 或部署到线上。验证记录见 [games/expansion/VERIFICATION.json](games/expansion/VERIFICATION.json)；这里只覆盖启动、中文显示和入门操作，不表示完整通关或所有设备已验证。
+本次只完成本地接入与验证，未推送 GitHub 或部署到线上。验证记录见 [games/expansion/VERIFICATION.json](../../games/expansion/VERIFICATION.json)；这里只覆盖启动、中文显示和入门操作，不表示完整通关或所有设备已验证。

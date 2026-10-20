@@ -25,7 +25,7 @@
     "check:games:types": "tsc -p tsconfig.games.json --noEmit",
     "pretest": "npm run games:catalog",
     "test": "npm run check:games:types && vitest run",
-    "test:all": "npm run test && npm run server:fruit:test && npm run server:sanctuary:test && npm run server:config:test && npm run server:board:test && npm run test:expansion",
+    "test:all": "npm run test && npm run server:fruit:test && npm run server:sanctuary:test && npm run server:webrtc:test && npm run server:webrtc:smoke && npm run server:config:test && npm run server:board:test && npm run test:expansion && npm run test:static-games",
     "preview": "vite preview --host 0.0.0.0",
     "preview:cloudflare": "npm run build && wrangler pages dev dist",
     "deploy:cloudflare": "npm run build && wrangler pages deploy dist --project-name yuqing-game-hall",
@@ -52,7 +52,8 @@
     "server:gobang:start": "pnpm --dir server-games/gobang start",
     "server:gobang:test": "pnpm --dir server-games/gobang test",
     "server:board:test": "npm run server:card:test && npm run server:gobang:test && node games/doudizhu/tests/engine.test.cjs",
-    "test:expansion": "node --test games/expansion/localization.test.mjs"
+    "test:expansion": "node --test games/expansion/localization.test.mjs",
+    "test:static-games": "node --test games/classics/runtime.test.mjs games/collection12/runtime.test.mjs"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^1.0.1",

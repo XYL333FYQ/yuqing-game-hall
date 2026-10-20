@@ -60,19 +60,27 @@ export class VisionOverlayRenderer {
     this.ctx.strokeStyle = color;
     this.ctx.lineWidth = width;
     this.ctx.lineCap = "round";
+    this.ctx.beginPath();
     for (const [startIndex, endIndex] of connections) {
       const start = landmarks[startIndex];
       const end = landmarks[endIndex];
       if (!start || !end || (start.visibility ?? 1) < 0.4 || (end.visibility ?? 1) < 0.4) continue;
-      this.ctx.beginPath();
       this.ctx.moveTo(start.x * this.canvas.width, start.y * this.canvas.height);
       this.ctx.lineTo(end.x * this.canvas.width, end.y * this.canvas.height);
-      this.ctx.stroke();
     }
+    this.ctx.stroke();
   }
 
   private drawPoints(landmarks: NormalizedLandmark[], color: string, radius: number): void {
-    for (const landmark of landmarks) this.drawPoint(landmark, color, radius);
+    this.ctx.fillStyle = color;
+    this.ctx.beginPath();
+    for (const landmark of landmarks) {
+      const x = landmark.x * this.canvas.width;
+      const y = landmark.y * this.canvas.height;
+      this.ctx.moveTo(x + radius, y);
+      this.ctx.arc(x, y, radius, 0, Math.PI * 2);
+    }
+    this.ctx.fill();
   }
 
   private drawPoint(landmark: NormalizedLandmark, color: string, radius: number): void {

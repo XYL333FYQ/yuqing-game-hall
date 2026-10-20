@@ -6,8 +6,9 @@
 // 曾经真的发生过：server-games/webrtc-gateway/server.js 整份变成 GBK，其中 4 行错误信息
 // 还丢了「。」和「–」这些字节。
 //
-// 检查方式是不依赖任何库的严格 UTF-8 校验（逐字节验证多字节序列），
+// 检查方式是 Node 内置的严格 UTF-8 校验（同时验证序列与 Unicode 码点范围），
 // 而不是用 Buffer.toString('utf8') —— 后者会把非法字节替换成 U+FFFD，容易看漏。
+import { isUtf8 } from "node:buffer";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -42,30 +43,6 @@ const BINARY_EXTENSIONS = new Set([
   ".db", ".sqlite", ".sqlite3", ".exe", ".dll", ".so", ".dylib", ".node",
   ".class", ".pyc", ".o", ".a", ".lib", ".jar",
 ]);
-
-/** 逐字节严格校验，不使用会替换非法序列的 Buffer.toString。 */
-function isStrictUtf8(buffer) {
-  let index = 0;
-  while (index < buffer.length) {
-    const byte = buffer[index];
-    if (byte <= 0x7f) {
-      index += 1;
-      continue;
-    }
-    let continuation;
-    if (byte >= 0xc2 && byte <= 0xdf) continuation = 1;
-    else if (byte >= 0xe0 && byte <= 0xef) continuation = 2;
-    else if (byte >= 0xf0 && byte <= 0xf4) continuation = 3;
-    else return false;
-    if (index + continuation >= buffer.length) return false;
-    for (let offset = 1; offset <= continuation; offset += 1) {
-      const next = buffer[index + offset];
-      if (next < 0x80 || next > 0xbf) return false;
-    }
-    index += continuation + 1;
-  }
-  return true;
-}
 
 const failures = [];
 const bomFiles = [];
@@ -105,7 +82,7 @@ function walk(directory) {
     }
     scanned += 1;
     const relative = path.relative(projectRoot, full).replaceAll("\\", "/");
-    if (!isStrictUtf8(buffer)) {
+    if (!isUtf8(buffer)) {
       failures.push(`${relative}（不是严格 UTF-8，${statSync(full).size} 字节）`);
       continue;
     }

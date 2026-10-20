@@ -23,21 +23,6 @@ export abstract class BaseWorker<T> {
   protected basePath = '/';
   protected isProcessing = false;
 
-  protected static async loadWasmModule(basePath: string, fileName: string): Promise<any> {
-    const url = `${basePath}/${fileName}`;
-
-    const module = await import(/* @vite-ignore */ url);
-    const ModuleFactory = module.default;
-
-    const wasmModule = await ModuleFactory({
-      print: (text: string) => console.log('[MediaPipe Debug]:', text),
-      printErr: (text: string) => console.error('[MediaPipe Error]:', text),
-      custom_dbg: (text: string) => console.log('[MediaPipe Debug]:', text),
-    });
-
-    return wasmModule;
-  }
-
   constructor() {
     self.onmessage = this.handleMessage.bind(this);
   }
@@ -58,8 +43,7 @@ export abstract class BaseWorker<T> {
 
         await this.initializeBase(event.data);
 
-        const payload = this.getInitPayload();
-        self.postMessage({ type: 'INIT_DONE', ...payload });
+        self.postMessage({ type: 'INIT_DONE' });
       } else if (type === 'SET_OPTIONS') {
         const { type: _type, ...optionsToUpdate } = event.data;
         Object.assign(this.currentOptions, optionsToUpdate);
@@ -214,20 +198,6 @@ export abstract class BaseWorker<T> {
     return fileset;
   }
 
-  protected async getAudioFileset() {
-    const wasmPath = this.getWasmPath();
-    const fileset = await FilesetResolver.forAudioTasks(wasmPath, true);
-    fileset.wasmLoaderPath = `${fileset.wasmLoaderPath}?cb=${Date.now()}`; // Force reload
-    return fileset;
-  }
-
-  protected async getTextFileset() {
-    const wasmPath = this.getWasmPath();
-    const fileset = await FilesetResolver.forTextTasks(wasmPath, true);
-    fileset.wasmLoaderPath = `${fileset.wasmLoaderPath}?cb=${Date.now()}`; // Force reload
-    return fileset;
-  }
-
   protected updateOptions(_?: any): Promise<void> {
     return Promise.resolve();
   }
@@ -235,7 +205,4 @@ export abstract class BaseWorker<T> {
   protected abstract initializeTask(data?: any): Promise<void>;
   protected abstract handleCustomMessage(data: any): Promise<void>;
 
-  protected getInitPayload(): any {
-    return {};
-  }
 }

@@ -171,7 +171,7 @@ WEBRTC_GATEWAY_URL=http://127.0.0.1:9000 WEBRTC_GATEWAY_ORIGIN=https://games.exa
 
 ## 新增棋牌
 
-部署、好友 / 单人玩法、固定上游版本及换 VPS 操作见 [BOARD_GAMES.md](../BOARD_GAMES.md)。新增牌房 8002 和五子棋 8792 只监听 VPS 回环地址，使用独立 HTTPS/WSS 反向代理。前端新增 `CARD_ROOM_SERVICE_URL` 与 `GOBANG_SERVICE_URL`，仍由 GitHub Variables 管理。牌房为访客内存模式，重启会清空战绩及房间。
+部署、好友 / 单人玩法、固定上游版本及换 VPS 操作见 [棋牌与 VPS](../docs/games/board-games.md)。新增牌房 8002 和五子棋 8792 只监听 VPS 回环地址，使用独立 HTTPS/WSS 反向代理。前端新增 `CARD_ROOM_SERVICE_URL` 与 `GOBANG_SERVICE_URL`，仍由 GitHub Variables 管理。牌房为访客内存模式，重启会清空战绩及房间。
 
 ```bash
 pnpm --dir server-games/card-room test

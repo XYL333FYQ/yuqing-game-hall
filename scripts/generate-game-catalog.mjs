@@ -198,6 +198,16 @@ export async function generateGameCatalog() {
   const sources = entries.map(({ source }) => `// - ${source}`).join("\n");
   const output = `// 此文件由 scripts/generate-game-catalog.mjs 生成，请修改对应 game.json。\n${sources}\nimport type { GameManifest } from "../platform/game-manifest";\n\nexport const GAME_MANIFESTS = ${JSON.stringify(manifestList, null, 2)} as const satisfies readonly GameManifest[];\n`;
   const outputPath = path.join(projectRoot, "src/generated/gameCatalog.ts");
+  let previous;
+  try {
+    previous = await readFile(outputPath, "utf8");
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+  if (previous === output) {
+    console.log(`游戏目录未变化：${entries.length} 款，保留现有生成文件。`);
+    return;
+  }
   await mkdir(path.dirname(outputPath), { recursive: true });
   await writeFile(outputPath, output, "utf8");
   console.log(`游戏目录已生成：${entries.length} 款，来源为 ${entries.length} 份 game.json。`);

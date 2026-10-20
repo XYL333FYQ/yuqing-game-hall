@@ -10,8 +10,8 @@
   "scripts": {
     "check": "node --check server.js && node --check tests/server.test.js && node --check tests/gateway.smoke.test.js",
     "start": "node server.js",
-    "test": "node --test --test-force-exit tests/server.test.js",
-    "test:smoke": "node --test --test-force-exit tests/gateway.smoke.test.js"
+    "test": "node --test tests/server.test.js",
+    "test:smoke": "node --test tests/gateway.smoke.test.js"
   },
   "dependencies": {
     "express": "5.2.1",

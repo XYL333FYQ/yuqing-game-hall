@@ -26,6 +26,7 @@ class Game {
     this.seq = 0;
     this.redealStreak = 0;
     this._t = null;
+    this._pumping = false;
   }
 
   emit(evName, data) {
@@ -93,13 +94,26 @@ class Game {
   }
 
   pump() {
-    if (this._t) { clearTimeout(this._t); this._t = null; }
-    const s = this.actorSeat();
-    if (s == null || !this.players[s].isAI) return;
-    const seq = this.seq;
-    const run = () => { if (this.seq === seq) this.aiStep(s); };
-    if (this.cfg.aiDelay <= 0) run();
-    else this._t = setTimeout(run, this.cfg.aiDelay + Math.random() * 700);
+    // Actions call pump again. Drain zero-delay turns in the outer call so
+    // synchronous simulations do not put an entire round on the call stack.
+    if (this._pumping) return;
+    this._pumping = true;
+    try {
+      while (true) {
+        if (this._t) { clearTimeout(this._t); this._t = null; }
+        const s = this.actorSeat();
+        if (s == null || !this.players[s].isAI) return;
+        const seq = this.seq;
+        if (this.cfg.aiDelay > 0) {
+          this._t = setTimeout(() => { if (this.seq === seq) this.aiStep(s); }, this.cfg.aiDelay + Math.random() * 700);
+          return;
+        }
+        this.aiStep(s);
+        if (this.seq === seq) return;
+      }
+    } finally {
+      this._pumping = false;
+    }
   }
 
   aiStep(seat) {

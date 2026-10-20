@@ -16,6 +16,7 @@
 - `/`：游戏厅首页
 - `/library/<id>`：游戏介绍页
 - `/play/<id>`：平台播放器页面
+- `/vision-lab`：浏览器本地体感识别实验室
 - `/games/<id>/<entry>.html`：游戏自己的静态入口（非平台路由）
 
 ---
@@ -84,7 +85,7 @@ corepack pnpm server:fruit:dev
 4. 比对本地与 VPS 的 `sha256`，确认落盘内容一致；
 5. `docker compose pull` / `up -d`，然后做健康检查与协议 smoke test。
 
-会起来四件事：果切房间服务、庇护所中继、WebRTC gateway（PeerJS 信令 + 签发短期 TURN 凭据）、coturn（自建 STUN + TURN）。
+部署包含六个组件：果切房间服务、庇护所中继、WebRTC gateway（PeerJS 信令与短期 TURN 凭据）、coturn、掼蛋/麻将牌房和五子棋房间。
 
 本地想跑一遍示例（仅用于调试，正式环境请走 Actions）：
 
@@ -106,7 +107,7 @@ corepack pnpm server:config:test          # .env 生成与 Cloudflare 同步逻�
 
 ---
 
-新增棋牌及换 VPS 的操作说明：[BOARD_GAMES.md](BOARD_GAMES.md)。
+新增棋牌及换 VPS 的操作说明：[棋牌与 VPS](docs/games/board-games.md)。
 
 ## 部署配置清单
 
@@ -199,11 +200,11 @@ corepack pnpm build:fruit-party
 # 类型、Manifest、静态入口、边界与文本编码检查（含五个 VPS 服务的语法检查）
 corepack pnpm check
 
-# 平台/游戏逻辑测试 + 果切服务测试 + 庇护所中继协议 smoke test
+# 平台、游戏规则、五个后端及 WebRTC 协议的完整回归
 corepack pnpm test:all
 
-# WebRTC gateway 的协议 smoke test（单独跑，因为要占用端口）
-corepack pnpm server:webrtc:test
+# 只排查 WebRTC gateway 时，可单独运行协议检查
+corepack pnpm server:webrtc:smoke
 
 # 构建平台并生成 dist/
 corepack pnpm build
@@ -248,6 +249,10 @@ writeFileSync(file, text, { encoding: "utf8" });
 - `games/`：自维护游戏开发源码
 - `server-games/`：仅部署到 VPS 的联机后端服务
 - `external-games/`：第三方服务器游戏资料（构建时读入）
+- `functions/`：Cloudflare Pages 公开运行时配置入口
+- `scripts/` / `tests/`：构建、结构守卫与平台回归测试
+- `docs/`：游戏批次、设计与维护记录
+- `licenses/`：许可证源文件；`public/legal/` 是发布副本
 - `dist/`：构建产物（用于 Cloudflare Pages）
 
 请注意：不要把密钥、私有配置、服务端源码放进 `public/`。
@@ -286,6 +291,8 @@ writeFileSync(file, text, { encoding: "utf8" });
 
 ## 新增中文游戏
 
-首批接入 20 款经营、动作、卡牌、解谜与塔防游戏，说明见 [NEW_GAMES.md](NEW_GAMES.md)。第二批再接入 10 款完整经典玩法，来源、玩法和验收见 [CLASSIC_GAMES.md](CLASSIC_GAMES.md)。大厅现展示 44 款游戏（45 份清单，含一个原有不可用条目）。两批都是独立静态运行包，不需要新增 VPS 后端，主要菜单和关键规则提供中文。
+批次来源、玩法和验收记录集中在 [游戏文档](docs/README.md)：[首批 20 款](docs/games/new-games.md)、[经典 10 款](docs/games/classic-games.md)、[追加 12 款](docs/games/collection12-games.md)。这些是独立静态运行包，不需要新增 VPS 后端。
 
-新增游戏：第一批 10 款见 [CLASSIC_GAMES.md](CLASSIC_GAMES.md)，追加 12 款见 [COLLECTION12_GAMES.md](COLLECTION12_GAMES.md)。当前 56 款可用游戏，57 份清单；新增游戏自动进入精选与热门候选池。
+当前目录由各游戏的 `game.json` 自动生成，新增可用游戏会进入精选与热门候选池；不在 README 重复维护总数。
+
+维护材料入口见 [docs/README.md](docs/README.md)。`output/` 仅存本地验收材料和历史辅助脚本，不作为开发或部署的隐含依赖。

@@ -38,7 +38,7 @@ for game in games:
         for file in sorted(HERE.rglob('*')):
             if file.is_file() and file.suffix != '.pyc':
                 archive.write(file, 'adaptations/' + file.relative_to(HERE).as_posix())
-        archive.write(ROOT / 'CLASSIC_GAMES.md', 'CLASSIC_GAMES.md')
+        archive.write(ROOT / 'docs/games/classic-games.md', 'CLASSIC_GAMES.md')
         archive.write(ROOT / 'THIRD_PARTY_NOTICES.md', 'THIRD_PARTY_NOTICES.md')
         archive.writestr('BUILD.md', f'''# {game['title']}
 

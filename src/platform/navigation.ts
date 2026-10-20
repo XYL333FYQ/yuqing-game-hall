@@ -1,11 +1,21 @@
 /** 页面卸载时清理事件、计时器、音频和 Canvas 循环的统一约定。 */
 export type PageCleanup = () => void;
 
+export function fragmentTargetId(hash: string): string {
+  const targetId = hash.slice(1);
+  try {
+    return decodeURIComponent(targetId);
+  } catch {
+    // A literal percent sign or malformed UTF-8 must not interrupt navigation.
+    return targetId;
+  }
+}
+
 export function navigate(path: string): void {
   const url = new URL(path, window.location.origin);
   if (url.pathname === window.location.pathname && url.search === window.location.search) {
     if (url.hash !== window.location.hash) window.history.pushState({}, "", `${url.pathname}${url.search}${url.hash}`);
-    const targetId = decodeURIComponent(url.hash.slice(1));
+    const targetId = fragmentTargetId(url.hash);
     const hashTarget = targetId ? document.getElementById(targetId) : null;
     if (hashTarget) hashTarget.scrollIntoView({ block: "start", behavior: "smooth" });
     else if (!url.hash) window.scrollTo({ top: 0, behavior: "smooth" });

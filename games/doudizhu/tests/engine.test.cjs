@@ -6,6 +6,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+require('./pump.test.cjs');
 const context = vm.createContext({ console, process });
 for (const file of ['cards.js', 'moves.js', 'ai.js', 'game.js']) {
   vm.runInContext(fs.readFileSync(path.resolve(__dirname, '../../../public/games/doudizhu/js', file), 'utf8'), context, { filename: file });

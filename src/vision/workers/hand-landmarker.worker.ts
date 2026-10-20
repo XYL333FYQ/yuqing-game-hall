@@ -87,7 +87,8 @@ class HandLandmarkerWorker extends BaseWorker<HandLandmarker> {
       self.postMessage({
         type: 'DETECT_RESULT',
         mode: requiredMode,
-        result: result,
+        // The preview consumes image landmarks only; avoid cloning world coordinates.
+        result: { landmarks: result.landmarks, handedness: result.handedness },
         inferenceTime: inferenceTime,
         timestampMs,
       });

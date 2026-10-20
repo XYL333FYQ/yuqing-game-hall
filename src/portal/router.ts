@@ -1,8 +1,9 @@
-import { installLinkNavigation, type PageCleanup } from "../platform/navigation";
+import { fragmentTargetId, installLinkNavigation, type PageCleanup } from "../platform/navigation";
 import { cancelPortal } from "../platform/portal-transition";
 import { siteFooter, siteHeader } from "../platform/shell";
 
-type PageLoader = (root: HTMLElement) => Promise<PageCleanup>;
+type PageRenderer = (root: HTMLElement) => PageCleanup;
+type PageLoader = () => Promise<PageRenderer>;
 
 export function startPortal(app: HTMLDivElement): Promise<void> {
   if ("scrollRestoration" in window.history) window.history.scrollRestoration = "manual";
@@ -21,7 +22,10 @@ export function startPortal(app: HTMLDivElement): Promise<void> {
       const loader = resolvePortalRoute(path);
       if (revision !== renderRevision) return;
       const applyPage = async (): Promise<void> => {
-        if (loader) cleanup = await loader(app);
+        if (revision !== renderRevision) return;
+        const renderPage = loader ? await loader() : undefined;
+        if (revision !== renderRevision) return;
+        if (renderPage) cleanup = renderPage(app);
         else renderNotFound(app);
         restoreScroll(path, revision, () => renderRevision);
       };
@@ -57,15 +61,21 @@ export function startPortal(app: HTMLDivElement): Promise<void> {
 }
 
 function resolvePortalRoute(path: string): PageLoader | undefined {
-  if (path === "/") return async (root) => (await import("../pages/home")).renderHome(root);
-  if (path === "/vision-lab") return async (root) => (await import("../pages/vision-lab")).renderVisionLab(root);
-  if (path === "/third-party-notices") return async (root) => (await import("../pages/third-party-notices")).renderThirdPartyNotices(root);
+  if (path === "/") return async () => (await import("../pages/home")).renderHome;
+  if (path === "/vision-lab") return async () => (await import("../pages/vision-lab")).renderVisionLab;
+  if (path === "/third-party-notices") return async () => (await import("../pages/third-party-notices")).renderThirdPartyNotices;
 
   const playMatch = path.match(/^\/play\/([^/]+)$/i);
-  if (playMatch) return async (root) => (await import("../pages/library-play")).renderLibraryPlay(root, playMatch[1]);
+  if (playMatch) return async () => {
+    const { renderLibraryPlay } = await import("../pages/library-play");
+    return (root) => renderLibraryPlay(root, playMatch[1]);
+  };
 
   const gameMatch = path.match(/^\/library\/([^/]+)$/i);
-  if (gameMatch) return async (root) => (await import("../pages/library-game")).renderLibraryGame(root, gameMatch[1]);
+  if (gameMatch) return async () => {
+    const { renderLibraryGame } = await import("../pages/library-game");
+    return (root) => renderLibraryGame(root, gameMatch[1]);
+  };
   return undefined;
 }
 
@@ -79,7 +89,7 @@ function restoreScroll(path: string, revision: number, currentRevision: () => nu
   if (path.startsWith("/play/")) return;
   const resetScroll = (): void => {
     if (revision !== currentRevision() || window.location.pathname !== path) return;
-    const targetId = decodeURIComponent(window.location.hash.slice(1));
+    const targetId = fragmentTargetId(window.location.hash);
     const hashTarget = targetId ? document.getElementById(targetId) : null;
     if (hashTarget) hashTarget.scrollIntoView({ block: "start" });
     else window.scrollTo(0, 0);

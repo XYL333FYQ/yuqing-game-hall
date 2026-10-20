@@ -2,12 +2,16 @@
 .claude/
 .omc/
 .playwright-cli/
+.playwright-mcp/
+.codex-remote-attachments/
+.workbuddy-ai/
 .wrangler/
 node_modules/
 **/node_modules/
 dist/
 **/dist/
 output/
+references/
 public/
 external-games/
 game-sources/

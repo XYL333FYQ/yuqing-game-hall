@@ -135,7 +135,7 @@ Der Koloss 上游自带的 27 个脚本校验器在当前归档提交与 Node 24
 
 ## 新增棋牌来源与部署边界（2026-10-05）
 
-斗地主、掼蛋、四人麻将与五子棋的固定源提交、许可、接入改动及玩法边界登记在 `BOARD_GAMES.md`。静态入口在 `public/games`，新增专用后端只在 `server-games/card-room` 与 `server-games/gobang`。没有采用来源不明的上游示例图，扑克 / 标识 / 封面为自绘 SVG。旧版 Layer 改用官方 MIT 3.5.1，Vue / jQuery / Socket.IO / PeerJS 的完整许可已补齐。
+斗地主、掼蛋、四人麻将与五子棋的固定源提交、许可、接入改动及玩法边界登记在 `docs/games/board-games.md`。静态入口在 `public/games`，新增专用后端只在 `server-games/card-room` 与 `server-games/gobang`。没有采用来源不明的上游示例图，扑克 / 标识 / 封面为自绘 SVG。旧版 Layer 改用官方 MIT 3.5.1，Vue / jQuery / Socket.IO / PeerJS 的完整许可已补齐。
 
 斗地主走现有自建 WebRTC 配置，不再访问公共 PeerJS 或原作公共 TURN API。掼蛋 / 麻将去掉远程字体和论坛默认认证，后端强制访客内存模式。五子棋使用 `/socket` 与运行时地址，验证玩家回合、合法落点和双方向连五。重启后没有持久化战绩或房间。
 

@@ -146,12 +146,12 @@ Kaetram Open 的自定义 OPL 明确限制 AI 相关用途，因此本项目不�
 | Socket.IO client 4.8.1 | https://github.com/socketio/socket.io | `licenses/SOCKET.IO-CLIENT-4.8.1-MIT.txt` |
 | PeerJS（复用现有 vendored 运行包） | https://github.com/peers/peerjs | `licenses/PEERJS-MIT.txt` |
 
-固定源版本与改动清单见 `BOARD_GAMES.md`。浏览器可访问 `/legal/THIRD_PARTY_NOTICES.md` 和 `/legal/licenses/` 中的对应文本。
+固定源版本与改动清单见 `docs/games/board-games.md`。浏览器可访问 `/legal/THIRD_PARTY_NOTICES.md` 和 `/legal/licenses/` 中的对应文本。
 
 
 ## 新增 20 款中文静态游戏（2026-10-05）
 
-固定来源与改动见 `NEW_GAMES.md`、`games/expansion/SOURCES.json`。以下各款保留上游完整许可证，并随站点提供 `/games/<id>/source.zip` 对应源码。共享中文适配与玩法说明使用本项目 MIT 许可，第三方游戏按各自许可分发。
+固定来源与改动见 `docs/games/new-games.md`、`games/expansion/SOURCES.json`。以下各款保留上游完整许可证，并随站点提供 `/games/<id>/source.zip` 对应源码。共享中文适配与玩法说明使用本项目 MIT 许可，第三方游戏按各自许可分发。
 
 | 游戏 / 路径 | 上游 | 代码许可 |
 | --- | --- | --- |
