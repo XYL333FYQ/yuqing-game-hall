@@ -75,6 +75,17 @@ export function renderVisionLab(root: HTMLElement): () => void {
     const dot = root.querySelector<HTMLElement>(".runtime-dot")!;
     dot.dataset.phase = status.phase;
     setText("[data-status]", status.message);
+    if (status.phase === "error") {
+      running = false;
+      overlay.clear();
+      stabilizer.reset();
+      resetMetrics();
+      placeholder.hidden = false;
+      stopButton.hidden = true;
+      startButton.disabled = false;
+      startButton.textContent = "重新尝试";
+      error.textContent = status.message;
+    }
     if (status.delegate) setText("[data-delegate]", status.delegate === "GPU" ? "GPU 加速" : "CPU 模式");
     // Keep the overlay at the recognition rate; text only needs four updates/second.
     if (status.inferenceMs !== undefined && performance.now() - lastMetricsUpdate < 250) return;

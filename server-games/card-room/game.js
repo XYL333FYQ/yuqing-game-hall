@@ -149,12 +149,16 @@ Object.assign(
     },
     //检查牌是否存在，防客户端作弊
     checkExist(cards, posId) {
+      var sourceCards = this.getCardsByPosId(posId);
+      if (!sourceCards) return false;
+      var remainingCards = sourceCards.slice(0);
       for (var i = 0; i < cards.length; i++) {
         var card = cards[i];
-        var index = this.getCardIndexByPosId(card, posId);
+        var index = this.getCardIndexByCards(card, remainingCards);
         if (index === -1) {
           return false;
         }
+        remainingCards.splice(index, 1);
       }
       return true;
     },

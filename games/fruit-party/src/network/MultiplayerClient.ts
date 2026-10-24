@@ -44,10 +44,12 @@ export class MultiplayerClient {
       player: this.credentials.playerId,
       token: this.credentials.token,
     });
+    let socket: WebSocket;
     try {
-      this.socket = new WebSocket(
+      socket = new WebSocket(
         multiplayerWebSocketUrl(`/api/rooms/${this.credentials.code}/socket?${query}`),
       );
+      this.socket = socket;
     } catch (error) {
       this.onConnection("offline");
       reportDiagnostic("service", "fail", "多人服务地址不可用");
@@ -57,13 +59,16 @@ export class MultiplayerClient {
       });
       return;
     }
-    this.socket.addEventListener("open", () => {
+    const isCurrent = (): boolean => !this.closed && this.socket === socket;
+    socket.addEventListener("open", () => {
+      if (!isCurrent()) return;
       this.reconnectStartedAt = 0;
       this.onConnection("online");
       this.startTimers();
       this.send({ type: "sync" });
     });
-    this.socket.addEventListener("message", (event) => {
+    socket.addEventListener("message", (event) => {
+      if (!isCurrent()) return;
       try {
         const message = JSON.parse(String(event.data)) as ServerMessage;
         if (message.type === "snapshot") {
@@ -74,8 +79,8 @@ export class MultiplayerClient {
         this.onMessage({ type: "error", message: "收到无法识别的房间消息。" });
       }
     });
-    this.socket.addEventListener("close", () => this.handleDisconnect());
-    this.socket.addEventListener("error", () => this.socket?.close());
+    socket.addEventListener("close", () => { if (isCurrent()) this.handleDisconnect(); });
+    socket.addEventListener("error", () => { if (isCurrent()) socket.close(); });
   }
 
   setReady(ready: boolean): void {

@@ -6,7 +6,7 @@ import {
 } from "../games/fruit-party/src/network/serviceConfig";
 import { isRoomCredentials, isValidRoomCode } from "../games/fruit-party/src/shared/protocol";
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
 
 describe("room API errors", () => {
   it("replaces a non-JSON backend response with a useful Chinese message", async () => {
@@ -23,7 +23,7 @@ describe("room API errors", () => {
 
   it("uses the configured service and returns valid room credentials", async () => {
     stubGameWindow("https://rooms.example/fruit-service");
-    const payload = { code: "ABC234", playerId: "player", token: "token", nickname: "玩家甲" };
+    const payload = { code: "ABC234", mode: "score90", playerId: "player", token: "token", nickname: "玩家甲" };
     const fetchMock = vi.fn(async () => new Response(JSON.stringify(payload), {
       status: 201,
       headers: { "content-type": "application/json" },
@@ -34,6 +34,25 @@ describe("room API errors", () => {
       "https://rooms.example/fruit-service/api/rooms",
       expect.objectContaining({ method: "POST" }),
     );
+  });
+
+  it("ends a stalled request so the room controls can become usable again", async () => {
+    vi.useFakeTimers();
+    stubGameWindow("http://127.0.0.1:8790");
+    vi.stubGlobal("fetch", vi.fn((_url: string, options: RequestInit) => new Promise((_resolve, reject) => {
+      options.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")));
+    })));
+    let failure: Error | undefined;
+    void roomRequest("/api/rooms", {}).catch(error => { failure = error; });
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(failure?.message).toContain("请求超时");
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it.each([null, {}, { code: "ABC234" }])("rejects incomplete successful credentials %j", async (payload) => {
+    stubGameWindow("http://127.0.0.1:8790");
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(payload), { status: 201, headers: { "content-type": "application/json" } })));
+    await expect(roomRequest("/api/rooms", {})).rejects.toThrow("房间数据不完整");
   });
 });
 

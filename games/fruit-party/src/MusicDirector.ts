@@ -94,6 +94,9 @@ export class MusicDirector {
     if ("preservesPitch" in element) element.preservesPitch = false;
     const next = { element, cue };
     this.current = next;
+    // Retain the old channel while play() is pending so another switch or
+    // destroy can still stop it before the cross-fade starts.
+    this.outgoing = previous;
 
     if (this.shouldPause()) {
       previous?.element.pause();

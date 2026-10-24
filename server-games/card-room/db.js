@@ -13,6 +13,7 @@
  * 启动时会自动建表（如果不存在）：积分表、<前缀>game_history、<前缀>site_stats、<前缀>site_game_stats
  */
 
+const { randomUUID } = require('node:crypto');
 const TABLE_PREFIX = process.env.DB_TABLE_PREFIX || 'pre_';
 const TABLES = {
   doudizhu: `${TABLE_PREFIX}doudizhu_score`,
@@ -28,6 +29,7 @@ const STAT_COLUMNS = ['page_views', 'socket_connections', 'game_starts', 'games_
 const GAME_STAT_COLUMNS = ['game_starts', 'games_completed', 'player_rounds'];
 const GAME_TYPES = Object.keys(TABLES);
 const memoryHistory = [];
+const memoryHistoryIds = new WeakMap();
 const memoryStats = {
   page_views: 0,
   socket_connections: 0,
@@ -46,7 +48,6 @@ GAME_TYPES.forEach(gameType => {
     updated_at: 0,
   };
 });
-let memoryHistorySeq = 1;
 let memoryStatsMeta = null;
 const siteStatsListeners = new Set();
 let siteStatsNotifyTimer = null;
@@ -314,7 +315,9 @@ function historySummary(record) {
 
 async function saveHistory(record) {
   const normalized = normalizeHistory(record, 0);
-  normalized.id = memoryHistorySeq++;
+  normalized.id = 'memory:' + randomUUID();
+  // Keep a listed temporary link valid after the insert assigns a database ID.
+  memoryHistoryIds.set(normalized, normalized.id);
   memoryHistory.unshift(normalized);
   if (memoryHistory.length > 200) memoryHistory.length = 200;
   if (!isReady()) return normalized.id;
@@ -327,7 +330,8 @@ async function saveHistory(record) {
         normalized.isPrivate ? 1 : 0, normalized.startedAt, normalized.endedAt,
         JSON.stringify(normalized.players), JSON.stringify(normalized.moves), JSON.stringify(normalized.result)]
     );
-    return ret && ret.insertId ? Number(ret.insertId) : normalized.id;
+    if (ret && ret.insertId) normalized.id = Number(ret.insertId);
+    return normalized.id;
   } catch (err) {
     console.error('[db] saveHistory 失败：', err && err.message);
     return normalized.id;
@@ -340,12 +344,16 @@ async function listHistory(options = {}) {
   const gameType = options.gameType && options.gameType !== 'all' ? String(options.gameType) : '';
   let records = memoryHistory.slice(0);
   if (isReady()) {
+    const temporaryRecords = records.filter(record => typeof record.id === 'string');
     try {
       const [rows] = await pool.query(
         `SELECT id, room_code, desk_id, game_type, game_label, is_private, started_at, ended_at, players_json, moves_json, result_json
          FROM \`${HISTORY_TABLE}\` ORDER BY ended_at DESC, id DESC LIMIT 500`
       );
-      records = rows.map(rowToHistory).filter(Boolean);
+      const persistedRecords = rows.map(rowToHistory).filter(Boolean);
+      const persistedIds = new Set(persistedRecords.map(record => record.id));
+      records = temporaryRecords.filter(record => !persistedIds.has(record.id)).concat(persistedRecords)
+        .sort((a, b) => b.endedAt - a.endedAt).slice(0, 500);
     } catch (err) {
       console.error('[db] listHistory 失败：', err && err.message);
     }
@@ -357,10 +365,11 @@ async function listHistory(options = {}) {
 }
 
 async function getHistory(id, viewer) {
+  const temporaryRecord = memoryHistory.find(item => memoryHistoryIds.get(item) === String(id)) || null;
   const target = Number(id);
-  if (!Number.isFinite(target) || target <= 0) return null;
-  let record = memoryHistory.find(item => Number(item.id) === target) || null;
-  if (isReady()) {
+  if (!temporaryRecord && (!Number.isFinite(target) || target <= 0)) return null;
+  let record = temporaryRecord || memoryHistory.find(item => Number(item.id) === target) || null;
+  if (!temporaryRecord && isReady()) {
     try {
       const [rows] = await pool.query(
         `SELECT id, room_code, desk_id, game_type, game_label, is_private, started_at, ended_at, players_json, moves_json, result_json

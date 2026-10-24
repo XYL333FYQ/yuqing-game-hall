@@ -75,14 +75,17 @@ KeyboardInputManager.prototype.listen = function () {
 
   // Respond to swipe events
   var touchStartClientX, touchStartClientY;
+  var touchStartValid = false;
   var gameContainer = document.getElementsByClassName("game-container")[0];
 
   gameContainer.addEventListener(this.eventTouchstart, function (event) {
     if ((!window.navigator.msPointerEnabled && event.touches.length > 1) ||
         event.targetTouches.length > 1) {
+      touchStartValid = false;
       return; // Ignore if touching with more than 1 finger
     }
 
+    touchStartValid = true;
     if (window.navigator.msPointerEnabled) {
       touchStartClientX = event.pageX;
       touchStartClientY = event.pageY;
@@ -99,10 +102,12 @@ KeyboardInputManager.prototype.listen = function () {
   });
 
   gameContainer.addEventListener(this.eventTouchend, function (event) {
-    if ((!window.navigator.msPointerEnabled && event.touches.length > 0) ||
+    if (!touchStartValid ||
+        (!window.navigator.msPointerEnabled && event.touches.length > 0) ||
         event.targetTouches.length > 0) {
       return; // Ignore if still touching with one or more fingers
     }
+    touchStartValid = false;
 
     var touchEndClientX, touchEndClientY;
 

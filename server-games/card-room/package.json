@@ -8,7 +8,7 @@
   "scripts": {
     "start": "node server.js",
     "check": "node --check server.js && node --check game.js && node --check guandan-game.js && node --check mahjong-game.js",
-    "test": "node test/ai.test.js && node test/history.test.js && node test/reconnect-live.test.js && node test/room-controls.test.js && node --test test/integration.test.cjs",
+    "test": "node test/ai.test.js && node test/history.test.js && node test/reconnect-live.test.js && node test/room-controls.test.js && node --test test/integration.test.cjs test/mahjong-claims.test.cjs test/db-history.test.cjs",
     "test:smoke": "node --test test/integration.test.cjs"
   },
   "dependencies": {

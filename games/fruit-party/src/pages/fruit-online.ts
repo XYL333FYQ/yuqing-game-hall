@@ -69,6 +69,7 @@ export function renderFruitOnline(root: HTMLElement): () => void {
     </div>`;
 
   let selectedMode: CompetitiveMode = "score90";
+  let disposed = false;
   const error = root.querySelector<HTMLElement>(".form-error")!;
   const clickHandler = async (event: MouseEvent): Promise<void> => {
     const modeButton = event.target instanceof Element ? event.target.closest<HTMLButtonElement>("[data-mode]") : null;
@@ -101,6 +102,7 @@ export function renderFruitOnline(root: HTMLElement): () => void {
         saveAndOpen(response);
       }
     } catch (reason) {
+      if (disposed) return;
       error.textContent = reason instanceof Error ? reason.message : "房间连接失败，请稍后重试。";
       actionButton.disabled = false;
       actionButton.textContent = actionButton.dataset.action === "create" ? "创建房间" : "加入房间";
@@ -119,6 +121,7 @@ export function renderFruitOnline(root: HTMLElement): () => void {
 
   const valueOf = (name: string): string => root.querySelector<HTMLInputElement>(`[name="${name}"]`)!.value.trim();
   const saveAndOpen = (response: CreateRoomResponse): void => {
+    if (disposed) return;
     try {
       localStorage.setItem("yuqing-nickname", response.nickname);
     } catch {
@@ -133,6 +136,7 @@ export function renderFruitOnline(root: HTMLElement): () => void {
   };
 
   return () => {
+    disposed = true;
     root.removeEventListener("click", clickHandler);
     root.removeEventListener("keydown", keyHandler);
   };

@@ -1,5 +1,6 @@
 """Publish preferred upstream source, build inputs and the exact adapted runtime."""
 import io
+import argparse
 import json
 from pathlib import Path
 import subprocess
@@ -8,6 +9,11 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
 games = json.loads((HERE / 'SOURCES.json').read_text(encoding='utf-8'))
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--game', choices=[game['id'] for game in games], help='Only rebuild this game source archive')
+options = parser.parse_args()
+if options.game:
+    games = [game for game in games if game['id'] == options.game]
 for game in games:
     checkout = ROOT / 'game-sources/upstream/classics' / game['folder']
     # Only the JavaScript edition is distributed, not the unrelated desktop,
@@ -54,7 +60,8 @@ upstream/ contains the preferred source at the recorded commit. Normal hall
 builds serve committed runtimes without rebuilding third-party programs.
 adaptations/ contains import-games.mjs, pinned build inputs and the source
 packager. See adaptations/README.md for rebuilding the two compiled games;
-prepare-builds.mjs selects Chinese by default for Minesweeper and replaces
+prepare-builds.mjs applies the editable Minesweeper App.jsx/i18n.js from
+adaptations/overrides/minesweeper/ (including Chinese defaults) and replaces
 obsolete node-sass for BreakLock. The original sources remain separate.
 For other games the readable runtime is also the editable adapted source.
 Chinese Chess originally uses GBK: import-games.mjs converts it to UTF-8.

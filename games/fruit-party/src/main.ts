@@ -6,8 +6,9 @@ import { renderFruitPlay } from "./pages/fruit-play";
 import { renderRoom } from "./pages/room";
 import { parseFruitPartyRoute } from "./router";
 
-const root = document.querySelector<HTMLDivElement>("#game-root");
-if (!root) throw new Error("游戏根节点不存在。");
+const gameRoot = document.querySelector<HTMLDivElement>("#game-root");
+if (!gameRoot) throw new Error("游戏根节点不存在。");
+const root = gameRoot;
 let cleanup = (): void => undefined;
 function route(): void {
   cleanup();
@@ -22,6 +23,7 @@ function route(): void {
   document.body.scrollTop = 0;
 }
 document.addEventListener("click", (event) => {
+  if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
   const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>("a[data-game-nav]") : null;
   if (!link) return;
   const url = new URL(link.href, window.location.href);

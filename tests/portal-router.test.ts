@@ -127,4 +127,36 @@ describe("portal navigation", () => {
     expect(scrollIntoView).toHaveBeenLastCalledWith({ block: "start" });
     expect(scrollTo).not.toHaveBeenCalled();
   });
+
+  it("shows the load error when a view-transition page callback fails", async () => {
+    documentStub.startViewTransition = (callback: () => Promise<void> | void) => {
+      const update = Promise.resolve().then(callback);
+      return { finished: update, updateCallbackDone: update, ready: update.then(() => {}) };
+    };
+    vi.doMock("../src/pages/home", () => ({ renderHome: () => {
+      throw new Error("route render failed");
+    } }));
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { startPortal } = await import("../src/portal/router");
+    await startPortal(app);
+    expect(app.innerHTML).toContain("页面没有顺利打开");
+    expect(app.innerHTML).toContain("route render failed");
+    expect(error).toHaveBeenCalledOnce();
+  });
+
+  it("keeps the rendered page when only the transition animation is skipped", async () => {
+    documentStub.startViewTransition = (callback: () => Promise<void> | void) => {
+      const update = Promise.resolve().then(callback);
+      return { finished: update, updateCallbackDone: update, ready: Promise.reject(new Error("animation skipped")) };
+    };
+    vi.doMock("../src/pages/home", () => ({ renderHome: (root: HTMLElement) => {
+      root.innerHTML = "home";
+      return () => {};
+    } }));
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { startPortal } = await import("../src/portal/router");
+    await startPortal(app);
+    expect(app.innerHTML).toBe("home");
+    expect(error).not.toHaveBeenCalled();
+  });
 });

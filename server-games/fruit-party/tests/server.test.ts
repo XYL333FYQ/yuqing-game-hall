@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import WebSocket from "ws";
+import { connect } from "node:net";
 import { createFruitPartyService, type FruitPartyService } from "../src/server";
 import type { CreateRoomResponse, RoomSnapshot } from "../../../games/fruit-party/src/shared/protocol";
 
@@ -10,6 +11,22 @@ afterEach(async () => {
 });
 
 describe("果切 VPS 多人服务", () => {
+  it("拒绝异常 URL 握手并继续提供服务", async () => {
+    const service = createFruitPartyService({ host: "127.0.0.1", port: 0, production: true, allowedOrigins: new Set(["https://games.example.com"]) });
+    services.push(service);
+    const port = await service.listen();
+    const response = await new Promise<string>((resolve, reject) => {
+      let body = "";
+      const socket = connect(port, "127.0.0.1", () => socket.write("GET /api/rooms/ABCDEF/socket HTTP/1.1\r\nHost: [\r\nOrigin: https://games.example.com\r\nConnection: Upgrade\r\nUpgrade: websocket\r\n\r\n"));
+      socket.setEncoding("utf8");
+      socket.on("data", chunk => { body += chunk; });
+      socket.on("error", reject);
+      socket.on("close", () => resolve(body));
+    });
+    expect(response).toContain("400 Bad Request");
+    expect((await fetch(`http://127.0.0.1:${port}/api/health`)).status).toBe(200);
+  });
+
   it("提供健康检查、建房、加入和 WebSocket 准备流程", async () => {
     const service = createFruitPartyService({
       host: "127.0.0.1",

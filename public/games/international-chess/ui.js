@@ -149,7 +149,8 @@ Chess.UI.prototype.updatePieces = function() {
  * Adds chessboard cell hover, and chess piece dragging and dropping capabilities to the chessboard
  */
 Chess.UI.prototype.updateMoves = function() {
-	var moves = this.chessPosition.getMoves();
+	var playing = this.chessPosition.getStatus() === Chess.Position.Status.NORMAL;
+	var moves = playing ? this.chessPosition.getMoves() : [];
 
 	$("#moves").html(
 		'<a href="#" id="undo" class="' + (this.chessPosition.canUndo() ? "can" : "cannot") + '">悔棋</a><br/>' +
@@ -163,6 +164,8 @@ Chess.UI.prototype.updateMoves = function() {
 			function(move, index) {
 				return '<a href="#" id="' + index + '">' + move.getString() + "</a><br/>";
 			}).join(""));
+
+	$("#moves a.cannot").attr({"aria-disabled": "true", "tabindex": "-1"});
 
 	$(Chess.UI.CHESSBOARD_PIECES_AND_SQUARES).removeClass("can-move");
 	moves.forEach(/** @param {!Chess.Move} move */ function(move) {
@@ -238,6 +241,7 @@ Chess.UI.prototype.updateMoves = function() {
 	});
 
 	$("#moves a").click(function() {
+		if ($(this).hasClass("cannot")) return false;
 		var id = $(this).attr("id");
 		if (id === "undo") {
 			ui.chessPosition.unmakeMove(); // computer (black) move
@@ -249,6 +253,7 @@ Chess.UI.prototype.updateMoves = function() {
 			ui.chessPosition.makeMove(moves[parseInt(id, 10)]);
 			ui.updateChessPosition();
 		}
+		return false;
 	});
 };
 
@@ -256,6 +261,7 @@ Chess.UI.prototype.updateMoves = function() {
  * @throws {Error}
  */
 Chess.UI.prototype.doComputerMove = function() {
+	if (this.chessPosition.getStatus() !== Chess.Position.Status.NORMAL) return;
 	$("#moves").html("");
 	var ui = this;
 	var dim = $("#dim");

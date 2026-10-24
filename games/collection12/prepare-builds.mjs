@@ -45,6 +45,23 @@ await esbuild.build({entryPoints:[path.join(non,'src/index.js')],outfile:path.jo
 let html=await read(path.join(non,'public/index.html'));html=html.replace(/%PUBLIC_URL%/g,'.').replace('</head>','<link rel="stylesheet" href="main.css"></head>').replace('</body>','<script defer src="main.js"></script></body>');await fs.writeFile(path.join(non,'hall-dist/index.html'),html);await fs.cp(path.join(non,'public/locales'),path.join(non,'hall-dist/locales'),{recursive:true});await fs.copyFile(path.join(non,'public/favicon.ico'),path.join(non,'hall-dist/favicon.ico'));
 
 const sol=path.join(base,'solitaire');await fs.mkdir(path.join(sol,'hall-dist'),{recursive:true});
+await edit(path.join(sol,'src/index.js'),'state.deal.pile.cards = state.deal.deal.cards;','state.deal.pile.cards = state.deal.deal.cards.slice().reverse();');
+await edit(path.join(sol,'src/index.js'),'function resetGame() {',`let gameRevision = 0;
+function resetGame() {
+    gameRevision++;
+    clearTimeout(moving);
+    clearTimeout(release);
+    for (const destination of state.moving.destinations) destination.el.classList.remove('finish-dest');
+    if (state.moving.element) {
+        state.moving.element.classList.remove('card--moving');
+        state.moving.element.style.left = '';
+        state.moving.element.style.top = '';
+    }
+    state.moving.capture = false;
+    state.moving.element = null;
+    state.moving.destinations = [];`);
+await edit(path.join(sol,'src/index.js'),'const releaseMove = event => {','const releaseMove = event => {\n    const revision = gameRevision;');
+await edit(path.join(sol,'src/index.js'),'requestAnimationFrame(() => {\n                dropCard(x, y);','requestAnimationFrame(() => {\n                if (revision !== gameRevision) return;\n                dropCard(x, y);');
 await esbuild.build({entryPoints:[path.join(sol,'src/index.js')],outfile:path.join(sol,'hall-dist/main.js'),bundle:true,minify:true,loader:{'.scss':'empty'},legalComments:'external'});
 await fs.writeFile(path.join(sol,'hall-dist/main.css'),sass.compile(path.join(sol,'src/index.scss')).css);
 html=(await read(path.join(sol,'src/index.html'))).replace('%CDN_URL%','').replace('New game','新游戏').replace(/Solitaire/g,'纸牌接龙').replace('</head>','<link rel="stylesheet" href="main.css"></head>');await fs.writeFile(path.join(sol,'hall-dist/index.html'),html);

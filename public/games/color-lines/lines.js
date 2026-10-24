@@ -287,16 +287,19 @@ var Lines = (function(){
 	function removeLines(lineSets){
 
 		blocked = true;
+		var scoreAdd = 0;
 
 		for(var k in lineSets){
 
-			var lines = lineSets[k],
-				scoreAdd = 0;
+			var lines = lineSets[k];
 
 			for(var i=0; i<lines.length; i++){
 				for(var j=0; j<lines[i].length; j++){
 					var x = lines[i][j][0],
 						y = lines[i][j][1];
+					if(grid[y][x] === 0){
+						continue;
+					}
 					var cell = getCell(x, y);
 
 					cell.classList.add('fadeout');

@@ -59,8 +59,19 @@ export function renderLibraryPlay(root: HTMLElement, slug: string): () => void {
   const loadingCopy = root.querySelector<HTMLElement>("[data-loading-copy]");
   const loadingActions = root.querySelector<HTMLElement>(".library-frame-actions");
   let loaded = false;
+  let slowTimer: number | undefined;
+  const startLoadingTimer = (): void => {
+    window.clearTimeout(slowTimer);
+    slowTimer = window.setTimeout(() => {
+      if (loaded) return;
+      if (loadingTitle) loadingTitle.textContent = "加载时间比预期更久";
+      if (loadingCopy) loadingCopy.textContent = "可以重新载入，或在独立页面打开以查看浏览器给出的错误。";
+      loadingActions?.removeAttribute("hidden");
+    }, 15000);
+  };
   const onLoad = (): void => {
     loaded = true;
+    window.clearTimeout(slowTimer);
     loading?.setAttribute("hidden", "");
   };
   const onFullscreen = (): void => { void frame?.requestFullscreen(); };
@@ -79,6 +90,7 @@ export function renderLibraryPlay(root: HTMLElement, slug: string): () => void {
     loadingActions?.setAttribute("hidden", "");
     if (loadingTitle) loadingTitle.textContent = `正在重新打开 ${game.title}`;
     if (loadingCopy) loadingCopy.textContent = "正在重新载入游戏…";
+    startLoadingTimer();
     frame.src = startPath ?? "about:blank";
   };
   const onReadyMessage = (event: MessageEvent): void => {
@@ -91,12 +103,7 @@ export function renderLibraryPlay(root: HTMLElement, slug: string): () => void {
   cinemaRestore?.addEventListener("click", onCinemaRestore);
   retryButtons.forEach((button) => button.addEventListener("click", onRetry));
   window.addEventListener("message", onReadyMessage);
-  const slowTimer = window.setTimeout(() => {
-    if (loaded) return;
-    if (loadingTitle) loadingTitle.textContent = "加载时间比预期更久";
-    if (loadingCopy) loadingCopy.textContent = "可以重新载入，或在独立页面打开以查看浏览器给出的错误。";
-    loadingActions?.removeAttribute("hidden");
-  }, 15000);
+  startLoadingTimer();
 
   return () => {
     window.clearTimeout(slowTimer);

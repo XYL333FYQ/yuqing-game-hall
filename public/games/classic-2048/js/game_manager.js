@@ -24,6 +24,7 @@ GameManager.prototype.restart = function () {
 GameManager.prototype.keepPlaying = function () {
   this.keepPlaying = true;
   this.actuator.continueGame(); // Clear the game won/lost message
+  this.actuate();
 };
 
 // Return true if the game is lost, or has won and the user hasn't kept playing

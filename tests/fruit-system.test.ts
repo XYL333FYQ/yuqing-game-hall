@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fruitRadiusForInstance, fruitTypeByName } from "../games/fruit-party/src/data/fruits";
 import { FruitSystem } from "../games/fruit-party/src/systems/FruitSystem";
-import { initialBombDelayForSeed } from "../games/fruit-party/src/FruitNinjaEngine";
+import { fastForwardScheduledState, initialBombDelayForSeed } from "../games/fruit-party/src/FruitNinjaEngine";
 import type { Fruit, FruitNinjaState } from "../games/fruit-party/src/types";
 
 function endlessState(): FruitNinjaState {
@@ -47,6 +47,30 @@ function endlessState(): FruitNinjaState {
     shake: 0,
   };
 }
+
+describe("联机开始时钟校准", () => {
+  it.each([100, 2_000])("比赛已开始 %i ms 时清除旧倒计时", (elapsedMs) => {
+    const state = endlessState();
+    state.mode = "score90";
+    state.elapsedMs = 0;
+    state.countdownTimer = 3_000;
+    state.rules.durationMs = 90_000;
+    fastForwardScheduledState(state, elapsedMs);
+    expect(state.countdownTimer).toBe(0);
+    expect(state.elapsedMs).toBe(elapsedMs > 350 ? elapsedMs : 0);
+  });
+
+  it("保留尚未开始的倒计时和本地无尽模式", () => {
+    const state = endlessState();
+    state.countdownTimer = 3_000;
+    fastForwardScheduledState(state, 2_000);
+    expect(state.countdownTimer).toBe(3_000);
+    state.mode = "score90";
+    state.elapsedMs = 0;
+    fastForwardScheduledState(state, 0);
+    expect(state.countdownTimer).toBe(3_000);
+  });
+});
 
 function activeFruit(
   id: number,

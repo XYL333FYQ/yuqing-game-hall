@@ -41,7 +41,13 @@ httpServer.on("upgrade", (request, socket, head) => {
     rejectUpgrade(socket, 403, "Forbidden");
     return;
   }
-  const pathname = new URL(request.url || "/", `http://${request.headers.host || "localhost"}`).pathname;
+  let pathname;
+  try {
+    pathname = new URL(request.url || "/", `http://${request.headers.host || "localhost"}`).pathname;
+  } catch {
+    rejectUpgrade(socket, 400, "Bad Request");
+    return;
+  }
   if (pathname !== "/" && pathname !== "/socket") {
     rejectUpgrade(socket, 404, "Not Found");
     return;

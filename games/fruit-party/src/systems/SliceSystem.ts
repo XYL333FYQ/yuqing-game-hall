@@ -57,7 +57,8 @@ export class SliceSystem {
   }
 
   private processBlade(state: FruitNinjaState, blade: BladeState): void {
-    if (!blade.visible || blade.points.length < 2) return;
+    // Visibility controls the cursor; released input can still await this frame.
+    if (blade.points.length < 2) return;
     for (let index = 1; index < blade.points.length; index += 1) {
       const start = blade.points[index - 1];
       const end = blade.points[index];

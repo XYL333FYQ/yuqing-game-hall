@@ -1,5 +1,5 @@
 // Optional maintenance build, never run by normal hall CI.
-import { readFile, writeFile, cp } from 'node:fs/promises';
+import { cp } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -10,10 +10,7 @@ function npm(cwd, args) {
   if (result.status !== 0) throw new Error(`npm ${args.join(' ')} failed`);
 }
 const mines = path.join(upstream,'minesweeper');
-const i18n = path.join(mines,'src/i18n.js');
-let source = await readFile(i18n,'utf8');
-source = source.replace("return navigator.language.toLowerCase().startsWith('zh') ? 'zh' : 'en'", "return 'zh'");
-await writeFile(i18n,source);
+for (const name of ['App.jsx','i18n.js']) await cp(new URL(`./overrides/minesweeper/${name}`,import.meta.url),path.join(mines,'src',name));
 npm(mines,['ci','--ignore-scripts','--no-audit','--no-fund']);
 npm(mines,['test']);
 npm(mines,['run','build']);

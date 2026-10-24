@@ -4,6 +4,7 @@
 
 const TILE_COUNT = 34;
 const PLAYER_COUNT = 4;
+const CLAIM_PRIORITY = { chi: 1, peng: 2, gang: 2, hu: 3 };
 
 function cloneCard(card) {
   return card ? { value: card.value, type: card.type || 0 } : null;
@@ -112,7 +113,7 @@ function removeTiles(hand, cards) {
 }
 
 function firstChiOption(hand, discard) {
-  if (!discard || !canTakeSequence(Number(discard.value))) return null;
+  if (!discard || !isSuit(Number(discard.value))) return null;
   const value = Number(discard.value);
   const counts = countsFor(hand);
   const starts = [value, value - 1, value - 2];
@@ -341,9 +342,8 @@ class MahjongGame {
     if (!this.pendingClaim || !this.pendingClaim.eligible.includes(pos) || this.pendingClaim.responded[pos]) {
       return { status: false, msg: '当前没有可跳过的操作' };
     }
-    this.pendingClaim.responded[pos] = true;
-    const done = this.pendingClaim.eligible.every(target => this.pendingClaim.responded[target]);
-    return done ? this.advanceAfterClaim() : { status: true, waiting: true };
+    this.pendingClaim.responded[pos] = 'pass';
+    return this.resolveClaims();
   }
 
   claim(posId, action) {
@@ -353,12 +353,31 @@ class MahjongGame {
     }
     const tile = this.pendingClaim.card;
     const allowed = this.getClaimOptions(pos, tile, this.pendingClaim.nextPos);
-    if (action === 'hu') {
-      if (!allowed.includes('hu')) return { status: false, msg: '当前不能胡牌' };
-      return this.finishWin(pos, this.pendingClaim.discarder, '放铳');
-    }
     if (!allowed.includes(action)) return { status: false, msg: '当前不能执行该操作' };
+    this.pendingClaim.responded[pos] = action;
+    return this.resolveClaims();
+  }
 
+  resolveClaims() {
+    const pending = this.pendingClaim;
+    const distance = pos => (pos - pending.discarder + PLAYER_COUNT) % PLAYER_COUNT;
+    const choices = pending.eligible.filter(pos => CLAIM_PRIORITY[pending.responded[pos]]);
+    choices.sort((a, b) => CLAIM_PRIORITY[pending.responded[b]] - CLAIM_PRIORITY[pending.responded[a]] || distance(a) - distance(b));
+    if (!choices.length) {
+      return pending.eligible.every(pos => pending.responded[pos])
+        ? this.advanceAfterClaim() : { status: true, waiting: true };
+    }
+    const pos = choices[0];
+    const action = pending.responded[pos];
+    const priority = CLAIM_PRIORITY[action];
+    // 只等待仍可能取得优先权的玩家，避免由消息到达顺序决定吃碰胡。
+    const waiting = pending.eligible.some(other => !pending.responded[other]
+      && this.getClaimOptions(other, pending.card, pending.nextPos).some(option =>
+        CLAIM_PRIORITY[option] > priority || (CLAIM_PRIORITY[option] === priority && distance(other) < distance(pos))));
+    if (waiting) return { status: true, waiting: true };
+    if (action === 'hu') return this.finishWin(pos, pending.discarder, '放铳');
+
+    const tile = pending.card;
     let take = [];
     if (action === 'peng') take = [tile, tile];
     if (action === 'gang') take = [tile, tile, tile];
@@ -378,11 +397,11 @@ class MahjongGame {
     if (action === 'gang') {
       const draw = this.drawNext();
       drawCard = draw.drawCard || null;
-      if (draw.result) return Object.assign({ meld: Object.assign({}, this.melds[pos][this.melds[pos].length - 1], { taken: take.map(cloneCard) }) }, draw);
+      if (draw.result) return Object.assign({ meld: Object.assign({}, this.melds[pos][this.melds[pos].length - 1], { posId: pos, taken: take.map(cloneCard) }) }, draw);
     }
     return {
       status: true,
-      meld: Object.assign({}, this.melds[pos][this.melds[pos].length - 1], { taken: take.map(cloneCard) }),
+      meld: Object.assign({}, this.melds[pos][this.melds[pos].length - 1], { posId: pos, taken: take.map(cloneCard) }),
       drawCard,
     };
   }

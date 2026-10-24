@@ -22,9 +22,9 @@ export function siteHeader(active: "home" | "games" | "vision" | "about" | "none
             <kbd class="site-search-kbd" aria-hidden="true" title="按 / 键快速搜索">/</kbd>
           </label>` : ""}
         ${themeSwitcher()}
-        <div class="site-header-status" title="自建联机网关与穿透服务就绪">
+        <div class="site-header-status" title="游戏目录已载入，可选择游戏">
           <span class="status-pulse-dot" aria-hidden="true"></span>
-          <span>服务在线</span>
+          <span>游戏厅就绪</span>
         </div>
       </div>
     </header>`;

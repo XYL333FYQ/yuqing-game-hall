@@ -58,6 +58,7 @@ for (const [index, game] of games.entries()) {
     let css = await read(file('style/main.css'));
     css = replace(css, '@import url(fonts/clear-sans.css);', '');
     css = replace(css, '"Score"', '"分数"'); css = replace(css, '"Best"', '"最高"');
+    css = replace(css, '    width: 280px;\n    margin: 0 auto; }', '    width: 280px;\n    padding-top: 32px;\n    margin: 0 auto; }');
     await put(file('style/main.css'), css);
   }
   if (game.recipe === 'tetris') {

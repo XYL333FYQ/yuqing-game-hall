@@ -1292,14 +1292,20 @@ const proto = {
         const current = this.gameDatas[deskId];
         const pending = current && current.getPendingClaim && current.getPendingClaim();
         if (!pending) return;
+        let drawCard;
+        let meld;
         pending.eligible.forEach(posId => {
-          if (!pending.responded[posId]) current.passClaim(posId);
+          if (!pending.responded[posId]) {
+            const result = current.passClaim(posId);
+            if (result && result.drawCard) drawCard = result.drawCard;
+            if (result && result.meld) meld = result.meld;
+          }
         });
         if (current.getStatus() === 3) {
           this.finishMahjongGame(deskId, current.getResult());
           return;
         }
-        this.broadcastMahjongState(deskId, { timeout: MAHJONG_PLAY_TIMEOUT });
+        this.broadcastMahjongState(deskId, { timeout: MAHJONG_PLAY_TIMEOUT, drawCard, meld });
         this.scheduleBotAction(deskId);
       }, MAHJONG_PLAY_TIMEOUT * 1000);
     }
@@ -1983,6 +1989,8 @@ const proto = {
         if (!deskId) {
           return;
         }
+        const game = this.gameDatas[deskId];
+        if (game && game.getStatus() > 0 && game.getStatus() < 3) return;
         //更新座位为准备状态
         this.updatePosStatus(deskId, posId, 2);
         //通知该客户端准备成功
@@ -2063,6 +2071,7 @@ const proto = {
       });
 
       socket.on('CALL_SCORE', data => {
+        if (!data || typeof data !== 'object' || Array.isArray(data) || !Number.isInteger(data.score) || data.score < 0 || data.score > 3) return;
         const { score } = data;
         const client = this.getClient(socket);
         if (!client || client.posId === 'spec') {
@@ -2074,6 +2083,7 @@ const proto = {
         if (!game || !deskId || (room && room.pauseInfo)) {
           return;
         }
+        if (!room || room.gameType !== 'doudizhu' || game.getStatus() !== 1 || Number(game.getContextPosId()) !== Number(posId)) return;
         const status = game.next(posId, score).getStatus();
         this.recordRoundMove(deskId, { type: 'call', posId: Number(posId), score: Number(score), source: 'human' });
         if (status == 1) {
@@ -2125,6 +2135,10 @@ const proto = {
           return;
         }
         if (game && deskId) {
+          if (game.getStatus() !== 2 || Number(game.getContextPosId()) !== Number(posId)) {
+            socket.emit('PLAY_CARD_ERROR', '还没轮到你出牌');
+            return;
+          }
           const ret = game.validate(posId, data);
           const isPass = !data.length;
           const { status } = ret;

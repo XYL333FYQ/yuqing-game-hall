@@ -1,5 +1,6 @@
 """Package pinned editable source, adapted source and the shipped runtime."""
 import io
+import argparse
 import json
 from pathlib import Path
 import subprocess
@@ -7,7 +8,13 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
-for game in json.loads((HERE / 'SOURCES.json').read_text(encoding='utf-8')):
+games = json.loads((HERE / 'SOURCES.json').read_text(encoding='utf-8'))
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--game', choices=[game['id'] for game in games], help='Only rebuild this game source archive')
+options = parser.parse_args()
+if options.game:
+    games = [game for game in games if game['id'] == options.game]
+for game in games:
     checkout = ROOT / 'game-sources/upstream/next12' / game['folder']
     original = subprocess.run(['git', 'archive', '--format=zip', game['commit']], cwd=checkout, check=True, capture_output=True).stdout
     runtime = ROOT / 'public/games' / game['id']

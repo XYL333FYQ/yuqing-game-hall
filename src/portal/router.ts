@@ -32,11 +32,13 @@ export function startPortal(app: HTMLDivElement): Promise<void> {
 
       cancelPortal();
       const docWithTransition = document as Document & {
-        startViewTransition?: (callback: () => Promise<void> | void) => { finished: Promise<void> };
+        startViewTransition?: (callback: () => Promise<void> | void) => { finished: Promise<void>; ready?: Promise<void>; updateCallbackDone?: Promise<void> };
       };
       const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       if (typeof docWithTransition.startViewTransition === "function" && !prefersReducedMotion && app.childElementCount > 0) {
-        await docWithTransition.startViewTransition(() => applyPage()).finished.catch(() => undefined);
+        const transition = docWithTransition.startViewTransition(() => applyPage());
+        void transition.ready?.catch(() => undefined);
+        await Promise.all([transition.updateCallbackDone, transition.finished]);
       } else {
         if (app.childElementCount === 0 && !document.querySelector("#entry-screen[open]")) {
           app.innerHTML = `<div class="route-loader" role="status"><i></i><span>正在打开雨晴游戏厅…</span></div>`;

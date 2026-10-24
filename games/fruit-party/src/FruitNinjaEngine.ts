@@ -89,11 +89,16 @@ export class FruitNinjaEngine {
   }
 
   togglePause(): void {
-    if (this.state.started && !this.state.gameOver) this.state.paused = !this.state.paused;
+    this.setPaused(!this.state.paused);
   }
 
   setPaused(paused: boolean): void {
-    if (this.state.started && !this.state.gameOver) this.state.paused = paused;
+    if (this.state.started && !this.state.gameOver) {
+      this.state.paused = paused;
+      if (paused) {
+        for (const blade of this.state.blades) blade.points = [];
+      }
+    }
   }
 
   updateBlade(
@@ -126,27 +131,16 @@ export class FruitNinjaEngine {
     blade.sampleTime = time;
     blade.initialized = true;
 
-    if (!active) {
-      blade.points = [{
-        x: nextX,
-        y: nextY,
-        time: now,
-        speed: 0,
-        sequence: blade.nextSequence++,
-        active: false,
-      }];
-      return;
-    }
-
+    const sampleActive = active && this.acceptsBladeInput();
     const previous = blade.points[blade.points.length - 1];
-    if (previous && Math.hypot(nextX - previous.x, nextY - previous.y) < 0.2) return;
+    if (previous && previous.active === sampleActive && Math.hypot(nextX - previous.x, nextY - previous.y) < 0.2) return;
     blade.points.push({
       x: nextX,
       y: nextY,
       time,
-      speed,
+      speed: sampleActive ? speed : 0,
       sequence: blade.nextSequence++,
-      active: true,
+      active: sampleActive,
     });
     if (blade.points.length > 72) blade.points.splice(0, blade.points.length - 72);
   }
@@ -161,14 +155,20 @@ export class FruitNinjaEngine {
     blade.targetSpeed = 0;
     blade.sampleTime = time;
     blade.initialized = true;
-    blade.points = [{
+    // Keep unprocessed segments; an inactive endpoint separates gestures.
+    blade.points.push({
       x,
       y,
       time,
       speed: 0,
       sequence: blade.nextSequence++,
-      active,
-    }];
+      active: active && this.acceptsBladeInput(),
+    });
+    if (blade.points.length > 72) blade.points.splice(0, blade.points.length - 72);
+  }
+
+  private acceptsBladeInput(): boolean {
+    return this.state.started && !this.state.paused && !this.state.gameOver && this.state.countdownTimer <= 0;
   }
 
   hideBlade(id: string): void {
@@ -599,6 +599,7 @@ export function fastForwardScheduledState(
     state.rules.durationMs ?? Number.POSITIVE_INFINITY,
     Math.max(0, elapsedMs),
   );
+  if (target > 0) state.countdownTimer = 0;
   if (target - state.elapsedMs <= minimumDriftMs) return false;
 
   state.elapsedMs = target;

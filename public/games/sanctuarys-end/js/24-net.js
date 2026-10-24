@@ -51,7 +51,7 @@ const NET = {
     };
     this.ws.onmessage = ev => { let m; try { m = JSON.parse(ev.data); } catch (_) { return; } this.onMsg(m); };
   },
-  disconnect() { if (this.ws) { try { this.ws.close(); } catch (_) { } } this.ws = null; this.connected = false; this.clearRemotes(); this.refreshUI(); this.status('Not connected'); this.diag.report('connected', 'fail', '已手动断开'); },
+  disconnect() { if (this.ws) { try { this.ws.onopen = this.ws.onmessage = this.ws.onclose = this.ws.onerror = null; this.ws.close(); } catch (_) { } } this.ws = null; this.connected = false; this.clearRemotes(); this.refreshUI(); this.status('Not connected'); this.diag.report('connected', 'fail', '已手动断开'); },
   send(o) { if (this.connected && this.ws && this.ws.readyState === 1) { try { this.ws.send(JSON.stringify(o)); } catch (_) { } } },
   onMsg(m) { if (m.t === 'welcome') { this.id = m.id; this.diag.report('connected', 'ok', '已分配 id ' + m.id); } else if (m.t === 'state') { this.upsert(m); this.diag.report('peers', 'ok', this.remotes.size + ' 位队友'); } else if (m.t === 'leave') { this.removeRemote(m.id); this.diag.report('peers', this.remotes.size ? 'ok' : 'pending', this.remotes.size + ' 位队友'); } else if (m.t === 'chat') { this.chat(m.name, m.msg); this.diag.report('chat', 'ok', String(m.name || '').slice(0, 12)); } },
   upsert(m) {

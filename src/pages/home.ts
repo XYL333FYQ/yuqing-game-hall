@@ -72,9 +72,9 @@ export function renderHome(root: HTMLElement): () => void {
               <span>排序</span>
               <button class="arcade-select-trigger" type="button" data-sort-trigger aria-haspopup="listbox" aria-expanded="false" aria-label="游戏排序"><span data-sort-label>热门优先</span></button>
               <div class="arcade-sort-menu" data-sort-menu role="listbox" aria-label="游戏排序选项" hidden>
-                <button type="button" role="option" data-sort-option="popular" aria-selected="true">热门优先</button>
-                <button type="button" role="option" data-sort-option="name" aria-selected="false">名称排序</button>
-                <button type="button" role="option" data-sort-option="group" aria-selected="false">多人优先</button>
+                <button type="button" role="option" tabindex="-1" data-sort-option="popular" aria-selected="true">热门优先</button>
+                <button type="button" role="option" tabindex="-1" data-sort-option="name" aria-selected="false">名称排序</button>
+                <button type="button" role="option" tabindex="-1" data-sort-option="group" aria-selected="false">多人优先</button>
               </div>
               <select class="arcade-native-sort" data-sort aria-hidden="true" tabindex="-1"><option value="popular">热门优先</option><option value="name">名称排序</option><option value="group">多人优先</option></select>
             </div>
@@ -115,6 +115,7 @@ export function renderHome(root: HTMLElement): () => void {
   const empty = root.querySelector<HTMLElement>("[data-empty]");
   const sortSelect = root.querySelector<HTMLSelectElement>("[data-sort]");
   const sortTrigger = root.querySelector<HTMLButtonElement>("[data-sort-trigger]");
+  const sortControl = root.querySelector<HTMLElement>("[data-sort-control]");
   const sortMenu = root.querySelector<HTMLElement>("[data-sort-menu]");
   const sortLabel = root.querySelector<HTMLElement>("[data-sort-label]");
   const sortOptions = root.querySelectorAll<HTMLButtonElement>("[data-sort-option]");
@@ -133,6 +134,15 @@ export function renderHome(root: HTMLElement): () => void {
   let carouselTimer: number | undefined;
   let featureExitTimer: number | undefined;
   let trendingTimer: number | undefined;
+
+  const setSortOpen = (open: boolean): void => {
+    if (sortMenu) sortMenu.hidden = !open;
+    sortTrigger?.setAttribute("aria-expanded", String(open));
+    if (open) Array.from(sortOptions).find(option => option.getAttribute("aria-selected") === "true")?.focus();
+  };
+  const onSortFocusOut = (event: FocusEvent): void => {
+    if (!(event.relatedTarget instanceof Element) || !sortControl?.contains(event.relatedTarget)) setSortOpen(false);
+  };
 
   const syncSearchClear = (): void => {
     searchClearButtons.forEach((btn) => {
@@ -256,6 +266,27 @@ export function renderHome(root: HTMLElement): () => void {
     updateList();
   };
   const onKeyDown = (event: KeyboardEvent): void => {
+    if (sortControl?.contains(document.activeElement)) {
+      if (event.key === "Escape" && !sortMenu?.hidden) {
+        event.preventDefault();
+        setSortOpen(false);
+        sortTrigger?.focus();
+        return;
+      }
+      if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
+        event.preventDefault();
+        if (sortMenu?.hidden) setSortOpen(true);
+        else {
+          const options = Array.from(sortOptions);
+          const index = options.indexOf(document.activeElement as HTMLButtonElement);
+          const next = event.key === "Home" ? 0 : event.key === "End" ? options.length - 1
+            : index < 0 ? (event.key === "ArrowDown" ? 0 : options.length - 1)
+              : (index + (event.key === "ArrowDown" ? 1 : -1) + options.length) % options.length;
+          options[next]?.focus();
+        }
+        return;
+      }
+    }
     if (event.key === "Enter" && document.activeElement instanceof HTMLInputElement && document.activeElement.hasAttribute("data-game-search")) {
       root.querySelector("#all-games")?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
       return;
@@ -323,8 +354,7 @@ export function renderHome(root: HTMLElement): () => void {
       return;
     }
     if (sortMenu && !target?.closest("[data-sort-control]")) {
-      sortMenu.hidden = true;
-      sortTrigger?.setAttribute("aria-expanded", "false");
+      setSortOpen(false);
     }
     const sortOption = target?.closest<HTMLButtonElement>("[data-sort-option]");
     if (sortOption) {
@@ -333,16 +363,15 @@ export function renderHome(root: HTMLElement): () => void {
       if (sortSelect) sortSelect.value = sortValue;
       if (sortLabel) sortLabel.textContent = sortOption.textContent ?? "热门优先";
       sortOptions.forEach((option) => option.setAttribute("aria-selected", String(option === sortOption)));
-      if (sortMenu) sortMenu.hidden = true;
-      sortTrigger?.setAttribute("aria-expanded", "false");
+      setSortOpen(false);
+      sortTrigger?.focus();
       updateList();
       return;
     }
     const sortTriggerEl = target?.closest<HTMLButtonElement>("[data-sort-trigger]");
     if (sortTriggerEl) {
       const isOpen = !sortMenu?.hidden;
-      if (sortMenu) sortMenu.hidden = isOpen;
-      sortTrigger?.setAttribute("aria-expanded", String(!isOpen));
+      setSortOpen(!isOpen);
       return;
     }
     const featureControl = target?.closest<HTMLButtonElement>("[data-featured-step], [data-featured-index]");
@@ -396,6 +425,7 @@ export function renderHome(root: HTMLElement): () => void {
     updateList();
   };
   root.addEventListener("click", onRootClick);
+  sortControl?.addEventListener("focusout", onSortFocusOut);
   window.addEventListener("keydown", onKeyDown);
   carousel?.addEventListener("pointerenter", pauseCarousel);
   carousel?.addEventListener("pointerleave", playCarousel);
@@ -421,6 +451,7 @@ export function renderHome(root: HTMLElement): () => void {
     pauseCarousel();
     if (trendingTimer !== undefined) window.clearInterval(trendingTimer);
     root.removeEventListener("click", onRootClick);
+    sortControl?.removeEventListener("focusout", onSortFocusOut);
     window.removeEventListener("keydown", onKeyDown);
     carousel?.removeEventListener("pointerenter", pauseCarousel);
     carousel?.removeEventListener("pointerleave", playCarousel);

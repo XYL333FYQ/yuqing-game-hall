@@ -9,7 +9,7 @@ class FakeWorker {
   messages: Record<string, unknown>[] = [];
   constructor() { FakeWorker.instances.push(this); }
   postMessage(message: Record<string, unknown>): void { this.messages.push(message); }
-  terminate(): void {}
+  terminate = vi.fn();
   emit(data: Record<string, unknown>): void { this.onmessage?.({ data }); }
 }
 
@@ -21,6 +21,8 @@ describe("vision frame lifecycle", () => {
   let createBitmap: ReturnType<typeof vi.fn>;
   let now: number;
   let currentTime: number;
+  let stopTrack: ReturnType<typeof vi.fn>;
+  let video: HTMLVideoElement;
 
   beforeEach(() => {
     FakeWorker.instances = [];
@@ -28,15 +30,16 @@ describe("vision frame lifecycle", () => {
     currentTime = 1;
     bitmap = { close: vi.fn() };
     createBitmap = vi.fn().mockResolvedValue(bitmap);
+    stopTrack = vi.fn();
     vi.stubGlobal("Worker", FakeWorker);
     vi.stubGlobal("createImageBitmap", createBitmap);
     vi.stubGlobal("window", { setTimeout, clearTimeout });
     vi.stubGlobal("document", { createElement: () => ({ getContext: () => ({ drawImage: vi.fn() }) }) });
     vi.stubGlobal("navigator", { mediaDevices: { getUserMedia: async () => ({
-      active: true, getTracks: () => [{ stop: vi.fn() }], getVideoTracks: () => [{getSettings: () => ({width: 640, height: 360})}],
+      active: true, getTracks: () => [{ stop: stopTrack }], getVideoTracks: () => [{getSettings: () => ({width: 640, height: 360})}],
     }) } });
     vi.spyOn(performance, "now").mockImplementation(() => now);
-    const video = {
+    video = {
       readyState: 2,
       get currentTime() { return currentTime; },
       play: async () => {},
@@ -54,8 +57,9 @@ describe("vision frame lifecycle", () => {
   });
 
   async function start(): Promise<FakeWorker> {
+    const count = FakeWorker.instances.length;
     const pending = controller.start("hands");
-    await vi.waitFor(() => expect(FakeWorker.instances.length).toBeGreaterThan(0));
+    await vi.waitFor(() => expect(FakeWorker.instances.length).toBe(count + 1));
     const worker = FakeWorker.instances.at(-1)!;
     worker.emit({ type: "INIT_DONE", delegate: "GPU" });
     await pending;
@@ -120,6 +124,72 @@ describe("vision frame lifecycle", () => {
     expect(createBitmap).toHaveBeenCalledTimes(2);
   });
 
+  it("does not mistake video clock advancement for a newly presented camera frame", async () => {
+    const worker = await start();
+    tick();
+    await Promise.resolve();
+    currentTime += 1 / 60; // The playback clock advances without a new video-frame callback.
+    now += 16;
+    worker.emit({ type: "DETECT_RESULT", result: { landmarks: [], handedness: [] }, timestampMs: 34, inferenceTime: 16 });
+    await Promise.resolve();
+    expect(createBitmap).toHaveBeenCalledOnce();
+  });
+
+  it("keeps the pending camera sample timestamp when inference finishes later", async () => {
+    const worker = await start();
+    tick();
+    await Promise.resolve();
+    tick();
+    now = 90;
+    worker.emit({ type: "DETECT_RESULT", result: { landmarks: [], handedness: [] }, timestampMs: 34, inferenceTime: 56 });
+    await Promise.resolve();
+    const requests = worker.messages.filter(message => message.type === "DETECT_VIDEO");
+    expect(requests).toHaveLength(2);
+    expect(requests[1].timestampMs).toBe(68);
+  });
+
+  it("keeps frame deduplication and camera metrics in the animation-frame fallback", async () => {
+    Object.defineProperty(video, "requestVideoFrameCallback", { value: undefined });
+    let fallback!: FrameRequestCallback;
+    vi.stubGlobal("requestAnimationFrame", (next: FrameRequestCallback) => { fallback = next; return 1; });
+    vi.stubGlobal("cancelAnimationFrame", vi.fn());
+    const worker = await start();
+    now = 34;
+    fallback(now);
+    await Promise.resolve();
+    now = 50;
+    fallback(now);
+    worker.emit({ type: "DETECT_RESULT", result: { landmarks: [], handedness: [] }, timestampMs: 34, inferenceTime: 16 });
+    expect(status.mock.calls.at(-1)?.[0].cameraFps).toBe(1);
+    expect(createBitmap).toHaveBeenCalledOnce();
+    currentTime += 1 / 30;
+    now = 68;
+    fallback(now);
+    await Promise.resolve();
+    expect(createBitmap).toHaveBeenCalledTimes(2);
+  });
+
+  it("uses decoded frame counts when the fallback playback clock changes continuously", async () => {
+    Object.defineProperty(video, "requestVideoFrameCallback", { value: undefined });
+    let decodedFrames = 1;
+    Object.defineProperty(video, "getVideoPlaybackQuality", { value: () => ({ totalVideoFrames: decodedFrames, droppedVideoFrames: 0 }) });
+    let fallback!: FrameRequestCallback;
+    vi.stubGlobal("requestAnimationFrame", (next: FrameRequestCallback) => { fallback = next; return 1; });
+    vi.stubGlobal("cancelAnimationFrame", vi.fn());
+    const worker = await start();
+    fallback(34);
+    await Promise.resolve();
+    worker.emit({ type: "DETECT_RESULT", result: { landmarks: [], handedness: [] }, timestampMs: 34, inferenceTime: 1 });
+    currentTime += 1 / 120;
+    fallback(42);
+    await Promise.resolve();
+    expect(createBitmap).toHaveBeenCalledOnce();
+    decodedFrames++;
+    fallback(68);
+    await Promise.resolve();
+    expect(createBitmap).toHaveBeenCalledTimes(2);
+  });
+
   it("settles a model startup immediately when the camera is stopped", async () => {
     const pending = controller.start("hands");
     await vi.waitFor(() => expect(FakeWorker.instances).toHaveLength(1));
@@ -141,5 +211,32 @@ describe("vision frame lifecycle", () => {
     await pending;
     expect(stop).toHaveBeenCalledOnce();
     expect(FakeWorker.instances).toHaveLength(0);
+  });
+
+  it.each(["worker-error", "error-message"])("stops the camera and reports a %s after successful initialization", async kind => {
+    const worker = await start();
+    tick();
+    await Promise.resolve();
+    if (kind === "worker-error") worker.onerror?.({ message: "Worker crashed" });
+    else worker.emit({ type: "ERROR", error: "Worker crashed" });
+    expect(status.mock.calls.at(-1)?.[0]).toMatchObject({ phase: "error", message: "Worker crashed" });
+    expect(stopTrack).toHaveBeenCalledOnce();
+    expect(video.srcObject).toBeNull();
+    expect(worker.terminate).toHaveBeenCalledOnce();
+    tick();
+    expect(createBitmap).toHaveBeenCalledOnce();
+  });
+
+  it("ignores errors from a replaced worker and can restart after a runtime failure", async () => {
+    const old = await start();
+    old.onerror?.({ message: "First worker crashed" });
+    const next = await start();
+    status.mockClear();
+    old.onerror?.({ message: "Stale error" });
+    old.emit({ type: "ERROR", error: "Stale message" });
+    expect(status).not.toHaveBeenCalled();
+    tick();
+    await Promise.resolve();
+    expect(next.messages.filter(message => message.type === "DETECT_VIDEO")).toHaveLength(1);
   });
 });

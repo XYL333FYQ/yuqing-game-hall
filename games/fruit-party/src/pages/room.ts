@@ -304,6 +304,7 @@ function renderRoomJoin(root: HTMLElement, code: string, embedded: boolean): () 
       <section class="direct-join"><p class="kicker">房间码 ${code}</p><h1>加入朋友的房间</h1><p>输入昵称后即可进入，比赛会在双方都准备好后开始。</p><label class="field"><span>你的昵称</span><input maxlength="12" value="${escapeHtml(nickname)}" placeholder="2–12 个字符"></label><button class="button primary full" type="button">加入房间</button><p class="form-error" role="alert"></p></section>
     </main>${embedded ? "" : gamePageFooter()}</div>`;
   const button = root.querySelector<HTMLButtonElement>("button")!;
+  let disposed = false;
   const handler = async (): Promise<void> => {
     const value = root.querySelector<HTMLInputElement>("input")!.value.trim();
     const error = root.querySelector<HTMLElement>(".form-error")!;
@@ -315,6 +316,7 @@ function renderRoomJoin(root: HTMLElement, code: string, embedded: boolean): () 
     button.textContent = "正在加入…";
     try {
       const data = await roomRequest(`/api/rooms/${code}/join`, { nickname: value });
+      if (disposed) return;
       try {
         localStorage.setItem("yuqing-nickname", data.nickname);
       } catch {
@@ -327,6 +329,7 @@ function renderRoomJoin(root: HTMLElement, code: string, embedded: boolean): () 
       }
       window.dispatchEvent(new PopStateEvent("popstate"));
     } catch (reason) {
+      if (disposed) return;
       error.textContent = reason instanceof Error ? reason.message : "无法加入房间。";
       button.disabled = false;
       button.textContent = "加入房间";
@@ -342,6 +345,7 @@ function renderRoomJoin(root: HTMLElement, code: string, embedded: boolean): () 
   root.addEventListener("keydown", keyHandler);
   return () => {
     button.removeEventListener("click", handler);
+    disposed = true;
     root.removeEventListener("keydown", keyHandler);
   };
 }

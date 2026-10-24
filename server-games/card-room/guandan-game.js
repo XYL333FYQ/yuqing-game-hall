@@ -310,8 +310,10 @@ Object.assign(GuandanGame.prototype, {
       }
       this.passCount++;
       const activePlayers = 4 - this.finishOrder.length;
-      if (this.passCount >= activePlayers - 1) {
-        const leader = Number(this.lastCardInfo.posId);
+      const leader = Number(this.lastCardInfo.posId);
+      // 领出者已经走完时，所有仍在场的玩家都需要响应这一手。
+      const requiredPasses = activePlayers - (this.finished[leader] ? 0 : 1);
+      if (this.passCount >= requiredPasses) {
         const nextLeader = this.finished[leader] ? this.nextActive(leader) : leader;
         this.lastCardInfo = { posId: nextLeader, len: 0, key: '', type: '', bomb: false, bombPower: 0 };
         this.passCount = 0;

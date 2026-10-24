@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
+import {adaptChessPosition,adaptChessUi} from './chess-adaptation.mjs';
 const root=fileURLToPath(new URL('../../',import.meta.url)),sources=new URL('./SOURCES.json',import.meta.url);
 const games=JSON.parse(await fs.readFile(sources,'utf8')),inventory={};
 const read=async p=>(await fs.readFile(p,'utf8')).replace(/^\uFEFF/,'').replace(/\r\n/g,'\n');
@@ -54,9 +55,10 @@ for(const [i,g] of games.entries()){
  }
  if(g.folder==='connect-four'){
   for(const n of ['index.html','css','js','img'])await copy(n);
-  let html=(await read(f('index.html'))).replace(/<link href="https:[^>]*>/,'');html=translate(html,{'Connect Four':'四子连线','Current player is: ':'当前玩家：','Next up is: ':'接下来：','Player 1':'黑方','Player 2':'红方','Play Again':'再来一局','See the code':'查看源码'});await write(f('index.html'),html);
+  let html=(await read(f('index.html'))).replace(/<link href="https:[^>]*>/,'');html=translate(html,{'Connect Four':'四子连线','Current player is: ':'当前玩家：','Next up is: ':'接下来：','Player 1':'黑方','Player 2':'红方','Play Again':'再来一局','See the code':'查看源码'});html=html.replace('<div id="play-again" class="play-again">','<div id="play-again" class="play-again" inert>');await write(f('index.html'),html);
   await write(f('js/vars.js'),translate(await read(f('js/vars.js')),{'This position is already taken. Please make another choice.':'此列已满，请选择其他列。','This game is a draw.':'棋盘已满，平局。','The winner is: ':'获胜者：'}));
   await write(f('js/functions.js'),(await read(f('js/functions.js'))).replace('y > y_pos','y >= 0'));
+  await write(f('js/main.js'),(await read(f('js/main.js'))).replaceAll("playAgainEl.classList.add('show');","playAgainEl.inert = false;\n      playAgainEl.classList.add('show');"));
  }
  if(g.folder==='chess'){
   for(const n of ['chess.include.js','chess.js','bitboard.js','zobrist.js','move.js','position.js','parser.js','ai.js','ui.js'])await copy('src/'+n,n);await copy('chess.css');
@@ -66,6 +68,8 @@ for(const [i,g] of games.entries()){
   html=html.replace('<script src="chess.include.js">','<script src="jquery.min.js"></script><script src="jquery-ui.min.js"></script><script src="chess.include.js">').replace('<h1>Chess</h1>','<h1>国际象棋 · 你执白，电脑执黑 <button onclick="location.reload()">重新开局</button></h1>');
   html=html.replace(/<ul>[\s\S]*?<\/ul>/,'<ul><li>拖动棋子走子；右侧列出所有合法走法，也可直接点击。</li><li>兵到达底线可升变；右侧可选择升变棋子。</li><li>将王向车的方向移动两格即可王车易位。悔棋会撤销双方上一步。</li></ul>');await write(f('index.html'),html);
   await write(f('ui.js'),translate(await read(f('ui.js')),{'\">undo</a>':'\">悔棋</a>','\">auto</a>':'\">电脑代走</a>','Algebraic: ':'位置：','\\nRank: ':'\\n行：','\\nFile: ':'\\n列：','\\nIndex: ':'\\n编号：','\\nColor: ':'\\n颜色：','\\nPiece: ':'\\n棋子：'}));
+  await write(f('position.js'),adaptChessPosition(await read(f('position.js'))));
+  await write(f('ui.js'),adaptChessUi(await read(f('ui.js'))));
   await write(f('hall.css'),'#moves{max-height:600px;overflow:auto}#dim{pointer-events:none}body{margin-top:20px}h1{letter-spacing:0}\n');
  }
  if(g.folder==='snake-classic'){

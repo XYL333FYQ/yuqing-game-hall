@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { musicCueForState } from "../games/fruit-party/src/MusicDirector";
+import { describe, expect, it, vi } from "vitest";
+import { MusicDirector, musicCueForState } from "../games/fruit-party/src/MusicDirector";
 import type { FruitNinjaState } from "../games/fruit-party/src/types";
 
 function state(overrides: Partial<FruitNinjaState> = {}): FruitNinjaState {
@@ -17,6 +17,45 @@ function state(overrides: Partial<FruitNinjaState> = {}): FruitNinjaState {
 }
 
 describe("stage music direction", () => {
+  it("releases the old playing track when another switch happens before media playback settles", async () => {
+    const channels: any[] = [];
+    let finishLoading!: () => void;
+    class AudioStub {
+      paused = true;
+      volume = 0;
+      playbackRate = 1;
+      loop = false;
+      currentTime = 0;
+      constructor(_src: string) { channels.push(this); }
+      play() {
+        this.paused = false;
+        return channels.indexOf(this) === 1 ? new Promise<void>(resolve => { finishLoading = resolve; }) : Promise.resolve();
+      }
+      pause() { this.paused = true; }
+      removeAttribute() {}
+      load() {}
+    }
+    vi.stubGlobal("Audio", AudioStub);
+    vi.stubGlobal("requestAnimationFrame", () => 1);
+    vi.stubGlobal("cancelAnimationFrame", () => {});
+    const music = new MusicDirector();
+    try {
+      music.unlock();
+      music.sync(state());
+      await Promise.resolve();
+      music.sync(state({ elapsedMs: 51_000 }));
+      music.sync(state({ elapsedMs: 101_000 }));
+      await Promise.resolve();
+      finishLoading();
+      await Promise.resolve();
+      music.destroy();
+      expect(channels.every(channel => channel.paused)).toBe(true);
+    } finally {
+      music.destroy();
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("stays silent before play and uses a short title cue for countdown", () => {
     expect(musicCueForState(state({ started: false }))).toBeUndefined();
     expect(musicCueForState(state({ countdownTimer: 1_000 }))?.track).toBe("title");

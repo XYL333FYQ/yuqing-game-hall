@@ -20,7 +20,9 @@ export class VisionController {
   private rafId?: number;
   private generation = 0;
   private lastTimestamp = -1;
-  private lastMediaTime = -1;
+  private lastFrameId = -1;
+  private latestFrameId = -1;
+  private latestCaptureTime = 0;
   private cancelInitialization?: () => void;
   private detectionTimes: number[] = [];
   private cameraFrameTimes: number[] = [];
@@ -50,7 +52,9 @@ export class VisionController {
     this.ready = false;
     this.processing = false;
     this.lastTimestamp = -1;
-    this.lastMediaTime = -1;
+    this.lastFrameId = -1;
+    this.latestFrameId = -1;
+    this.latestCaptureTime = 0;
     this.detectionTimes = [];
     this.cameraFrameTimes = [];
     this.cancelFrameLoop();
@@ -144,6 +148,19 @@ export class VisionController {
         resolve();
       };
 
+      const fail = (message: string): void => {
+        if (generation !== this.generation || worker !== this.worker) return;
+        window.clearTimeout(timeout);
+        this.cancelInitialization = undefined;
+        if (this.ready) {
+          // Startup has already settled; reject() can no longer report a runtime failure.
+          this.stop();
+          this.onStatus({ phase: "error", message });
+        } else {
+          reject(new Error(message));
+        }
+      };
+
       worker.onmessage = (event: MessageEvent<Record<string, unknown>>) => {
         if (generation !== this.generation) return;
         const data = event.data;
@@ -179,17 +196,12 @@ export class VisionController {
           this.processing = false;
           console.warn("视觉帧处理失败:", String(data.error ?? "未知错误"));
         } else if (type === "ERROR") {
-          window.clearTimeout(timeout);
-          this.cancelInitialization = undefined;
-          const message = String(data.error ?? "视觉模型初始化失败");
-          reject(new Error(message));
+          fail(String(data.error ?? "视觉模型运行失败"));
         }
       };
 
       worker.onerror = (event) => {
-        window.clearTimeout(timeout);
-        this.cancelInitialization = undefined;
-        reject(new Error(event.message || "视觉 Worker 启动失败"));
+        fail(event.message || "视觉 Worker 运行失败");
       };
 
       worker.postMessage({
@@ -209,7 +221,6 @@ export class VisionController {
   private scheduleFrame(): void {
     if (typeof this.video.requestVideoFrameCallback === "function") {
       const callback: VideoFrameRequestCallback = (now, metadata) => {
-        this.recordCameraFrame(now);
         const reportedCaptureTime = metadata.captureTime;
         const captureTime = typeof reportedCaptureTime === "number"
           && Number.isFinite(reportedCaptureTime)
@@ -217,7 +228,8 @@ export class VisionController {
           && Math.abs(reportedCaptureTime - now) < 5000
           ? reportedCaptureTime
           : now;
-        void this.captureFrame(captureTime);
+        this.recordCameraFrame(now, metadata.mediaTime, captureTime);
+        void this.captureFrame();
         if (this.ready) this.frameCallbackId = this.video.requestVideoFrameCallback(callback);
       };
       this.frameCallbackId = this.video.requestVideoFrameCallback(callback);
@@ -225,20 +237,24 @@ export class VisionController {
     }
 
     const callback = (now: number) => {
-      this.recordCameraFrame(now);
-      void this.captureFrame(now);
+      const quality = this.video.getVideoPlaybackQuality?.();
+      const frameId = quality && quality.totalVideoFrames > 0
+        ? quality.totalVideoFrames - quality.droppedVideoFrames : this.video.currentTime;
+      this.recordCameraFrame(now, frameId);
+      void this.captureFrame();
       if (this.ready) this.rafId = requestAnimationFrame(callback);
     };
     this.rafId = requestAnimationFrame(callback);
   }
 
-  private async captureFrame(cameraTimestamp: number): Promise<void> {
+  private async captureFrame(): Promise<void> {
     if (!this.ready || !this.worker || this.processing || this.video.readyState < 2) return;
-    if (this.video.currentTime === this.lastMediaTime) return;
+    if (this.latestFrameId === this.lastFrameId) return;
     const generation = this.generation;
     const worker = this.worker;
+    const cameraTimestamp = this.latestCaptureTime;
     this.processing = true;
-    this.lastMediaTime = this.video.currentTime;
+    this.lastFrameId = this.latestFrameId;
 
     try {
       let bitmap: ImageBitmap;
@@ -288,10 +304,13 @@ export class VisionController {
     });
     // If a newer camera frame arrived during inference, use it now instead of
     // waiting up to another camera interval. Never queue or reprocess old frames.
-    void this.captureFrame(performance.now());
+    void this.captureFrame();
   }
 
-  private recordCameraFrame(now: number): void {
+  private recordCameraFrame(now: number, frameId: number, captureTime = now): void {
+    if (frameId === this.latestFrameId) return;
+    this.latestFrameId = frameId;
+    this.latestCaptureTime = captureTime;
     this.cameraFrameTimes.push(now);
     this.cameraFrameTimes = this.cameraFrameTimes.filter((time) => now - time <= 1000);
   }

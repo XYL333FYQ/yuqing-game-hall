@@ -45,12 +45,14 @@
       prefixEl.textContent = Game.config.winMsg;
       currentPlayerNameEl.contentEditable = false;
       secondaryTextEl.remove();
+      playAgainEl.inert = false;
       playAgainEl.classList.add('show');
       return;
     } else if (Game.check.isGameADraw()) {
       gameBoardEl.removeEventListener('click', placeGamePiece);
       primaryTextEl.textContent = Game.config.drawMsg;
       secondaryTextEl.remove();
+      playAgainEl.inert = false;
       playAgainEl.classList.add('show');
       return;
     }

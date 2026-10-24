@@ -307,20 +307,30 @@ export class RoomSession {
   private applySurvivalMisses(now: number): void {
     if (this.state.mode !== "survival" || this.state.startAt === undefined || this.state.seed === undefined) return;
     const elapsed = now - this.state.startAt;
-    const schedule = generateMatchSchedule(this.state.seed, this.state.durationMs ?? 300_000);
-    for (const player of this.state.players) {
-      const sliced = new Set(player.slicedIds);
-      const missed = new Set(player.missedIds);
-      for (const fruit of schedule) {
-        if (fruit.isBomb || sliced.has(fruit.id) || missed.has(fruit.id)) continue;
-        if (fruit.launchAtMs + fruit.flightMs + CLAIM_SETTLEMENT_GRACE_MS > elapsed) continue;
-        player.missedIds.push(fruit.id);
-        missed.add(fruit.id);
-        player.lives -= 1;
-        if (player.lives <= 0) {
-          this.finishMatch(otherPlayer(this.state, player.id)?.id, "survival", `${player.nickname} 已用完三条命`);
-          return;
+    const expired = generateMatchSchedule(this.state.seed, this.state.durationMs ?? 300_000)
+      .filter((fruit) => !fruit.isBomb && fruit.launchAtMs + fruit.flightMs + CLAIM_SETTLEMENT_GRACE_MS <= elapsed)
+      .sort((left, right) => left.launchAtMs + left.flightMs - right.launchAtMs - right.flightMs);
+    const players = this.state.players.map((player) => ({
+      player, sliced: new Set(player.slicedIds), missed: new Set(player.missedIds),
+    }));
+    // Settle simultaneous misses together, in time order, regardless of seat order.
+    let index = 0;
+    while (index < expired.length) {
+      const deadline = expired[index].launchAtMs + expired[index].flightMs;
+      do {
+        const fruit = expired[index++];
+        for (const { player, sliced, missed } of players) {
+          if (player.lives <= 0 || sliced.has(fruit.id) || missed.has(fruit.id)) continue;
+          player.missedIds.push(fruit.id);
+          missed.add(fruit.id);
+          player.lives -= 1;
         }
+      } while (index < expired.length && expired[index].launchAtMs + expired[index].flightMs === deadline);
+      const survivors = this.state.players.filter((player) => player.lives > 0);
+      if (survivors.length < this.state.players.length) {
+        const loser = this.state.players.find((player) => player.lives <= 0)!;
+        this.finishMatch(survivors[0]?.id, survivors.length ? "survival" : "draw", survivors.length ? `${loser.nickname} 已用完三条命` : "双方同时用完三条命，战平");
+        return;
       }
     }
   }

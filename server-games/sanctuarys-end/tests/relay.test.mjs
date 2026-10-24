@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { createServer } from "node:net";
+import { connect as connectTcp, createServer } from "node:net";
 import { fileURLToPath } from "node:url";
 import { after, before, describe, it } from "node:test";
 import assert from "node:assert/strict";
@@ -76,6 +76,20 @@ describe("sanctuary relay protocol", () => {
   it("rejects an unapproved browser Origin at the upgrade step", async () => {
     const rejected = await connectExpectingFailure(socketUrl, "https://evil.example");
     assert.match(rejected, /403|Unexpected server response/i);
+  });
+
+  it("rejects a malformed upgrade URL without terminating the relay", { skip: !!externalUrl }, async () => {
+    const port = Number(new URL(baseUrl).port);
+    const response = await new Promise((resolve, reject) => {
+      let body = "";
+      const socket = connectTcp(port, "127.0.0.1", () => socket.write(`GET /socket HTTP/1.1\r\nHost: [\r\nOrigin: ${origin}\r\nConnection: Upgrade\r\nUpgrade: websocket\r\n\r\n`));
+      socket.setEncoding("utf8");
+      socket.on("data", chunk => { body += chunk; });
+      socket.on("error", reject);
+      socket.on("close", () => resolve(body));
+    });
+    assert.match(response, /400 Bad Request/);
+    assert.equal((await fetch(`${baseUrl}/health`)).status, 200);
   });
 
   it("carries welcome, state, chat and leave between two clients", async () => {

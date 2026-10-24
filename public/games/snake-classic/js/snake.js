@@ -530,7 +530,7 @@ SNAKE.Snake =
           blocks[ii].elm.className += " snake-snakebody-alive";
         }
 
-        blockPool.concat(blocks);
+        blockPool.push(...blocks);
         me.snakeHead.elm.className = me.snakeHead.elm.className.replace(
           /\bsnake-snakebody-dead\b/,
           "",
@@ -1312,12 +1312,15 @@ SNAKE.Board =
             };
 
             //listener for pausing the game if user change tab or minimize the browser window
-            document.addEventListener("visibilitychange", () => {
-              if (document.visibilityState === "hidden") {
-                if (me.getBoardState() != BOARD_NOT_READY && !me.getPaused())
-                  me.setPaused(true);
-              }
-            });
+            if (!myWindowListener) {
+              myWindowListener = () => {
+                if (document.visibilityState === "hidden") {
+                  if (me.getBoardState() != BOARD_NOT_READY && !me.getPaused())
+                    me.setPaused(true);
+                }
+              };
+              document.addEventListener("visibilitychange", myWindowListener);
+            }
 
             SNAKE.addEventListener(
               elmContainer,

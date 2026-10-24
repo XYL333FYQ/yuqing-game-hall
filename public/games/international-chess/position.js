@@ -452,9 +452,26 @@ Chess.Position.prototype.isFiftyMoveRuleDraw = function() {
 	return this.halfmoveClock >= 100;
 };
 
+/**
+ * Repetition compares available moves, so an unusable en passant marker does
+ * not distinguish otherwise identical positions. Keep the incremental board
+ * hash unchanged; only the repetition-history key omits that marker.
+ * @return {!Chess.Zobrist}
+ */
+Chess.Position.prototype.getRepetitionKey = function() {
+	var key = this.hashKey.dup();
+	if (this.canEnPassant()) {
+		var legalEnPassant = this.generateMoves(true).some(function(move) {
+			return move.getKind() === Chess.Move.Kind.EN_PASSANT_CAPTURE && this.isMoveLegal(move);
+		}, this);
+		if (!legalEnPassant) key.updateEnPassantSquare(this.getEnPassantSquare());
+	}
+	return key;
+};
+
 /** @return {boolean} */
 Chess.Position.prototype.isThreefoldRepetitionRuleDraw = function() {
-	var currentHashKey = this.hashKey;
+	var currentHashKey = this.getRepetitionKey();
 	return this.hashHistory.reduce(
 		/**
 		 * @param {number} previousValue
@@ -463,7 +480,7 @@ Chess.Position.prototype.isThreefoldRepetitionRuleDraw = function() {
 		 * @param {Array} array (unused; please the Closure Compiler)
 		 * @return {number}
 		 */
-		function(previousValue, currentValue, index, array) { return previousValue + (currentValue.isEqual(currentHashKey) ? 1 : 0); }, 0) >= 3;
+		function(previousValue, currentValue, index, array) { return previousValue + (currentValue.isEqual(currentHashKey) ? 1 : 0); }, 0) >= 2; // Two past occurrences plus the current position.
 };
 
 /**
@@ -803,7 +820,7 @@ Chess.Position.prototype.isMoveLegal = function(move) {
  * @return {boolean} true if the move was made
  */
 Chess.Position.prototype.makeMove = function(move) {
-	this.hashHistory.push(this.hashKey.dup());
+	this.hashHistory.push(this.getRepetitionKey());
 	this.updatePieces(move);
 
 	if (this.isKingInCheck()) {
@@ -898,7 +915,7 @@ Chess.Position.prototype.unmakeMove = function() {
 	this.turn = Chess.getOtherPieceColor(this.getTurnColor());
 	this.hashKey.updateTurn();
 	this.revertPieces(move);
-	this.halfMoveClock = /** @type {number} */(this.irreversibleHistory.pop());
+	this.halfmoveClock = /** @type {number} */(this.irreversibleHistory.pop());
 	this.hashKey.updateCastlingRights(this.castlingRights);
 	this.castlingRights = /** @type {number} */(this.irreversibleHistory.pop());
 	this.hashKey.updateCastlingRights(this.castlingRights);

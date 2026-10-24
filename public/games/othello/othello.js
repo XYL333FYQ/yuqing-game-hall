@@ -27,6 +27,7 @@ function creatHistory(turn) {
 	let historyItem = JSON.parse(JSON.stringify(OTHELLO_BOARD));
 	historyItem.turn = turn;
 	historyItem.canPlaceCount = OTHELLO_BOARD.canPlaceCount;
+	historyItem.gameResult = OTHELLO_BOARD.gameResult;
 	return historyItem;
 }
 function recordHistory(turn) {
@@ -47,8 +48,10 @@ function undoHistory() {
 
 		setTurn(undoItem.turn);
 		OTHELLO_BOARD.canPlaceCount = undoItem.canPlaceCount;
+		OTHELLO_BOARD.gameResult = undoItem.gameResult;
 
 		calculateScore();
+		if (undoItem.gameResult !== undefined) gameOver(undoItem.gameResult);
 	}
 }
 function redoHistory() {
@@ -65,10 +68,12 @@ function redoHistory() {
 
 		setTurn(redoItem.turn);
 		OTHELLO_BOARD.canPlaceCount = redoItem.canPlaceCount;
+		OTHELLO_BOARD.gameResult = redoItem.gameResult;
 
 		calculateScore();
 
-		checkGameState();
+		if (redoItem.gameResult !== undefined) gameOver(redoItem.gameResult);
+		else checkGameState();
 	}
 }
 
@@ -139,6 +144,7 @@ function switchTurn() {
 }
 function showTurn() {
 	turnBarEl.classList.add("expand");
+	turnIconEl.classList.remove("double");
 
 	turnIconEl.classList.remove("black");
 	turnIconEl.classList.remove("white");
@@ -151,6 +157,7 @@ function showTurn() {
 
 // 设置
 let settingsFormEl;
+let settingsTransitionTimer;
 const DEFAULT_SETTINGS = {
 	// 计时
 	timerEnabled: false,
@@ -312,22 +319,24 @@ function resetSettings() {
 	writeSettingsForm(DEFAULT_SETTINGS);
 }
 function showSettings() {
+	clearTimeout(settingsTransitionTimer);
 	// 读取设置
 	writeSettingsForm(settings);
 
 	// 显示设置
-	settingsFormEl.classList.remove("hide");
+	settingsFormEl.classList.remove("hide", "pre-hide", "show");
 	settingsFormEl.classList.add("pre-show");
-	setTimeout(() => {
+	settingsTransitionTimer = setTimeout(() => {
 		settingsFormEl.classList.remove("pre-show");
 		settingsFormEl.classList.add("show");
 	}, 200);
 }
 function hideSettings() {
+	clearTimeout(settingsTransitionTimer);
 	// 隐藏设置
-	settingsFormEl.classList.remove("show");
+	settingsFormEl.classList.remove("show", "pre-show", "hide");
 	settingsFormEl.classList.add("pre-hide");
-	setTimeout(() => {
+	settingsTransitionTimer = setTimeout(() => {
 		settingsFormEl.classList.remove("pre-hide");
 		settingsFormEl.classList.add("hide");
 	}, 200);
@@ -456,6 +465,7 @@ function timerPunish() {
 
 // 开局游戏
 function startGame() {
+	OTHELLO_BOARD.gameResult = undefined;
 	// 锁定设置
 	OTHELLO_BOARD.settings = JSON.parse(JSON.stringify(settings));
 
@@ -723,6 +733,7 @@ function gameOver(winnerTurn = null) {
 		removeAllPredPlacePos();
 	}
 
+	OTHELLO_BOARD.gameResult = winnerTurn;
 	if (winnerTurn === null) {
 		// 平局
 		turnTextEl.innerText = "双方平局";

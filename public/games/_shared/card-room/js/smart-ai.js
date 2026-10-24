@@ -50,7 +50,7 @@
     var values = (cards || []).map(function (card) { return Number(card.value); });
     var fn = nodeValidator || global.validate;
     if (!fn) return { status: false, len: values.length, types: [] };
-    try { return fn(values); } catch (e) { return { status: false, len: values.length, types: [] }; }
+    try { return fn(nodeValidator ? values : cards); } catch (e) { return { status: false, len: values.length, types: [] }; }
   }
 
   function normalizeDoudizhuRet(validation, preferredType) {
@@ -341,7 +341,7 @@
     var hand = sortCards(myCards || []);
     var levelRank = Number(options.levelRank) || engine.rankFromLabel(options.levelLabel);
     var last = lastInfo && Number(lastInfo.len) ? {
-      len: Number(lastInfo.len), key: Number(lastInfo.key) || 0, type: lastInfo.type || '', bomb: !!lastInfo.bomb,
+      len: Number(lastInfo.len), key: Number(lastInfo.key) || 0, type: lastInfo.type || '', bomb: !!lastInfo.bomb || ['BOMB', 'STRAIGHT_FLUSH', 'JOKER_BOMB'].indexOf(lastInfo.type) > -1,
       bombPower: Number(lastInfo.bombPower) || (lastInfo.type === 'JOKER_BOMB' ? 100 : (lastInfo.type === 'STRAIGHT_FLUSH' ? 5.5 : (lastInfo.type === 'BOMB' ? Number(lastInfo.len) : 0)))
     } : { len: 0 };
     var leadMode = !last.len || (lastInfo && lastInfo.ctxPos === 'self');

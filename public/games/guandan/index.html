@@ -1730,14 +1730,36 @@
             '</div>';
           var historyWidth = Math.max(220, Math.min(900, (window.innerWidth || 360) - 20));
           var historyHeight = Math.max(180, Math.min(780, (window.innerHeight || 480) - 60));
-          var idx = layer.open({ type: 1, title: '历史战局', shadeClose: true, area: [historyWidth + 'px', historyHeight + 'px'], content: panelHtml });
+          var stopReplay = function () {};
+          var historyClosed = false;
+          var requestRevision = 0;
+          var pendingRequest = null;
+          var closeHistory = function () {
+            historyClosed = true;
+            requestRevision++;
+            if (pendingRequest) pendingRequest.abort();
+            stopReplay();
+          };
+          var idx = layer.open({ type: 1, title: '历史战局', shadeClose: true, area: [historyWidth + 'px', historyHeight + 'px'], content: panelHtml, end: closeHistory });
           var panel = document.getElementById('history-panel');
           var list = document.getElementById('history-list');
           var activeGame = 'all';
-          var loading = false;
           var query = function (extra) {
             var base = self.historyViewerQuery();
             return (base ? base + '&' : '') + (extra || '');
+          };
+          var requestHistory = function (url, render, onError) {
+            if (historyClosed || !panel.isConnected) return;
+            if (pendingRequest) pendingRequest.abort();
+            var controller = new AbortController();
+            var revision = ++requestRevision;
+            pendingRequest = controller;
+            var isCurrent = function () { return !historyClosed && panel.isConnected && revision === requestRevision; };
+            return fetch(url, { headers: self.historyViewerHeaders(), signal: controller.signal })
+              .then(function (r) { if (!r.ok) throw new Error('history'); return r.json(); })
+              .then(function (data) { if (isCurrent()) render(data); })
+              .catch(function (error) { if (isCurrent() && (!error || error.name !== 'AbortError')) onError(); })
+              .finally(function () { if (pendingRequest === controller) pendingRequest = null; });
           };
           var formatTime = function (stamp) {
             if (!stamp) return '时间未知';
@@ -1763,10 +1785,10 @@
             list.innerHTML = items.map(function (item) {
               var privacy = item.isPrivate ? '<em class="history-private">私密</em>' : '<em class="history-public">公开</em>';
               var players = (item.players || []).map(function (p) { return esc(p.username || '玩家'); }).join(' · ');
-              return '<article class="history-item"><div class="history-item-main"><div class="history-item-title"><strong>' + esc(item.gameLabel || self.gameTypeName(item.gameType)) + '</strong>' + privacy + '<span>#' + esc(item.roomCode || item.deskId) + '</span></div><div class="history-item-meta"><span>' + esc(formatTime(item.endedAt)) + '</span><span>' + esc(resultText(item)) + '</span><span>' + Number(item.moveCount || 0) + ' 手</span></div><small>' + players + '</small></div><button type="button" class="history-view-btn" data-history-id="' + Number(item.id) + '">查看复盘</button></article>';
+              return '<article class="history-item"><div class="history-item-main"><div class="history-item-title"><strong>' + esc(item.gameLabel || self.gameTypeName(item.gameType)) + '</strong>' + privacy + '<span>#' + esc(item.roomCode || item.deskId) + '</span></div><div class="history-item-meta"><span>' + esc(formatTime(item.endedAt)) + '</span><span>' + esc(resultText(item)) + '</span><span>' + Number(item.moveCount || 0) + ' 手</span></div><small>' + players + '</small></div><button type="button" class="history-view-btn" data-history-id="' + esc(item.id) + '">查看复盘</button></article>';
             }).join('');
             list.querySelectorAll('[data-history-id]').forEach(function (button) {
-              button.onclick = function () { openDetail(Number(button.getAttribute('data-history-id'))); };
+              button.onclick = function () { openDetail(button.getAttribute('data-history-id')); };
             });
           };
           var renderDetail = function (record) {
@@ -1787,6 +1809,7 @@
               timeline.querySelectorAll('[data-step]').forEach(function (button) { button.onclick = function () { current = Number(button.getAttribute('data-step')); renderStep(); }; });
             };
             var stopAuto = function () { if (timer) { clearInterval(timer); timer = null; } var auto = document.getElementById('replay-auto'); if (auto) auto.textContent = '自动播放'; };
+            stopReplay = stopAuto;
             document.getElementById('history-back').onclick = function () { stopAuto(); var content = panel.parentNode; content.innerHTML = panelHtml; panel = document.getElementById('history-panel'); list = document.getElementById('history-list'); bindList(); loadList(); };
             document.getElementById('replay-prev').onclick = function () { current = Math.max(0, current - 1); renderStep(); };
             document.getElementById('replay-next').onclick = function () { current = Math.min(moves.length, current + 1); renderStep(); };
@@ -1796,20 +1819,18 @@
           };
           var openDetail = function (id) {
             list.innerHTML = '<div class="stats-loading">复盘加载中...</div>';
-            fetch(window.YUQING_CARD_ROOM_SERVICE_URL + '/api/history/' + encodeURIComponent(id) + '?' + query(), { headers: self.historyViewerHeaders() }).then(function (r) { if (!r.ok) throw new Error('history'); return r.json(); }).then(renderDetail).catch(function () { list.innerHTML = '<div class="history-empty"><b>这局复盘不可见或已不存在</b><small>私密房只能由实际参与者查看。</small></div>'; });
+            requestHistory(window.YUQING_CARD_ROOM_SERVICE_URL + '/api/history/' + encodeURIComponent(id) + '?' + query(), renderDetail, function () { list.innerHTML = '<div class="history-empty"><b>这局复盘不可见或已不存在</b><small>私密房只能由实际参与者查看。</small></div>'; });
           };
           var bindList = function () {
             if (!panel) return;
             list = document.getElementById('history-list');
-            panel.querySelectorAll('.history-filter-btn').forEach(function (button) { button.onclick = function () { activeGame = button.getAttribute('data-game') || 'all'; panel.querySelectorAll('.history-filter-btn').forEach(function (item) { item.classList.toggle('active', item === button); }); loadList(); }; });
+            panel.querySelectorAll('.history-filter-btn').forEach(function (button) { button.classList.toggle('active', (button.getAttribute('data-game') || 'all') === activeGame); button.onclick = function () { activeGame = button.getAttribute('data-game') || 'all'; panel.querySelectorAll('.history-filter-btn').forEach(function (item) { item.classList.toggle('active', item === button); }); loadList(); }; });
             var refresh = document.getElementById('history-refresh');
             if (refresh) refresh.onclick = loadList;
           };
           var loadList = function () {
-            if (loading) return;
-            loading = true;
             if (list) list.innerHTML = '<div class="stats-loading">战局加载中...</div>';
-            fetch(window.YUQING_CARD_ROOM_SERVICE_URL + '/api/history?limit=30&gameType=' + encodeURIComponent(activeGame) + '&' + query(), { headers: self.historyViewerHeaders() }).then(function (r) { if (!r.ok) throw new Error('history'); return r.json(); }).then(renderList).catch(function () { if (list) list.innerHTML = '<div class="history-empty"><b>历史战局加载失败</b><small>请稍后刷新重试。</small></div>'; }).finally(function () { loading = false; });
+            requestHistory(window.YUQING_CARD_ROOM_SERVICE_URL + '/api/history?limit=30&gameType=' + encodeURIComponent(activeGame) + '&' + query(), renderList, function () { if (list) list.innerHTML = '<div class="history-empty"><b>历史战局加载失败</b><small>请稍后刷新重试。</small></div>'; });
           };
           bindList();
           loadList();

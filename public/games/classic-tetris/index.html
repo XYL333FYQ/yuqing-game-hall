@@ -163,7 +163,7 @@
     function randomPiece() {
       if (pieces.length == 0)
         pieces = [i,i,i,i,j,j,j,j,l,l,l,l,o,o,o,o,s,s,s,s,t,t,t,t,z,z,z,z];
-      var type = pieces.splice(random(0, pieces.length-1), 1)[0];
+      var type = pieces.splice(Math.floor(random(0, pieces.length)), 1)[0];
       return { type: type, dir: DIR.UP, x: Math.round(random(0, nx - type.size)), y: 0 };
     }
 
@@ -334,7 +334,7 @@
 
     function removeLines() {
       var x, y, complete, n = 0;
-      for(y = ny ; y > 0 ; --y) {
+      for(y = ny - 1 ; y >= 0 ; --y) {
         complete = true;
         for(x = 0 ; x < nx ; ++x) {
           if (!getBlock(x, y))

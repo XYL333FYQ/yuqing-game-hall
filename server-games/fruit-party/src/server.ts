@@ -30,7 +30,12 @@ export function createFruitPartyService(config: FruitPartyServerConfig): FruitPa
   httpServer.on("upgrade", (request, socket, head) => {
     const origin = resolveAllowedOrigin(request.headers.origin, config);
     if (origin === null) return rejectUpgrade(socket, 403, "Forbidden");
-    const url = requestUrl(request);
+    let url: URL;
+    try {
+      url = requestUrl(request);
+    } catch {
+      return rejectUpgrade(socket, 400, "Bad Request");
+    }
     const match = url.pathname.match(/^\/api\/rooms\/([^/]+)\/socket$/i);
     if (!match || !isValidRoomCode(match[1])) return rejectUpgrade(socket, 404, "Not Found");
     const room = rooms.get(match[1].toUpperCase());

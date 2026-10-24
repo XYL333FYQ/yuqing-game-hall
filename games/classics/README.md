@@ -13,7 +13,9 @@ npm.cmd run check:games
 node --test games/classics/runtime.test.mjs
 ```
 
-只有扫雷和图案解锁需要编译。扫雷使用上游锁文件，并将未保存语言偏好时的默认语言设为中文；图案解锁用本目录 `build-inputs/breaklock/` 的 package.json/lock 替换原作的过时 node-sass，使用 Dart Sass。安装与编译都在忽略的上游目录内进行，不改变大厅依赖。
+只有扫雷和图案解锁需要编译。扫雷使用上游锁文件，并将本目录 `overrides/minesweeper/` 中可编辑的 App.jsx、i18n.js 复制到上游 src 后构建，包含中文默认语言、快捷键和成绩保存适配；图案解锁用本目录 `build-inputs/breaklock/` 的 package.json/lock 替换原作的过时 node-sass，使用 Dart Sass。安装与编译都在忽略的上游目录内进行，不改变大厅依赖。
+
+只更新一款游戏的源码包可运行 `python games/classics/package_sources.py --game minesweeper`，避免改写其余游戏的压缩包。
 
 `import-games.mjs` 的替换锚点缺失或提交不匹配时会报错，避免原作更新后悄悄漏掉适配。它不覆盖已捕获的 `cover.png` 和源码压缩包。封面来自实际运行截图；玩法验收记录见 [经典游戏](../../docs/games/classic-games.md)。
 
