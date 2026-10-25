@@ -1,3 +1,4 @@
+// 此文件由 shared-sync.json 同步生成，请修改 server-games/card-room/rules/ai-suggest.js
 /* =====================================================================
  * 雀阁 · AI 选牌建议（智囊 / 机器人决策）
  * 全局对象：window.AISuggest（CommonJS 下：module.exports.AISuggest）

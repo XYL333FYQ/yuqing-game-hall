@@ -1,0 +1,20 @@
+{
+  "files": [
+    {
+      "source": "server-games/card-room/rules/ai-suggest.js",
+      "target": "public/games/_shared/card-room/js/ai-suggest.js"
+    },
+    {
+      "source": "server-games/card-room/rules/guandan-suggest.js",
+      "target": "public/games/_shared/card-room/js/guandan-suggest.js"
+    },
+    {
+      "source": "server-games/card-room/rules/mahjong-ai.js",
+      "target": "public/games/_shared/card-room/js/mahjong-ai.js"
+    },
+    {
+      "source": "server-games/card-room/rules/smart-ai.js",
+      "target": "public/games/_shared/card-room/js/smart-ai.js"
+    }
+  ]
+}

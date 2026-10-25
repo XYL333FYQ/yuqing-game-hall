@@ -9,6 +9,7 @@
 
 ## 游戏接入与运行资料
 
+- [新增游戏操作指南](adding-a-game.md)
 - [棋牌、联机配置与更换 VPS](games/board-games.md)
 - [首批 20 款游戏](games/new-games.md)
 - [经典 10 款游戏](games/classic-games.md)

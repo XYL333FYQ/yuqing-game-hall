@@ -1,3 +1,4 @@
+// 此文件由 shared-sync.json 同步生成，请修改 server-games/card-room/rules/smart-ai.js
 /* =====================================================================
  * 雀阁 · 牌类智能决策层
  *
@@ -11,7 +12,7 @@
   var nodeValidator = null;
   var nodeGuandan = null;
   if (typeof module !== 'undefined' && module.exports) {
-    try { nodeValidator = require('../../core-validator.js'); } catch (e) {}
+    try { nodeValidator = require('../core-validator.js'); } catch (e) {}
     try { nodeGuandan = require('./guandan-suggest.js').GuandanSuggest; } catch (e2) {}
   }
 

@@ -69,6 +69,16 @@ public/platform/           需要在应用启动前直接加载的公共运行�
 
 主题切换通过 View Transition 保留旧主题画面，再从按钮中心圆形揭开新主题；前景保留 150 条桌面星轨（移动端 84 条），以三个 SVG 深度平面的变换与透明度运动，避免逐帧重画高分辨率 Canvas。连续选择取消前一个效果，以最后一次选择为准。首次入场屏在 HTML 中提供，加载期间显示星门，开场展示至少约一秒后，在首屏准备好时从星门中心揭幕；支持原生跳过按钮、减少动态效果和加载失败时的自动退场，不等待游戏 iframe 内部资源。
 
+### 浏览器与服务端共用代码
+
+需要保留静态发布副本的共享 JavaScript，在根目录 `shared-sync.json` 的 `files` 数组登记 `source` → `target` 映射。当前四个棋牌脚本以 `server-games/card-room/rules/` 为唯一源码，同步到 `public/games/_shared/card-room/js/`。只在源处修改，其他位置不得手改；新增共享脚本也通过映射登记，不在同步脚本里添加游戏特例。
+
+`node scripts/sync-shared.mjs` 生成副本，正文逐字节保留源文件及换行符，只在副本首行添加来源注释。副本作为普通文件保留在仓库，供 Cloudflare Pages 直接托管，不使用符号链接。共享源码须同时兼容 Node CommonJS `require` 和浏览器 `<script>`；例如棋牌源码在 Node 加载 `../core-validator.js`，浏览器使用已加载的 `parser.js` 全局校验器，两者参数格式分别为数字数组和牌对象数组。
+
+`prepare:platform` 自动同步；`prebuild` 在准备资源之前先检查副本，避免构建时自动同步掩盖不一致；`check:platform` 运行 `node scripts/sync-shared.mjs --check`，任何副本缺失或内容不一致都会列出路径并以非零状态退出。修改源文件后运行同步，并将源文件与生成副本一起纳入同一次变更。直接运行检查不会修复副本。
+
+另一种已知方式是果切后端直接以相对路径 import `games/fruit-party/src/shared/`（例如 `../../../games/fruit-party/src/shared/protocol`），由两端各自编译使用同一份源码，无需发布副本同步。本次保留这种做法。
+
 ## 3. Manifest 是唯一游戏目录
 
 Manifest 的类型定义位于 `src/platform/game-manifest.ts`。生成脚本扫描：
@@ -154,7 +164,7 @@ server-games/fruit-party/src/server.ts
   └─ GET  /api/rooms/:code/socket  -> WebSocket upgrade
 ```
 
-比赛规则和协议位于 `games/fruit-party/src/shared/`，由浏览器客户端和 Node 服务共同编译使用；这是刻意保留的唯一跨边界代码共享。服务器维护权威比分、房间生命周期和重连状态，客户端保持本地画面响应。
+比赛规则和协议位于 `games/fruit-party/src/shared/`，由浏览器客户端和 Node 服务共同编译使用；这是通过相对路径 import 共享源码的方式。服务器维护权威比分、房间生命周期和重连状态，客户端保持本地画面响应。
 
 当前服务的房间状态保存在单个 Node 进程内。它适合第一阶段单实例 VPS；服务重启会结束现有房间。只有真正需要横向扩容时，才应引入 Redis/共享状态和跨实例广播。
 
@@ -247,6 +257,8 @@ VPS 使用各服务自己的 Dockerfile 或 `docker-compose.example.yml`，与�
 这些检查证明结构没有重新混在一起，但不能代替行为验收。发布前仍要实际打开首页、介绍页、iframe、果切模式选择、暂停/声音、房间 WebSocket，以及至少一个第三方静态游戏；WebRTC 还需跨网络和 TURN 条件的真实设备测试。
 
 ## 11. 新增游戏决策
+
+先运行 `npm run game:new -- <id>`（第三方服务器游戏加 `--external`），生成必须填写后才能通过校验的 schemaVersion 3 清单。三种接入步骤、字段词表、联机判定和提交前命令见 [新增游戏操作指南](docs/adding-a-game.md)。
 
 ```text
 游戏能否只靠浏览器静态文件完整运行？
