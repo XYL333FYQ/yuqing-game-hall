@@ -2,13 +2,8 @@
 
 .detail-index {
   margin: 0 0 20px;
-  color: #a0a3af;
   font-size: 9px;
   font-weight: 900;
-  letter-spacing: .15em;
-}
-
-.detail-index {
   color: #687068;
   letter-spacing: .05em;
 }
@@ -67,27 +62,29 @@
 
 .library-detail-cover strong {
   position: absolute;
-  left: 22px;
-  bottom: 55px;
   font-family: "YQ Display", sans-serif;
-  font-size: 53px;
   letter-spacing: -.04em;
   text-shadow: 4px 4px 0 rgba(0,0,0,.22);
+  right: 34px;
+  bottom: 76px;
+  left: 34px;
+  font-size: clamp(70px,8vw,110px);
+  line-height: .85;
 }
 
 .library-detail-cover small {
   position: absolute;
-  right: 21px;
-  bottom: 23px;
-  left: 23px;
   overflow: hidden;
   color: color-mix(in srgb, var(--game-accent) 45%, #fff);
-  font-size: 9px;
   font-weight: 900;
   letter-spacing: .11em;
   text-overflow: ellipsis;
   text-transform: uppercase;
   white-space: nowrap;
+  right: 34px;
+  bottom: 36px;
+  left: 36px;
+  font-size: 11px;
 }
 
 .library-status {
@@ -122,21 +119,6 @@
 
 .library-detail-cover {
   border-right: 2px solid var(--ink);
-}
-
-.library-detail-cover strong {
-  right: 34px;
-  bottom: 76px;
-  left: 34px;
-  font-size: clamp(70px,8vw,110px);
-  line-height: .85;
-}
-
-.library-detail-cover small {
-  right: 34px;
-  bottom: 36px;
-  left: 36px;
-  font-size: 11px;
 }
 
 .library-detail-copy {
@@ -313,8 +295,8 @@
 }
 
 .arcade-detail-shell .library-detail {
-  width: min(var(--arcade-detail-max-width), calc(100% - var(--arcade-shell-padding-inline)));
   margin: 28px auto 80px;
+  width: min(var(--arcade-shell-max-width), calc(100% - var(--arcade-shell-padding-inline)));
 }
 
 .arcade-detail-shell .back-link {
@@ -446,6 +428,9 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
   margin-top: 24px;
+  background: transparent;
+  border: 0;
+  padding: 0;
 }
 
 .arcade-detail-shell .library-facts div {
@@ -482,9 +467,11 @@
 }
 
 .library-highlights-heading h2 {
-  font-size: 22px;
-  font-weight: 800;
-  color: #fff;
+  margin: 0;
+  font-size: 24px;
+  font-weight: 900;
+  color: #f8fafc;
+  letter-spacing: -0.02em;
 }
 
 .library-highlights-grid {
@@ -734,12 +721,6 @@
   font-weight: 700;
 }
 
-.arcade-detail-shell .library-facts {
-  background: transparent;
-  border: 0;
-  padding: 0;
-}
-
 .arcade-detail-shell .library-screenshots img {
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 16px;
@@ -760,18 +741,6 @@
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.1em;
-}
-
-.library-highlights-heading h2 {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 900;
-  color: #f8fafc;
-  letter-spacing: -0.02em;
-}
-
-.arcade-detail-shell .library-detail {
-  width: min(var(--arcade-shell-max-width), calc(100% - var(--arcade-shell-padding-inline)));
 }
 
 .arcade-detail-shell .library-detail-cover.has-artwork {

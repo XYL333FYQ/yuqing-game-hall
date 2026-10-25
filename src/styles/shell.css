@@ -49,6 +49,10 @@
 .site-shell {
   min-height: 100vh;
   overflow: clip;
+  position: relative;
+  isolation: isolate;
+  background-color: #090b10;
+  color: #f8fafc;
 }
 
 .site-header {
@@ -56,8 +60,18 @@
   align-items: center;
   justify-content: space-between;
   width: min(1180px, calc(100% - 48px));
-  min-height: 82px;
   margin: 0 auto;
+  position: sticky;
+  z-index: 50;
+  top: 16px;
+  min-height: 68px;
+  margin-top: 16px;
+  padding: 9px 11px 9px 15px;
+  border: 1px solid rgba(220, 222, 233, .88);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, .82);
+  box-shadow: 0 16px 44px rgba(28, 31, 51, .08);
+  backdrop-filter: blur(18px) saturate(1.2);
 }
 
 .site-brand {
@@ -81,9 +95,9 @@
 .site-brand-mark i {
   position: absolute;
   width: 19px;
-  height: 7px;
-  border-radius: 99px;
   transform: rotate(-35deg);
+  height: 6px;
+  border-radius: 1px;
 }
 
 .site-brand-mark i:nth-child(1) {
@@ -115,30 +129,35 @@
 }
 
 .site-brand small {
-  margin-top: 2px;
-  color: #9093a0;
-  font-size: 8px;
   font-weight: 800;
-  letter-spacing: 0.15em;
+  margin-top: 0;
+  color: #6e756c;
+  font-size: 9px;
+  letter-spacing: .05em;
 }
 
 .site-nav {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid #e9eaf0;
+  border-radius: 14px;
+  background: #f3f4f8;
 }
 
 .site-nav a {
-  padding: 9px 13px;
   color: #6d7080;
   font-size: 13px;
   font-weight: 700;
+  padding: 9px 14px;
+  border-radius: 10px;
 }
 
 .site-nav a:hover,
 .site-nav a[aria-current="page"] {
   background: #fff;
-  box-shadow: 0 8px 24px rgba(34, 38, 61, 0.07);
+  box-shadow: 0 5px 14px rgba(34, 38, 61, .07);
 }
 
 .site-footer {
@@ -148,69 +167,32 @@
   width: min(1180px, calc(100% - 48px));
   margin: 0 auto;
   padding: 28px 0 35px;
-  border-top: 1px solid var(--line);
-  color: #9699a7;
   font-size: 11px;
+  border-top: 2px solid var(--ink);
+  color: #687168;
 }
 
 .site-footer a:hover {
   color: #5b5ce2;
 }
 
-.site-shell {
-  position: relative;
-  isolation: isolate;
-  background-color: #090b10;
-  color: #f8fafc;
-}
-
 .site-shell::before {
   content: "";
   position: absolute;
   z-index: -1;
-  height: 720px;
-  opacity: .32;
   background-image: linear-gradient(rgba(255, 255, 255, .03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, .03) 1px, transparent 1px);
-  background-size: 42px 42px;
-  mask-image: linear-gradient(to bottom, #000, transparent 82%);
-}
-
-.site-header {
-  position: sticky;
-  z-index: 50;
-  top: 16px;
-  min-height: 68px;
-  margin-top: 16px;
-  padding: 9px 11px 9px 15px;
-  border: 1px solid rgba(220, 222, 233, .88);
-  border-radius: 22px;
-  background: rgba(255, 255, 255, .82);
-  box-shadow: 0 16px 44px rgba(28, 31, 51, .08);
-  backdrop-filter: blur(18px) saturate(1.2);
+  inset: 0 0 auto;
+  height: 540px;
+  opacity: 1;
+  background: linear-gradient(110deg, rgba(233, 95, 44, .11) 0 13%, transparent 13% 82%, rgba(47, 125, 84, .09) 82%);
+  background-size: auto;
+  mask-image: linear-gradient(to bottom, #000, transparent 96%);
 }
 
 .site-header-actions {
   display: flex;
   align-items: center;
   gap: 10px;
-}
-
-.site-nav {
-  gap: 2px;
-  padding: 4px;
-  border: 1px solid #e9eaf0;
-  border-radius: 14px;
-  background: #f3f4f8;
-}
-
-.site-nav a {
-  padding: 9px 14px;
-  border-radius: 10px;
-}
-
-.site-nav a:hover,
-.site-nav a[aria-current="page"] {
-  box-shadow: 0 5px 14px rgba(34, 38, 61, .07);
 }
 
 @media (max-width: 900px) {
@@ -261,15 +243,6 @@
   }
 }
 
-.site-shell::before {
-  inset: 0 0 auto;
-  height: 540px;
-  opacity: 1;
-  background: linear-gradient(110deg, rgba(233, 95, 44, .11) 0 13%, transparent 13% 82%, rgba(47, 125, 84, .09) 82%);
-  background-size: auto;
-  mask-image: linear-gradient(to bottom, #000, transparent 96%);
-}
-
 .site-brand strong {
   font-family: "YQ Display", "Microsoft YaHei UI", sans-serif;
   font-weight: 700;
@@ -297,11 +270,6 @@
   box-shadow: 4px 4px 0 rgba(232, 95, 44, .45);
 }
 
-.site-brand-mark i {
-  height: 6px;
-  border-radius: 1px;
-}
-
 .site-brand-mark i:nth-child(2) {
   background: #f7b846;
 }
@@ -313,13 +281,6 @@
 
 .site-brand > span:last-child {
   margin-left: 5px;
-}
-
-.site-brand small {
-  margin-top: 0;
-  color: #6e756c;
-  font-size: 9px;
-  letter-spacing: .05em;
 }
 
 .site-header-actions {
@@ -347,11 +308,6 @@
   background: transparent;
   box-shadow: none;
   color: var(--ink);
-}
-
-.site-footer {
-  border-top: 2px solid var(--ink);
-  color: #687168;
 }
 
 .site-footer a:hover {

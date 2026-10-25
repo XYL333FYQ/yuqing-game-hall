@@ -263,15 +263,21 @@ p {
 
 .error-card {
   padding: 40px 32px;
-  background: rgba(18, 22, 34, 0.85);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
   text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  background: rgba(15, 20, 32, 0.85);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+  backdrop-filter: blur(20px);
 }
 
 .error-card h1 {
   margin: 0 0 12px;
   font-size: 32px;
-  font-weight: 800;
+  font-family: "YQ Display", "Microsoft YaHei UI", sans-serif;
+  font-weight: 700;
+  color: #fff;
 }
 
 .error-card p:not(.kicker) {
@@ -313,11 +319,6 @@ p {
   .desktop-gate .button {
     width: 100%;
   }
-}
-
-.error-card h1 {
-  font-family: "YQ Display", "Microsoft YaHei UI", sans-serif;
-  font-weight: 700;
 }
 
 @media (min-width: 1440px) {
@@ -384,19 +385,6 @@ p {
   border: 1px solid rgba(99, 102, 241, 0.35);
   border-radius: 14px;
   color: #818cf8;
-}
-
-.error-card {
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
-  background: rgba(15, 20, 32, 0.85);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  color: #f8fafc;
-  backdrop-filter: blur(20px);
-}
-
-.error-card h1 {
-  color: #fff;
 }
 
 .error-card p:not(.kicker) {

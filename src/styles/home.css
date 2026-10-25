@@ -16,6 +16,8 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(20px);
+  --game-accent: #6366f1;
+  --game-dark: #0f172a;
 }
 
 .arcade-featured-slide {
@@ -25,8 +27,8 @@
   min-height: 420px;
   overflow: hidden;
   isolation: isolate;
-  animation: featured-slide-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
   will-change: opacity, transform;
+  animation: heroSlideFadeIn 0.48s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .arcade-featured-slide::before {
@@ -455,9 +457,10 @@
 }
 
 .arcade-game-card:hover .arcade-card-action {
-  background: linear-gradient(135deg, #6366f1, #4f46e5);
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+  background: linear-gradient(135deg, var(--game-accent), color-mix(in srgb, var(--game-accent) 72%, #4f46e5));
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--game-accent) 42%, transparent);
 }
 
 .arcade-filter-bar {
@@ -538,6 +541,8 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: #94a3b8;
   font-size: 12px;
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .arcade-select:hover {
@@ -937,11 +942,6 @@
   }
 }
 
-.arcade-featured {
-  --game-accent: #6366f1;
-  --game-dark: #0f172a;
-}
-
 .arcade-featured-stage {
   background: radial-gradient(circle at 82% 38%, color-mix(in srgb, var(--game-accent) 26%, transparent), transparent 58%),
     radial-gradient(circle at 16% 85%, color-mix(in srgb, var(--game-accent) 14%, transparent), transparent 52%),
@@ -950,10 +950,6 @@
   box-shadow: 0 28px 64px -16px rgba(0, 0, 0, 0.72),
     0 0 48px -12px color-mix(in srgb, var(--game-accent) 22%, transparent),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.16);
-}
-
-.arcade-featured-slide {
-  animation: heroSlideFadeIn 0.48s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .arcade-featured-copy {
@@ -1164,13 +1160,6 @@
     inset 0 1px 0 0 rgba(255, 255, 255, 0.22);
 }
 
-.arcade-game-card:hover .arcade-card-action {
-  background: linear-gradient(135deg, var(--game-accent), color-mix(in srgb, var(--game-accent) 72%, #4f46e5));
-  border-color: transparent;
-  color: #fff;
-  box-shadow: 0 6px 18px color-mix(in srgb, var(--game-accent) 42%, transparent);
-}
-
 .arcade-empty-state {
   display: grid;
   justify-items: center;
@@ -1246,11 +1235,6 @@
 .arcade-filter-pills {
   flex: 1 1 0%;
   min-width: 0;
-}
-
-.arcade-select {
-  flex: 0 0 auto;
-  white-space: nowrap;
 }
 
 .arcade-select > span,
