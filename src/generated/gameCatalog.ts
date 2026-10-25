@@ -1633,8 +1633,8 @@ export const GAME_MANIFESTS = [
     "order": 19,
     "discovery": {
       "genres": [
-        "board-card",
-        "strategy"
+        "strategy",
+        "action-adventure"
       ],
       "online": "none",
       "audiences": [
@@ -2996,8 +2996,8 @@ export const GAME_MANIFESTS = [
     "order": 35,
     "discovery": {
       "genres": [
-        "board-card",
-        "strategy"
+        "strategy",
+        "action-adventure"
       ],
       "online": "none",
       "audiences": [

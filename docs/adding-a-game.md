@@ -108,19 +108,13 @@ npm run game:new -- star-map --external
 | `kind: "external"` 的 `url` | 必填 HTTPS 游玩地址，同时要求 `platform.hosting: "server"`。 |
 | `kind: "none"` | 不带入口，只用于 `platform.hosting: "restricted"`。 |
 
-当前分类 id 与展示名称如下；新增分类先更新唯一词表，不用自行创造近义 id：
+## 怎么选分类
 
-| id | 分类 |
-| --- | --- |
-| `board-card` | 棋牌 |
-| `puzzle` | 益智解谜 |
-| `arcade` | 街机 |
-| `shooter` | 射击 |
-| `action-adventure` | 动作冒险 |
-| `strategy` | 策略塔防 |
-| `sim-survival` | 经营生存 |
-| `racing` | 竞速 |
-| `casual-collection` | 休闲合集 |
+分类 id、展示名称和每一类的定义都只写在 [game-taxonomy.json](../src/platform/game-taxonomy.json)：`genres` 是 id 与名称，`genreGuide` 是定义和边界。这里不重复抄一份，避免两处不一致。新增分类先改词表和定义，不要自行创造近义 id。
+
+判断原则：**按核心玩法归类，不按题材或载体归类。** 例如用了扑克牌元素、但玩家主要在地牢里探索和构筑卡组的游戏，不属于“棋牌”，应选“策略塔防”或“动作冒险”。选 1~2 项，拿不准时选最能描述玩家主要在做什么的那项。
+
+校验器只能检查分类 id 合法，检查不出归得对不对，所以填完分类后请对照 `genreGuide` 再看一遍。
 
 ## 联机三档怎么判定
 

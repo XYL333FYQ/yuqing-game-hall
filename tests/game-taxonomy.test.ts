@@ -82,6 +82,22 @@ describe("游戏目录一致性", () => {
     expect(missing).toEqual([]);
   });
 
+  it("每个分类都有定义，且定义与分类列表一一对应", () => {
+    expect(Object.keys(taxonomy.genreGuide).sort()).toEqual([...GENRE_IDS].sort());
+    for (const [id, guide] of Object.entries(taxonomy.genreGuide)) {
+      expect(typeof guide === "string" && guide.trim().length > 0, `${id} 缺少分类定义`).toBe(true);
+    }
+    expect(taxonomy.genreGuideRule.trim().length).toBeGreaterThan(0);
+  });
+
+  it("棋牌只给传统棋牌，卡牌地牢和卡牌冒险不归入棋牌", async () => {
+    const entries = await collectManifests();
+    const byId = new Map(entries.map(({ manifest }) => [manifest.id as string, manifest]));
+    for (const id of ["khan", "casual-crusade"]) {
+      expect(byId.get(id)?.discovery.genres, id).not.toContain("board-card");
+    }
+  });
+
   it("已知联机游戏标注了正确的联机方式，可玩的联机游戏共 11 款", async () => {
     const entries = await collectManifests();
     const onlineById = new Map(entries.map(({ manifest }) => [manifest.id as string, manifest]));

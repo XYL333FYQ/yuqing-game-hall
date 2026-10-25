@@ -3,7 +3,7 @@
   "id": "casual-crusade",
   "order": 19,
   "discovery": {
-    "genres": ["board-card","strategy"],
+    "genres": ["strategy","action-adventure"],
     "online": "none",
     "audiences": [
       "single"
