@@ -5,7 +5,7 @@
 - [项目说明与运行命令](../README.md)
 - [架构、目录职责与部署边界](../ARCHITECTURE.md)
 - [许可声明](../THIRD_PARTY_NOTICES.md)
-- [来源审计](../SOURCE_AUDIT.md)与[上游源码索引](../UPSTREAM_SOURCE_INDEX.md)
+- [来源审计](maintenance/SOURCE_AUDIT.md)与[上游源码索引](maintenance/UPSTREAM_SOURCE_INDEX.md)
 
 ## 游戏接入与运行资料
 

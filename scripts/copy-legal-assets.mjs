@@ -12,8 +12,10 @@ for (const fileName of fs.readdirSync(sourceDirectory)) {
   fs.copyFileSync(source, path.join(destinationDirectory, fileName));
 }
 
-for (const fileName of ["LICENSE", "THIRD_PARTY_NOTICES.md", "SOURCE_AUDIT.md"]) {
-  fs.copyFileSync(path.resolve(fileName), path.join(legalRoot, fileName));
+// 来源审计放在 docs/maintenance/，发布时仍复制到 public/legal/ 根部，线上路径不变。
+const legalFiles = ["LICENSE", "THIRD_PARTY_NOTICES.md", "docs/maintenance/SOURCE_AUDIT.md"];
+for (const file of legalFiles) {
+  fs.copyFileSync(path.resolve(file), path.join(legalRoot, path.basename(file)));
 }
 
 console.log("License and source-audit files are ready in public/legal.");

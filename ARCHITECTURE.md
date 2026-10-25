@@ -281,7 +281,7 @@ VPS 使用各服务自己的 Dockerfile 或 `docker-compose.example.yml`，与�
 
 - `docs/games/`：游戏接入批次、来源与联机部署说明；统一从 `docs/README.md` 进入。
 - `docs/maintenance/`：已执行的跨模块修复、清理依据与验证边界。
-- `tests/`：大厅与跨模块回归；游戏和后端自身的测试留在所属模块中，由根目录命令串联。
+- `tests/`：大厅与跨模块回归；`tests/node/<id>/` 存放单个游戏的 Node 回归（如斗地主规则引擎）；后端自身的测试留在所属模块中，由根目录命令串联。
 - `output/`：被 Git 忽略的本地验收材料和历史辅助脚本，不是应用或构建输入。
 - `licenses/` 和根目录许可/审计文档：维护源；`public/legal/` 为构建同步后的发布副本，不单独编辑。
 

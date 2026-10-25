@@ -285,7 +285,7 @@ writeFileSync(file, text, { encoding: "utf8" });
 
 ## 许可与来源
 
-第三方运行包、上游归档与许可文件请分别遵循仓库中的审计与声明文档（如 `SOURCE_AUDIT.md`、`THIRD_PARTY_NOTICES.md` 等）。
+第三方运行包、上游归档与许可文件请分别遵循仓库中的审计与声明文档（如 `docs/maintenance/SOURCE_AUDIT.md`、`THIRD_PARTY_NOTICES.md` 等）。
 请勿因为“代码能跑”就默认拥有再分发或商用授权。
 
 

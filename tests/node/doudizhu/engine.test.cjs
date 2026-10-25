@@ -1,6 +1,6 @@
 'use strict';
 /* Node test for the rules engine + full AI-vs-AI simulations.
-   Run: node tests/engine.test.js */
+   Run: node tests/node/doudizhu/engine.test.cjs */
 
 // Run the classic browser scripts in one context, matching their production load order.
 const fs = require('node:fs');
