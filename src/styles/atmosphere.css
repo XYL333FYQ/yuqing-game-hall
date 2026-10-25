@@ -673,7 +673,8 @@ html[data-theme] .arcade-home.arcade-shell {
     box-shadow: var(--theme-shadow);
     backdrop-filter: blur(18px);
   }
-  & .arcade-filter-pills { min-width: 0; padding-block: 2px; }
+  & .arcade-filter-pills { min-width: 0; padding-block: 2px; gap: 8px 24px; }
+  & .arcade-filter-options.is-scrollable::-webkit-scrollbar { display: none; }
   & .arcade-trending-grid::-webkit-scrollbar { display: none; }
   & .arcade-filter-pills button { flex: 0 0 auto; min-height: 34px; padding-inline: 14px; border-radius: 99px; font-size: 12px; font-weight: 700; }
 
@@ -718,8 +719,18 @@ html[data-theme] .arcade-home.arcade-shell {
       grid-template-columns: 1fr;
       gap: 16px;
     }
-    & .arcade-filter-bar { position: static; gap: 10px; flex-wrap: wrap; }
-    & .arcade-filter-pills { flex-basis: 100%; }
+    & .arcade-filter-bar { position: static; gap: 10px; flex-wrap: wrap; padding: 10px 12px; }
+    & .arcade-filter-pills { flex: 1 1 100%; flex-direction: column; align-items: stretch; gap: 8px; }
+    /* 手机上每组一行：左侧固定标签，右侧按钮；分类按钮多，单行横滑并用右侧渐隐提示还有更多。 */
+    & .arcade-filter-group { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 8px; max-width: none; }
+    & .arcade-filter-pills button { min-height: 30px; padding-inline: 11px; }
+    & .arcade-filter-options.is-scrollable {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-inline-end: 22px;
+      mask-image: linear-gradient(90deg, #000 calc(100% - 26px), transparent);
+    }
     & .arcade-select { margin-left: auto; }
     & .gallery-vision { padding: 24px 20px; }
   }

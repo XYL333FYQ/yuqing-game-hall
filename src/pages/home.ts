@@ -65,18 +65,27 @@ export function renderHome(root: HTMLElement): () => void {
           <div class="arcade-filter-bar" aria-label="筛选游戏">
             <div class="arcade-filter-pills">
               <div class="arcade-filter-group" role="group" aria-label="按人数筛选">
-                <button class="is-active" type="button" data-audience="all" aria-pressed="true">全部 <em>${games.length}</em></button>
-                <button type="button" data-audience="single" aria-pressed="false">单人</button>
-                <button type="button" data-audience="duo" aria-pressed="false">双人</button>
-                <button type="button" data-audience="multi" aria-pressed="false">多人</button>
+                <span class="arcade-filter-label" aria-hidden="true">人数</span>
+                <div class="arcade-filter-options">
+                  <button class="is-active" type="button" data-audience="all" aria-pressed="true">全部 <em>${games.length}</em></button>
+                  <button type="button" data-audience="single" aria-pressed="false">单人</button>
+                  <button type="button" data-audience="duo" aria-pressed="false">双人</button>
+                  <button type="button" data-audience="multi" aria-pressed="false">多人</button>
+                </div>
               </div>
               <div class="arcade-filter-group" role="group" aria-label="按联机方式筛选">
-                <button class="is-active" type="button" data-online="all" aria-pressed="true">全部</button>
-                <button type="button" data-online="friend-room" aria-pressed="false">好友联机 <em>${onlineModeCounts.get("friend-room") ?? 0}</em></button>
-                <button type="button" data-online="public" aria-pressed="false">公开联机 <em>${onlineModeCounts.get("public") ?? 0}</em></button>
+                <span class="arcade-filter-label" aria-hidden="true">联机</span>
+                <div class="arcade-filter-options">
+                  <button class="is-active" type="button" data-online="all" aria-pressed="true">不限</button>
+                  <button type="button" data-online="friend-room" aria-pressed="false">好友联机 <em>${onlineModeCounts.get("friend-room") ?? 0}</em></button>
+                  <button type="button" data-online="public" aria-pressed="false">公开联机 <em>${onlineModeCounts.get("public") ?? 0}</em></button>
+                </div>
               </div>
               <div class="arcade-filter-group" role="group" aria-label="按分类筛选">
-                ${genreOptions.map(({ id, name, count }) => `<button type="button" data-genre="${id}" aria-pressed="false">${escapeHtml(name)} <em>${count}</em></button>`).join("")}
+                <span class="arcade-filter-label" aria-hidden="true">分类</span>
+                <div class="arcade-filter-options is-scrollable">
+                  ${genreOptions.map(({ id, name, count }) => `<button type="button" data-genre="${id}" aria-pressed="false">${escapeHtml(name)} <em>${count}</em></button>`).join("")}
+                </div>
               </div>
             </div>
             <div class="arcade-select" data-sort-control>
