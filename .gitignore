@@ -29,3 +29,6 @@ game-sources/upstream/
 game-sources/rejected/*/
 !game-sources/rejected/kaetram/
 !game-sources/rejected/kaetram/game.json
+
+# 本地缺陷排查工作目录
+.bug-hunter/

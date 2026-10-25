@@ -28,8 +28,6 @@ export interface GameManifest {
   schemaVersion: 3;
   id: string;
   order: number;
-  /** 兼容旧清单；首页推荐自动包含全部可玩的游戏，不再以此字段筛选。 */
-  featured?: boolean;
   discovery: {
     /** 分类词表 id，1~2 个；由目录生成脚本校验。 */
     genres: readonly GameGenreId[];
@@ -37,8 +35,6 @@ export interface GameManifest {
     online: GameOnlineMode;
     audiences: readonly GameAudience[];
     popularRank?: number;
-    /** 兼容旧清单；首页精选轮播不再使用手工排名。 */
-    featuredRank?: number;
   };
   theme: {
     accent: string;

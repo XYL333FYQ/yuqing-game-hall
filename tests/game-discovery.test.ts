@@ -4,12 +4,11 @@ import { featuredGames, playableGames, trendingGames } from "../src/platform/gam
 import type { GameManifest } from "../src/platform/game-manifest";
 
 describe("首页游戏发现规则", () => {
-  it("精选自动覆盖所有可玩游戏，包括没有精选标记的新游戏", () => {
+  it("精选自动覆盖所有可玩游戏", () => {
     const games = playableGames(GAME_CATALOG);
     const featured = featuredGames(GAME_CATALOG);
     expect(featured).toHaveLength(games.length);
     expect(new Set(featured.map((game) => game.id))).toEqual(new Set(games.map((game) => game.id)));
-    expect(featured.some((game) => !game.featured)).toBe(true);
     expect(featured.every((game) => game.platform.launch.kind !== "none")).toBe(true);
   });
 
@@ -48,7 +47,6 @@ describe("首页游戏发现规则", () => {
       ...playableGames(GAME_CATALOG)[0],
       id: "new-game",
       order: 1000,
-      featured: false,
       discovery: { genres: ["arcade"], online: "none", audiences: ["single"] },
     };
     const pool = featuredGames([...GAME_CATALOG, added], () => 0);

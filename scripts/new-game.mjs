@@ -91,7 +91,7 @@ async function main() {
   console.log(`已创建 ${root}/${id}/game.json（schemaVersion=3，order=${order}）。`);
   console.log('请逐项填写 TODO、空字符串和 null；tags/highlights/cautions/capabilities/permissions 无适用项时填写 []。未完成前目录校验和构建会失败。');
   console.log("分类与联机词表：src/platform/game-taxonomy.json；完整步骤：docs/adding-a-game.md。");
-  console.log("填写后运行 npm run games:catalog，根据具体字段错误继续修正。");
+  console.log("填写后运行 corepack pnpm games:catalog，根据具体字段错误继续修正。");
 }
 
 main().catch(error => {

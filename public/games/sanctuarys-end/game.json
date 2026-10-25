@@ -2,8 +2,7 @@
   "schemaVersion": 3,
   "id": "sanctuarys-end",
   "order": 4,
-  "featured": true,
-  "discovery": { "genres": ["action-adventure"], "online": "none", "audiences": ["single"], "popularRank": 4, "featuredRank": 3 },
+  "discovery": { "genres": ["action-adventure"], "online": "none", "audiences": ["single"], "popularRank": 4 },
   "theme": { "accent": "#9d72e8", "dark": "#1c1428" },
   "presentation": {
     "title": "庇护所终章",

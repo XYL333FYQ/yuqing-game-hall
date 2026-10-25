@@ -81,9 +81,6 @@ function validateManifest(value, source) {
   if (value.discovery.popularRank !== undefined && (!Number.isInteger(value.discovery.popularRank) || value.discovery.popularRank < 1)) {
     fail(source, "discovery.popularRank 必须是大于 0 的整数");
   }
-  if (value.discovery.featuredRank !== undefined && (!Number.isInteger(value.discovery.featuredRank) || value.discovery.featuredRank < 1)) {
-    fail(source, "discovery.featuredRank 必须是大于 0 的整数");
-  }
   const presentation = value.presentation;
   if (!presentation || typeof presentation !== "object" || Array.isArray(presentation)) fail(source, "缺少 presentation 配置");
   for (const key of ["title", "mark", "category", "tagline", "description", "actionLabel"]) {

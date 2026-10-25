@@ -2,8 +2,7 @@
   "schemaVersion": 3,
   "id": "scribble",
   "order": 6,
-  "featured": true,
-  "discovery": { "genres": ["casual-collection"], "online": "public", "audiences": ["multi"], "popularRank": 5, "featuredRank": 4 },
+  "discovery": { "genres": ["casual-collection"], "online": "public", "audiences": ["multi"], "popularRank": 5 },
   "theme": { "accent": "#4ea7e8", "dark": "#102131" },
   "presentation": {
     "title": "你画我猜",

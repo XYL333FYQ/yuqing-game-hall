@@ -2,8 +2,7 @@
   "schemaVersion": 3,
   "id": "der-koloss",
   "order": 2,
-  "featured": true,
-  "discovery": { "genres": ["shooter","action-adventure"], "online": "friend-room", "audiences": ["single", "multi"], "popularRank": 2, "featuredRank": 2 },
+  "discovery": { "genres": ["shooter","action-adventure"], "online": "friend-room", "audiences": ["single", "multi"], "popularRank": 2 },
   "theme": { "accent": "#f06a3d", "dark": "#251713" },
   "presentation": {
     "title": "孤堡尸潮",

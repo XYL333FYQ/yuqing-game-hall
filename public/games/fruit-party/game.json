@@ -2,8 +2,7 @@
   "schemaVersion": 3,
   "id": "fruit-party",
   "order": 1,
-  "featured": true,
-  "discovery": { "genres": ["arcade"], "online": "friend-room", "audiences": ["single", "duo"], "popularRank": 1, "featuredRank": 1 },
+  "discovery": { "genres": ["arcade"], "online": "friend-room", "audiences": ["single", "duo"], "popularRank": 1 },
   "theme": { "accent": "#dd5037", "dark": "#231411" },
   "presentation": {
     "title": "果切派对",

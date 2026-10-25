@@ -258,7 +258,7 @@ VPS 使用各服务自己的 Dockerfile 或 `docker-compose.example.yml`，与�
 
 ## 11. 新增游戏决策
 
-先运行 `npm run game:new -- <id>`（第三方服务器游戏加 `--external`），生成必须填写后才能通过校验的 schemaVersion 3 清单。三种接入步骤、字段词表、联机判定和提交前命令见 [新增游戏操作指南](docs/adding-a-game.md)。
+先运行 `corepack pnpm game:new <id>`（第三方服务器游戏加 `--external`），生成必须填写后才能通过校验的 schemaVersion 3 清单。三种接入步骤、字段词表、联机判定和提交前命令见 [新增游戏操作指南](docs/adding-a-game.md)。
 
 ```text
 游戏能否只靠浏览器静态文件完整运行？

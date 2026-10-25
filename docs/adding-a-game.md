@@ -9,10 +9,10 @@
 在仓库根目录运行，`star-map` 换成新游戏 id：
 
 ```powershell
-npm run game:new -- star-map
+corepack pnpm game:new star-map
 # 等价于 node scripts/new-game.mjs star-map
 
-npm run game:new -- star-map --external
+corepack pnpm game:new star-map --external
 # 等价于 node scripts/new-game.mjs star-map --external
 ```
 
@@ -24,13 +24,13 @@ npm run game:new -- star-map --external
 - `TODO:字段名`、空字符串 `""`、数组里的空字符串和布尔字段中的 `null` 都是待填写占位值。替换整个占位数组，不要只往后追加合法值。`tags`、`highlights`、`cautions`、`capabilities`、`permissions` 没有适用项时可以填 `[]`。
 - `genres` 必须选 1～2 项。`audiences`、`inputs`、`devices` 按实际支持情况填写，不能根据“网页一般都支持”推断；`vision` 必须明确改成 `true` 或 `false`。
 
-未完成的模板故意不能通过现有校验器。例如 `theme.accent 与 theme.dark 必须是十六进制颜色`、`discovery.genres 含词表外的 id` 都会指出具体配置项；每次修正后再运行 `npm run games:catalog`，直到通过。不要把空文案替换成无实际含义的“待填写”：校验器能检查结构与已知一致性，不能证明介绍、许可或支持设备的事实正确。
+未完成的模板故意不能通过现有校验器。例如 `theme.accent 与 theme.dark 必须是十六进制颜色`、`discovery.genres 含词表外的 id` 都会指出具体配置项；每次修正后再运行 `corepack pnpm games:catalog`，直到通过。不要把空文案替换成无实际含义的“待填写”：校验器能检查结构与已知一致性，不能证明介绍、许可或支持设备的事实正确。
 
 ## 三种接入情况
 
 ### 静态游戏
 
-1. 运行 `npm run game:new -- <id>`。
+1. 运行 `corepack pnpm game:new <id>`。
 2. 将真实 HTML / JS / CSS / 图片 / 音频和许可文件放入 `public/games/<id>/`。自维护游戏如需构建，源码放在 `games/<id>/`，沿用项目构建约定，确保成品进入该公开目录。`public/` 下禁止放后端源码、密钥和开发资料。
 3. 填好 `game.json`。通常保留 `platform.hosting: "static"`、`platform.launch.kind: "iframe"` 和 `presentation.availability.state: "playable"`；`launch.entry` 指向真实的 `/games/<id>/index.html`，入口不同就改成自己的 HTML 文件。
 4. 选择玩法分类、人数和联机方式。纯单机或同屏双人使用 `online: "none"`；浏览器静态客户端也可能依赖房间、信令或 TURN，须按真实联机方式标注。
@@ -38,7 +38,7 @@ npm run game:new -- star-map --external
 
 ### 需要自维护后端的游戏
 
-1. 同样运行 `npm run game:new -- <id>`，保留浏览器运行包和 iframe 入口；将 `platform.hosting` 改成 `"hybrid"`。共享或游戏源码按需要放 `games/<id>/`，专用联机数据服务放 `server-games/<id>/`。
+1. 同样运行 `corepack pnpm game:new <id>`，保留浏览器运行包和 iframe 入口；将 `platform.hosting` 改成 `"hybrid"`。共享或游戏源码按需要放 `games/<id>/`，专用联机数据服务放 `server-games/<id>/`。
 2. 填写房间、匹配、人数和能力声明。需要联网对局时，选择 `"friend-room"` 或 `"public"`，并在 `capabilities` 加入 `"multiplayer"`。后端仅提供存档等辅助能力时，按真实玩法判断，不能只因存在后端就标成多人游戏。
 3. 浏览器与服务端共用、且需要保留发布副本的 JavaScript，登记到根目录 [shared-sync.json](../shared-sync.json)，只编辑源文件，执行 `node scripts/sync-shared.mjs`，源文件和副本一起提交。果切直接相对路径 import `games/fruit-party/src/shared/`，是已有的另一种共享方式，详见 [共享代码规则](../ARCHITECTURE.md#浏览器与服务端共用代码)。
 4. 沿用 [后端维护说明](../server-games/README.md) 接入服务的包配置、测试、Dockerfile、Compose、健康检查、HTTPS/WSS 反向代理和允许来源。新增独立服务还需核对 `.github/workflows/deploy-vps.yml` 的镜像构建、推送和部署步骤；仅放入一个新目录不会自动获得完整部署支持。
@@ -48,7 +48,7 @@ npm run game:new -- star-map --external
 
 ### 第三方服务器游戏
 
-1. 运行 `npm run game:new -- <id> --external`。
+1. 运行 `corepack pnpm game:new <id> --external`。
 2. 填写 `external-games/<id>/game.json`，保留 `platform.hosting: "server"`、`platform.launch.kind: "external"`、`presentation.availability.state: "external"`，把 `platform.launch.url` 换成实际 HTTPS 游玩地址。
 3. 选择 `online: "friend-room"` 或 `"public"`，并添加 `capabilities: ["multiplayer"]` 或其他真实支持的能力。当前校验器不接受 `hosting: "server"` 与 `online: "none"` 的组合。
 4. `platform.sourceUrl` 填 HTTPS 来源地址；许可、技术、可用性与风险写在 `platform`，玩家介绍只描述玩法。需要自有封面时，将资源放入可公开的 `public/games/<id>/` 并引用站内绝对路径；第三方服务器源码不放 `public/`。
@@ -65,13 +65,11 @@ npm run game:new -- star-map --external
 | `schemaVersion` | 当前只能是数字 `3`。 |
 | `id` | 全目录唯一标识；格式见上文，和启动路径对应。 |
 | `order` | 全目录唯一、正整数排序值；生成器按它排序，脚手架自动分配。 |
-| `featured`（可选） | 旧清单兼容布尔值；当前首页推荐不按它筛选，不需要为新游戏添加。 |
 | `theme.accent`、`theme.dark` | 强调色和深色，均为六位十六进制颜色，例如 `#123456`。 |
 | `discovery.genres` | 1～2 个分类 id；唯一词表为 [game-taxonomy.json](../src/platform/game-taxonomy.json) 的 `genres`。 |
 | `discovery.online` | 唯一词表同文件的 `onlineModes`：`none`、`friend-room`、`public`；按下节判定。 |
 | `discovery.audiences` | 人数筛选数组：`single`（单人）、`duo`（双人）、`multi`（多人）。可按真实模式组合；`multi` 受联机一致性规则约束。 |
 | `discovery.popularRank`（可选） | 旧目录中的热门排序数据，填写时须为正整数；当前首页热门按会话兴趣和轮换选择，不必新增手工排名。 |
-| `discovery.featuredRank`（可选） | 旧清单兼容精选排名，填写时须为正整数；当前首页精选轮换不使用它。 |
 | `presentation.title` | 玩家看到的游戏名称，非空字符串。 |
 | `presentation.originalTitle`（可选） | 非空原名称，便于识别上游作品。 |
 | `presentation.mark` | 卡片短标记，非空字符串。 |
@@ -142,18 +140,18 @@ npm run game:new -- star-map --external
 
 ```powershell
 node scripts/sync-shared.mjs
-npm run games:catalog
+corepack pnpm games:catalog
 node scripts/sync-shared.mjs --check
-npm run check:platform
-npm run check:games
-npm test
-npm run build
+corepack pnpm check:platform
+corepack pnpm check:games
+corepack pnpm test
+corepack pnpm build
 git diff --check
 git status
 ```
 
 `games:catalog` 检查清单并更新 `src/generated/gameCatalog.ts`；`check:platform` 还检查共享副本、架构边界、编码和平台类型；`check:games` 检查实际静态入口和资源；`build` 再执行完整静态构建与部署产物检查。`prebuild` 会先检查共享副本，不会在构建时默默修复未同步内容。
 
-若增加后端，还必须运行该服务自己的检查与测试；例如棋牌服务使用 `pnpm --dir server-games/card-room check` 和 `pnpm --dir server-games/card-room test`。改了运行时配置或环境生成流程还要运行 `npm run server:config:test`。将新服务的检查/测试接入相应根命令，并完成前述真实联机验收。
+若增加后端，还必须运行该服务自己的检查与测试；例如棋牌服务使用 `pnpm --dir server-games/card-room check` 和 `pnpm --dir server-games/card-room test`。改了运行时配置或环境生成流程还要运行 `corepack pnpm server:config:test`。将新服务的检查/测试接入相应根命令，并完成前述真实联机验收。
 
 检查生成器的差异，连同新清单、真实运行资源及必要的共享副本一起审阅。构建成功只能证明通过这些检查，不等于游戏交互或线上部署已经正确；提交和部署仍按当前任务的授权执行。

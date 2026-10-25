@@ -63,7 +63,6 @@ export const GAME_MANIFESTS = [
     "schemaVersion": 3,
     "id": "fruit-party",
     "order": 1,
-    "featured": true,
     "discovery": {
       "genres": [
         "arcade"
@@ -73,8 +72,7 @@ export const GAME_MANIFESTS = [
         "single",
         "duo"
       ],
-      "popularRank": 1,
-      "featuredRank": 1
+      "popularRank": 1
     },
     "theme": {
       "accent": "#dd5037",
@@ -156,7 +154,6 @@ export const GAME_MANIFESTS = [
     "schemaVersion": 3,
     "id": "der-koloss",
     "order": 2,
-    "featured": true,
     "discovery": {
       "genres": [
         "shooter",
@@ -167,8 +164,7 @@ export const GAME_MANIFESTS = [
         "single",
         "multi"
       ],
-      "popularRank": 2,
-      "featuredRank": 2
+      "popularRank": 2
     },
     "theme": {
       "accent": "#f06a3d",
@@ -335,7 +331,6 @@ export const GAME_MANIFESTS = [
     "schemaVersion": 3,
     "id": "sanctuarys-end",
     "order": 4,
-    "featured": true,
     "discovery": {
       "genres": [
         "action-adventure"
@@ -344,8 +339,7 @@ export const GAME_MANIFESTS = [
       "audiences": [
         "single"
       ],
-      "popularRank": 4,
-      "featuredRank": 3
+      "popularRank": 4
     },
     "theme": {
       "accent": "#9d72e8",
@@ -510,7 +504,6 @@ export const GAME_MANIFESTS = [
     "schemaVersion": 3,
     "id": "scribble",
     "order": 6,
-    "featured": true,
     "discovery": {
       "genres": [
         "casual-collection"
@@ -519,8 +512,7 @@ export const GAME_MANIFESTS = [
       "audiences": [
         "multi"
       ],
-      "popularRank": 5,
-      "featuredRank": 4
+      "popularRank": 5
     },
     "theme": {
       "accent": "#4ea7e8",
