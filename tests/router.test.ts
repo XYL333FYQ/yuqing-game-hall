@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../src/platform/shell", () => ({ siteHeader: () => "", siteFooter: () => "" }));
-vi.mock("../src/platform/portal-transition", () => ({ cancelPortal: () => {} }));
+vi.mock("../src/shell/shell", () => ({ siteHeader: () => "", siteFooter: () => "" }));
+vi.mock("../src/appearance/portal-transition", () => ({ cancelPortal: () => {} }));
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -55,7 +55,7 @@ describe("portal navigation", () => {
       root.innerHTML = "vision";
       return () => { cleaned.push("vision"); };
     } }));
-    const { startPortal } = await import("../src/portal/router");
+    const { startPortal } = await import("../src/shell/router");
     const initial = startPortal(app);
     location = new URL("http://localhost/vision-lab");
     events.dispatchEvent(new Event("popstate"));
@@ -84,7 +84,7 @@ describe("portal navigation", () => {
       root.innerHTML = "vision";
       return () => {};
     } }));
-    const { startPortal } = await import("../src/portal/router");
+    const { startPortal } = await import("../src/shell/router");
     await startPortal(app);
     location = new URL("http://localhost/vision-lab");
     events.dispatchEvent(new Event("popstate"));
@@ -100,7 +100,7 @@ describe("portal navigation", () => {
       return () => {};
     } }));
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
-    const { startPortal } = await import("../src/portal/router");
+    const { startPortal } = await import("../src/shell/router");
     await startPortal(app);
     expect(app.innerHTML).toBe("home");
     expect(getElementById).toHaveBeenCalledWith("%E0%A4%A");
@@ -116,7 +116,7 @@ describe("portal navigation", () => {
       root.innerHTML = "home";
       return () => {};
     } }));
-    const { startPortal } = await import("../src/portal/router");
+    const { startPortal } = await import("../src/shell/router");
     await startPortal(app);
     const animationCallback = vi.mocked(requestAnimationFrame).mock.calls[0][0];
     const timeoutCallback = vi.mocked(window.setTimeout).mock.calls[0][0] as () => void;
@@ -137,7 +137,7 @@ describe("portal navigation", () => {
       throw new Error("route render failed");
     } }));
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
-    const { startPortal } = await import("../src/portal/router");
+    const { startPortal } = await import("../src/shell/router");
     await startPortal(app);
     expect(app.innerHTML).toContain("页面没有顺利打开");
     expect(app.innerHTML).toContain("route render failed");
@@ -154,7 +154,7 @@ describe("portal navigation", () => {
       return () => {};
     } }));
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
-    const { startPortal } = await import("../src/portal/router");
+    const { startPortal } = await import("../src/shell/router");
     await startPortal(app);
     expect(app.innerHTML).toBe("home");
     expect(error).not.toHaveBeenCalled();

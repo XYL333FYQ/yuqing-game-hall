@@ -1,5 +1,5 @@
 import { GAME_CATALOG } from "../platform/game-catalog";
-import { siteFooter, siteHeader } from "../platform/shell";
+import { siteFooter, siteHeader } from "../shell/shell";
 
 /**
  * 关于与素材说明页。

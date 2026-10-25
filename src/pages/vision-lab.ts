@@ -1,5 +1,5 @@
 import { canPlayGames } from "../platform/device";
-import { bindCopyUrl, desktopGate, siteFooter, siteHeader } from "../platform/shell";
+import { bindCopyUrl, desktopGate, siteFooter, siteHeader } from "../shell/shell";
 import { HandTrackStabilizer } from "../vision/HandTrackStabilizer";
 import { VisionController } from "../vision/VisionController";
 import { VisionOverlayRenderer } from "../vision/VisionOverlayRenderer";

@@ -70,7 +70,7 @@ if (/^\s*(?:root|alias|try_files)\b/mi.test(nginxConfig)) {
   failures.push("VPS Nginx 示例只能代理 API/WSS，不能提供静态文件。");
 }
 
-const router = await readFile(path.join(projectRoot, "src/portal/router.ts"), "utf8");
+const router = await readFile(path.join(projectRoot, "src/shell/router.ts"), "utf8");
 if (!router.includes("/^\\/play\\/") || !router.includes("/^\\/library\\/")) {
   failures.push("平台路由必须保留 /library/<id> 与 /play/<id> 两个命名空间。");
 }

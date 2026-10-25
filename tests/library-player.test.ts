@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderLibraryPlay } from "../src/pages/library-play";
 
 vi.mock("../src/platform/device", () => ({ canPlayGame: () => true }));
-vi.mock("../src/platform/theme", () => ({ themeSwitcher: () => "" }));
+vi.mock("../src/appearance/theme", () => ({ themeSwitcher: () => "" }));
 
 class Node extends EventTarget {
   textContent = "";

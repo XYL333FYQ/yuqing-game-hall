@@ -46,9 +46,15 @@ VPS
 
 ```text
 src/main.ts                 应用启动与首次入场衔接
-src/portal/router.ts        页面加载、导航与页面清理
 src/pages/                 各页面内容与本页交互
-src/platform/              公共外壳、目录、设备判断和主题控制
+src/platform/              游戏数据与规则（不渲染页面）
+  game-manifest.ts         Manifest 类型；game-taxonomy.json 为分类与联机词表
+  game-catalog.ts          目录与按 id 查找；game-filters / game-discovery 为筛选与推荐
+  game-launch.ts           iframe 权限策略；device.ts 为设备门禁；gallery-art.ts 为画廊素材映射
+src/shell/                 页面外壳与路由
+  router.ts                页面加载、导航与页面清理
+  navigation.ts            站内链接接管、导航与锚点定位；shell.ts 为页头、页脚与桌面门禁
+src/appearance/            主题与转场特效
   theme.ts                 主题选择、存储、跨页和跨标签同步
   portal-transition.ts     入场与主题共用的圆形时空揭幕及取消管理
   portal-particles.ts      三个深度平面的星轨与扩散光环
@@ -97,7 +103,7 @@ Manifest 的类型定义位于 `src/platform/game-manifest.ts`。生成脚本扫
   -> 首页 / 介绍页 / 播放器
 ```
 
-浏览器不能扫描服务器文件，所以扫描只发生在开发或构建阶段。生成文件禁止手工编辑；旧的 `gameLibrary.ts` 只做 UI 字段映射，不再保存第二份内容。
+浏览器不能扫描服务器文件，所以扫描只发生在开发或构建阶段。生成文件禁止手工编辑；介绍页和播放页直接读取 `GameManifest`（`src/platform/game-catalog.ts` 的 `findGame`），不再有第二层视图模型。
 
 `presentation` 是玩家可见介绍，`platform` 是维护、许可和启动信息。当前启动类型只有：
 

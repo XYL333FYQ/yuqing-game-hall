@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { GAME_CATALOG } from "../src/platform/game-catalog";
 import { playableGames } from "../src/platform/game-discovery";
-import { filterGames } from "../src/platform/game-filters";
+import { filterGames, sortGames } from "../src/platform/game-filters";
 
 const playable = playableGames(GAME_CATALOG);
 const ids = (games: ReturnType<typeof filterGames>) => games.map((game) => game.id).sort();
@@ -48,5 +48,25 @@ describe("首页游戏筛选 filterGames", () => {
   it("关键词仍匹配标签与分类副标题文本", () => {
     expect(ids(filterGames(playable, { query: "棋牌" }))).toEqual(ids(playable.filter((game) => game.presentation.tags.includes("棋牌"))));
     expect(ids(filterGames(playable, { query: "竞速" }))).toContain("hexgl");
+  });
+});
+
+describe("游戏库排序 sortGames", () => {
+  it("默认按热度排序，没有热度排名的游戏排在后面并按目录顺序", () => {
+    const sorted = [...playable].sort(sortGames("popular"));
+    const ranks = sorted.map((game) => game.discovery.popularRank ?? Number.MAX_SAFE_INTEGER);
+    expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
+  });
+
+  it("名称排序按中文拼音顺序", () => {
+    const titles = [...playable].sort(sortGames("name")).map((game) => game.presentation.title);
+    expect(titles).toEqual([...titles].sort((a, b) => a.localeCompare(b, "zh-CN")));
+  });
+
+  it("多人优先把 audiences 含 multi 的游戏排在前面", () => {
+    const sorted = [...playable].sort(sortGames("group"));
+    const multiCount = playable.filter((game) => game.discovery.audiences.includes("multi")).length;
+    expect(multiCount).toBeGreaterThan(0);
+    expect(sorted.slice(0, multiCount).every((game) => game.discovery.audiences.includes("multi"))).toBe(true);
   });
 });

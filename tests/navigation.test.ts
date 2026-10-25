@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { navigate } from "../src/platform/navigation";
+import { navigate } from "../src/shell/navigation";
 
 describe("same-page hash navigation", () => {
   let location: URL;

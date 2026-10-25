@@ -1,31 +1,35 @@
 import { canPlayGame } from "../platform/device";
-import { themeSwitcher } from "../platform/theme";
-import { bindCopyUrl, desktopGate } from "../platform/shell";
-import { findLibraryGame, iframeAllowPolicy } from "../data/gameLibrary";
+import { findGame } from "../platform/game-catalog";
+import { iframeAllowPolicy } from "../platform/game-launch";
+import { bindCopyUrl, desktopGate } from "../shell/shell";
+import { themeSwitcher } from "../appearance/theme";
 
-export function renderLibraryPlay(root: HTMLElement, slug: string): () => void {
-  const game = findLibraryGame(slug);
+export function renderLibraryPlay(root: HTMLElement, id: string): () => void {
+  const game = findGame(id);
   if (!game) throw new Error("没有找到这款游戏。");
+  const { presentation, theme } = game;
+  const { play } = presentation;
+  const launch = game.platform.launch;
 
-  document.title = `${game.title} · 雨晴游戏厅`;
+  document.title = `${presentation.title} · 雨晴游戏厅`;
   document.body.dataset.page = "library-game";
 
-  if (!canPlayGame(game)) {
-    root.innerHTML = `<main class="library-player-gate"><a class="back-link" href="/library/${game.slug}" data-nav>← 返回游戏介绍</a>${desktopGate("请在电脑上游玩", "当前设备适合浏览游戏介绍，请使用电脑打开游戏。")}</main>`;
+  if (!canPlayGame(play)) {
+    root.innerHTML = `<main class="library-player-gate"><a class="back-link" href="/library/${game.id}" data-nav>← 返回游戏介绍</a>${desktopGate("请在电脑上游玩", "当前设备适合浏览游戏介绍，请使用电脑打开游戏。")}</main>`;
     return bindCopyUrl(root);
   }
 
-  if (!game.localPath) {
-    root.innerHTML = `<main class="library-player-gate"><a class="back-link" href="/library/${game.slug}" data-nav>← 返回游戏介绍</a><section class="desktop-gate"><span class="desktop-gate-icon">↗</span><div><strong>${game.statusLabel}</strong><p>当前可以先查看游戏介绍与玩法信息。</p></div>${game.onlineUrl ? `<a class="button primary" href="${game.onlineUrl}" target="_blank" rel="noreferrer">${game.launchLabel ?? "前往体验"}</a>` : ""}</section></main>`;
+  if (launch.kind !== "iframe") {
+    root.innerHTML = `<main class="library-player-gate"><a class="back-link" href="/library/${game.id}" data-nav>← 返回游戏介绍</a><section class="desktop-gate"><span class="desktop-gate-icon">↗</span><div><strong>${presentation.availability.label}</strong><p>当前可以先查看游戏介绍与玩法信息。</p></div>${launch.kind === "external" ? `<a class="button primary" href="${launch.url}" target="_blank" rel="noreferrer">${presentation.actionLabel}</a>` : ""}</section></main>`;
     return () => undefined;
   }
-  const startPath = game.startPath ?? game.localPath;
+  const startPath = launch.startUrl ?? launch.entry;
 
   root.innerHTML = `
-    <div class="library-player" style="--game-accent:${game.accent};--game-dark:${game.dark}">
+    <div class="library-player" style="--game-accent:${theme.accent};--game-dark:${theme.dark}">
       <header class="library-player-toolbar">
-        <a href="/library/${game.slug}" data-nav><b>←</b><span><strong>${game.title}</strong><small>${game.mode} · ${game.players}</small></span></a>
-        <p class="library-player-status"><i></i> <span>${game.controls}</span></p>
+        <a href="/library/${game.id}" data-nav><b>←</b><span><strong>${presentation.title}</strong><small>${play.modes} · ${play.players}</small></span></a>
+        <p class="library-player-status"><i></i> <span>${play.controls}</span></p>
         <div class="library-player-tools">
           ${themeSwitcher()}
           <button type="button" data-cinema-toggle title="收起或展开顶部控制栏">沉浸宽屏</button>
@@ -35,11 +39,11 @@ export function renderLibraryPlay(root: HTMLElement, slug: string): () => void {
       </header>
       <button type="button" class="library-cinema-restore" data-cinema-restore hidden aria-label="展开顶部工具栏" title="退出沉浸宽屏">▾ 展开控制栏</button>
       <div class="library-frame-wrap">
-        <iframe src="${startPath}" title="${game.title}" allow="${iframeAllowPolicy(game)}"></iframe>
+        <iframe src="${startPath}" title="${presentation.title}" allow="${iframeAllowPolicy(game)}"></iframe>
         <div class="library-frame-loading" role="status">
-          <div class="library-loading-emblem"><span>${game.mark}</span><i></i></div>
-          <strong data-loading-title>正在打开 ${game.title}</strong>
-          <span data-loading-copy>游戏马上就好，准备进入游玩画面 · 操作：${game.controls}</span>
+          <div class="library-loading-emblem"><span>${presentation.mark}</span><i></i></div>
+          <strong data-loading-title>正在打开 ${presentation.title}</strong>
+          <span data-loading-copy>游戏马上就好，准备进入游玩画面 · 操作：${play.controls}</span>
           <div class="library-frame-actions" hidden>
             <button type="button" data-overlay-retry>重新载入</button>
             <a href="${startPath}" target="_blank" rel="noreferrer">独立页面打开</a>
@@ -88,10 +92,10 @@ export function renderLibraryPlay(root: HTMLElement, slug: string): () => void {
     loaded = false;
     loading?.removeAttribute("hidden");
     loadingActions?.setAttribute("hidden", "");
-    if (loadingTitle) loadingTitle.textContent = `正在重新打开 ${game.title}`;
+    if (loadingTitle) loadingTitle.textContent = `正在重新打开 ${presentation.title}`;
     if (loadingCopy) loadingCopy.textContent = "正在重新载入游戏…";
     startLoadingTimer();
-    frame.src = startPath ?? "about:blank";
+    frame.src = startPath;
   };
   const onReadyMessage = (event: MessageEvent): void => {
     if (event.origin !== window.location.origin || event.source !== frame?.contentWindow) return;

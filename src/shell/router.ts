@@ -1,6 +1,6 @@
-import { fragmentTargetId, installLinkNavigation, type PageCleanup } from "../platform/navigation";
-import { cancelPortal } from "../platform/portal-transition";
-import { siteFooter, siteHeader } from "../platform/shell";
+import { fragmentTargetId, installLinkNavigation, type PageCleanup } from "./navigation";
+import { cancelPortal } from "../appearance/portal-transition";
+import { siteFooter, siteHeader } from "./shell";
 
 type PageRenderer = (root: HTMLElement) => PageCleanup;
 type PageLoader = () => Promise<PageRenderer>;

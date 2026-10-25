@@ -1,4 +1,4 @@
-import { themeSwitcher } from "./theme";
+import { themeSwitcher } from "../appearance/theme";
 
 export function siteHeader(active: "home" | "games" | "vision" | "about" | "none" = "none", options: { search?: boolean } = {}): string {
   return `

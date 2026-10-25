@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { readThemePreference, themeParticles } from "../src/platform/theme";
+import { readThemePreference, themeParticles } from "../src/appearance/theme";
 
 describe("theme preference", () => {
   it.each(["dark", "light", "pink"] as const)("restores the saved %s theme", (theme) => {

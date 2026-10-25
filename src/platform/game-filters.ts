@@ -34,3 +34,14 @@ function matchesSearch(game: GameManifest, query: string): boolean {
   const presentation = game.presentation;
   return [presentation.title, presentation.originalTitle ?? "", presentation.category, presentation.tagline, presentation.description, presentation.mark, ...presentation.tags].join(" ").toLocaleLowerCase("zh-CN").includes(query.toLocaleLowerCase("zh-CN"));
 }
+
+function byPopularity(left: GameManifest, right: GameManifest): number {
+  return (left.discovery.popularRank ?? Number.MAX_SAFE_INTEGER) - (right.discovery.popularRank ?? Number.MAX_SAFE_INTEGER) || left.order - right.order;
+}
+
+/** 游戏库排序：popular 按热度、name 按名称、group 让多人游戏排前面。 */
+export function sortGames(sort: string): (left: GameManifest, right: GameManifest) => number {
+  if (sort === "name") return (left, right) => left.presentation.title.localeCompare(right.presentation.title, "zh-CN");
+  if (sort === "group") return (left, right) => Number(right.discovery.audiences.includes("multi")) - Number(left.discovery.audiences.includes("multi")) || byPopularity(left, right);
+  return byPopularity;
+}
