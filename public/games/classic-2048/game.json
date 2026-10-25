@@ -1,8 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "classic-2048",
   "order": 37,
   "discovery": {
+    "genres": ["puzzle"],
+    "online": "none",
     "audiences": [
       "single"
     ]

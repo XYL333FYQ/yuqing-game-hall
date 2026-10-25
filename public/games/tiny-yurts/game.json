@@ -1,8 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "tiny-yurts",
   "order": 18,
   "discovery": {
+    "genres": ["sim-survival","strategy"],
+    "online": "none",
     "audiences": [
       "single"
     ],

@@ -6,6 +6,7 @@
     "moduleResolution": "Bundler",
     "allowImportingTsExtensions": false,
     "strict": true,
+    "resolveJsonModule": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,

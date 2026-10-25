@@ -60,11 +60,15 @@ import type { GameManifest } from "../platform/game-manifest";
 
 export const GAME_MANIFESTS = [
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "fruit-party",
     "order": 1,
     "featured": true,
     "discovery": {
+      "genres": [
+        "arcade"
+      ],
+      "online": "friend-room",
       "audiences": [
         "single",
         "duo"
@@ -84,7 +88,6 @@ export const GAME_MANIFESTS = [
       "tagline": "切开飞舞的水果，和朋友来一场爽快对决。",
       "description": "在飞舞的水果中快速挥刀，挑战限时街机与经典无尽，也可以和朋友用房间码来一场 1v1 果切比赛。",
       "tags": [
-        "单人",
         "1v1",
         "街机"
       ],
@@ -150,11 +153,16 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "der-koloss",
     "order": 2,
     "featured": true,
     "discovery": {
+      "genres": [
+        "shooter",
+        "action-adventure"
+      ],
+      "online": "friend-room",
       "audiences": [
         "single",
         "multi"
@@ -174,7 +182,6 @@ export const GAME_MANIFESTS = [
       "tagline": "守住孤堡，在一波又一波的尸潮中活下来。",
       "description": "守住据点、购买武器、解锁防守区域并救援队友，在越来越凶猛的尸潮中坚持更久。",
       "tags": [
-        "单人",
         "四人合作",
         "打怪"
       ],
@@ -242,10 +249,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "suroi",
     "order": 3,
     "discovery": {
+      "genres": [
+        "shooter"
+      ],
+      "online": "public",
       "audiences": [
         "multi"
       ],
@@ -263,7 +274,6 @@ export const GAME_MANIFESTS = [
       "tagline": "搜集装备、躲避危险，在荒野中成为最后的幸存者。",
       "description": "搜集装备、躲避毒圈、判断枪声方向，在不断缩小的战场中寻找机会，成为最后的幸存者。",
       "tags": [
-        "多人",
         "生存",
         "射击"
       ],
@@ -316,14 +326,21 @@ export const GAME_MANIFESTS = [
         "kind": "external",
         "url": "https://suroi.io/"
       }
-    }
+    },
+    "capabilities": [
+      "multiplayer"
+    ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "sanctuarys-end",
     "order": 4,
     "featured": true,
     "discovery": {
+      "genres": [
+        "action-adventure"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ],
@@ -342,7 +359,6 @@ export const GAME_MANIFESTS = [
       "tagline": "深入地下城，在技能与装备之间找到自己的战斗方式。",
       "description": "选择职业、组合技能与装备词条，深入地下城迎战成群怪物和首领，在一次次探索中让角色变得更强。",
       "tags": [
-        "单人",
         "打怪",
         "养成"
       ],
@@ -398,7 +414,6 @@ export const GAME_MANIFESTS = [
       }
     },
     "capabilities": [
-      "multiplayer",
       "audio",
       "fullscreen",
       "storage"
@@ -409,10 +424,15 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "littlejs-arcade",
     "order": 5,
     "discovery": {
+      "genres": [
+        "casual-collection",
+        "arcade"
+      ],
+      "online": "none",
       "audiences": [
         "single",
         "duo"
@@ -431,8 +451,6 @@ export const GAME_MANIFESTS = [
       "tagline": "赛车、生存、台球和坦克，一次打开一整排小游戏。",
       "description": "从赛车、生存、防空到台球和坦克，挑一款短小直接的小游戏，随时开始一局轻松的街机时间。",
       "tags": [
-        "单人",
-        "本地双人",
         "合集"
       ],
       "play": {
@@ -489,11 +507,15 @@ export const GAME_MANIFESTS = [
     }
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "scribble",
     "order": 6,
     "featured": true,
     "discovery": {
+      "genres": [
+        "casual-collection"
+      ],
+      "online": "public",
       "audiences": [
         "multi"
       ],
@@ -512,7 +534,6 @@ export const GAME_MANIFESTS = [
       "tagline": "轮流画画和猜词，把一群人的笑声聚到一起。",
       "description": "轮流画画和猜词，和朋友开一间房，在有限时间里画出提示、抢先猜中答案。",
       "tags": [
-        "多人",
         "派对",
         "创作"
       ],
@@ -567,13 +588,21 @@ export const GAME_MANIFESTS = [
         "kind": "external",
         "url": "https://scribblers.bios-marcel.link/"
       }
-    }
+    },
+    "capabilities": [
+      "multiplayer"
+    ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "pvp-arena",
     "order": 7,
     "discovery": {
+      "genres": [
+        "shooter",
+        "arcade"
+      ],
+      "online": "friend-room",
       "audiences": [
         "duo",
         "multi"
@@ -592,7 +621,6 @@ export const GAME_MANIFESTS = [
       "tagline": "拾起武器，在像素竞技场里快速决出胜负。",
       "description": "在小地图中高速移动、拾取武器，与身边的朋友或远方的对手展开一场节奏明快的短局对战。",
       "tags": [
-        "1–4 人",
         "射击",
         "本地对战"
       ],
@@ -646,13 +674,20 @@ export const GAME_MANIFESTS = [
         "entry": "/games/pvp-arena/client/index.html",
         "upstreamUrl": "https://www.kesiev.com/pvp/"
       }
-    }
+    },
+    "capabilities": [
+      "multiplayer"
+    ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "tosios",
     "order": 8,
     "discovery": {
+      "genres": [
+        "shooter"
+      ],
+      "online": "public",
       "audiences": [
         "multi"
       ],
@@ -670,7 +705,6 @@ export const GAME_MANIFESTS = [
       "tagline": "在紧凑地图中组队交锋，抢下属于你的胜利。",
       "description": "在紧凑地图中进行死亡竞赛或团队战，灵活走位、瞄准射击，与对手争夺每一分优势。",
       "tags": [
-        "多人",
         "团队",
         "射击"
       ],
@@ -723,13 +757,20 @@ export const GAME_MANIFESTS = [
         "kind": "external",
         "url": "https://tosios.online/"
       }
-    }
+    },
+    "capabilities": [
+      "multiplayer"
+    ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "hexgl",
     "order": 9,
     "discovery": {
+      "genres": [
+        "racing"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ],
@@ -747,7 +788,6 @@ export const GAME_MANIFESTS = [
       "tagline": "驾驶悬浮载具冲过霓虹赛道，刷新自己的纪录。",
       "description": "驾驶高速悬浮载具穿越霓虹赛道，在连续弯道和急速镜头中保持路线，挑战更快的计时成绩。",
       "tags": [
-        "单人",
         "竞速",
         "3D"
       ],
@@ -804,10 +844,14 @@ export const GAME_MANIFESTS = [
     }
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "openfront",
     "order": 10,
     "discovery": {
+      "genres": [
+        "strategy"
+      ],
+      "online": "public",
       "audiences": [
         "multi"
       ],
@@ -825,7 +869,6 @@ export const GAME_MANIFESTS = [
       "tagline": "在世界地图上扩张领地，和大量玩家争夺胜利。",
       "description": "从一小片领地开始扩张，调配兵力、判断局势，与大量玩家在世界地图上争夺最终控制权。",
       "tags": [
-        "多人",
         "策略",
         "大地图"
       ],
@@ -880,13 +923,20 @@ export const GAME_MANIFESTS = [
         "kind": "external",
         "url": "https://openfront.io/"
       }
-    }
+    },
+    "capabilities": [
+      "multiplayer"
+    ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "kaetram",
     "order": 11,
     "discovery": {
+      "genres": [
+        "action-adventure"
+      ],
+      "online": "public",
       "audiences": [
         "multi"
       ],
@@ -953,13 +1003,20 @@ export const GAME_MANIFESTS = [
       "launch": {
         "kind": "none"
       }
-    }
+    },
+    "capabilities": [
+      "multiplayer"
+    ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "doudizhu",
     "order": 12,
     "discovery": {
+      "genres": [
+        "board-card"
+      ],
+      "online": "friend-room",
       "audiences": [
         "single",
         "duo",
@@ -980,9 +1037,7 @@ export const GAME_MANIFESTS = [
       "description": "经典三人斗地主与二人对决，支持癞子和不洗牌玩法。邀请朋友用房间码加入，也可以让 AI 陪你单机练习。",
       "tags": [
         "棋牌",
-        "斗地主",
-        "好友联机",
-        "单人"
+        "斗地主"
       ],
       "play": {
         "modes": "经典三人 / 二人对决 / 癞子 / 不洗牌",
@@ -1045,10 +1100,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "guandan",
     "order": 13,
     "discovery": {
+      "genres": [
+        "board-card"
+      ],
+      "online": "friend-room",
       "audiences": [
         "single",
         "multi"
@@ -1069,8 +1128,7 @@ export const GAME_MANIFESTS = [
       "tags": [
         "棋牌",
         "掼蛋",
-        "组队",
-        "好友联机"
+        "组队"
       ],
       "play": {
         "modes": "好友房间 / AI 补位 / 观战",
@@ -1133,10 +1191,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "mahjong",
     "order": 14,
     "discovery": {
+      "genres": [
+        "board-card"
+      ],
+      "online": "friend-room",
       "audiences": [
         "single",
         "multi"
@@ -1157,7 +1219,6 @@ export const GAME_MANIFESTS = [
       "tags": [
         "棋牌",
         "麻将",
-        "好友联机",
         "休闲"
       ],
       "play": {
@@ -1221,10 +1282,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "gobang",
     "order": 15,
     "discovery": {
+      "genres": [
+        "board-card"
+      ],
+      "online": "friend-room",
       "audiences": [
         "duo",
         "multi"
@@ -1244,9 +1309,7 @@ export const GAME_MANIFESTS = [
       "description": "在十五路棋盘上轮流落子，横、竖或斜向连成五颗即可获胜。支持同屏双人、好友房间和旁观，重新进入房间可以继续棋局。",
       "tags": [
         "棋牌",
-        "五子棋",
-        "本地双人",
-        "好友联机"
+        "五子棋"
       ],
       "play": {
         "modes": "好友房间 / 同屏双人 / 观战",
@@ -1308,10 +1371,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "a-dark-room",
     "order": 16,
     "discovery": {
+      "genres": [
+        "sim-survival"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ],
@@ -1389,10 +1456,15 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "gridland",
     "order": 17,
     "discovery": {
+      "genres": [
+        "sim-survival",
+        "puzzle"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ],
@@ -1470,10 +1542,15 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "tiny-yurts",
     "order": 18,
     "discovery": {
+      "genres": [
+        "sim-survival",
+        "strategy"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ],
@@ -1551,10 +1628,15 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "casual-crusade",
     "order": 19,
     "discovery": {
+      "genres": [
+        "board-card",
+        "strategy"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ],
@@ -1632,10 +1714,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "infernal-throne",
     "order": 20,
     "discovery": {
+      "genres": [
+        "action-adventure"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ],
@@ -1713,10 +1799,15 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "underrun",
     "order": 21,
     "discovery": {
+      "genres": [
+        "shooter",
+        "action-adventure"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ],
@@ -1794,10 +1885,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "xx142-b2",
     "order": 22,
     "discovery": {
+      "genres": [
+        "puzzle"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ],
@@ -1875,10 +1970,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "packabunchas",
     "order": 23,
     "discovery": {
+      "genres": [
+        "puzzle"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ],
@@ -1956,10 +2055,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "bounce-back",
     "order": 24,
     "discovery": {
+      "genres": [
+        "action-adventure"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ],
@@ -2037,10 +2140,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "super-castle",
     "order": 25,
     "discovery": {
+      "genres": [
+        "puzzle"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ],
@@ -2118,10 +2225,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "norman-necromancer",
     "order": 26,
     "discovery": {
+      "genres": [
+        "action-adventure"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ],
@@ -2199,10 +2310,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "the-neatness",
     "order": 27,
     "discovery": {
+      "genres": [
+        "puzzle"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ],
@@ -2279,10 +2394,15 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "backcountry",
     "order": 28,
     "discovery": {
+      "genres": [
+        "action-adventure",
+        "shooter"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ],
@@ -2360,10 +2480,15 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "radius-raid",
     "order": 29,
     "discovery": {
+      "genres": [
+        "shooter",
+        "arcade"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ],
@@ -2441,10 +2566,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "elematter",
     "order": 30,
     "discovery": {
+      "genres": [
+        "strategy"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ],
@@ -2522,10 +2651,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "bee-kind",
     "order": 31,
     "discovery": {
+      "genres": [
+        "action-adventure"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ],
@@ -2602,10 +2735,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "rat-plague",
     "order": 32,
     "discovery": {
+      "genres": [
+        "action-adventure"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ],
@@ -2683,10 +2820,15 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "hextris",
     "order": 33,
     "discovery": {
+      "genres": [
+        "puzzle",
+        "arcade"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ],
@@ -2764,10 +2906,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "thirteenth-floor",
     "order": 34,
     "discovery": {
+      "genres": [
+        "action-adventure"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ],
@@ -2845,10 +2991,15 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "khan",
     "order": 35,
     "discovery": {
+      "genres": [
+        "board-card",
+        "strategy"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ],
@@ -2926,10 +3077,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "classic-tower-defense",
     "order": 36,
     "discovery": {
+      "genres": [
+        "strategy"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ]
@@ -3006,10 +3161,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "classic-2048",
     "order": 37,
     "discovery": {
+      "genres": [
+        "puzzle"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ]
@@ -3088,10 +3247,15 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "classic-tetris",
     "order": 38,
     "discovery": {
+      "genres": [
+        "puzzle",
+        "arcade"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ]
@@ -3168,10 +3332,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "classic-breakout",
     "order": 39,
     "discovery": {
+      "genres": [
+        "arcade"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ]
@@ -3252,10 +3420,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "sokoban-100",
     "order": 40,
     "discovery": {
+      "genres": [
+        "puzzle"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ]
@@ -3333,10 +3505,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "chinese-chess",
     "order": 41,
     "discovery": {
+      "genres": [
+        "board-card"
+      ],
+      "online": "none",
       "audiences": [
         "single",
         "duo"
@@ -3416,10 +3592,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "othello",
     "order": 42,
     "discovery": {
+      "genres": [
+        "board-card"
+      ],
+      "online": "none",
       "audiences": [
         "duo"
       ]
@@ -3437,7 +3617,6 @@ export const GAME_MANIFESTS = [
       "description": "两人在同一台设备上轮流落子，用横、竖、斜方向夹住对手棋子并翻转。棋盘显示合法落点、双方数量，支持撤销、重做和回合计时。",
       "tags": [
         "棋类",
-        "本地双人",
         "策略",
         "中文"
       ],
@@ -3497,10 +3676,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "breaklock",
     "order": 43,
     "discovery": {
+      "genres": [
+        "puzzle"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ]
@@ -3579,10 +3762,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "minesweeper",
     "order": 44,
     "discovery": {
+      "genres": [
+        "puzzle"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ]
@@ -3659,10 +3846,15 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "asteroids",
     "order": 45,
     "discovery": {
+      "genres": [
+        "shooter",
+        "arcade"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ]
@@ -3741,10 +3933,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "binary-puzzle",
     "order": 46,
     "discovery": {
+      "genres": [
+        "puzzle"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ]
@@ -3820,10 +4016,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "visible-dots",
     "order": 47,
     "discovery": {
+      "genres": [
+        "puzzle"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ]
@@ -3899,10 +4099,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "mahjong-solitaire",
     "order": 48,
     "discovery": {
+      "genres": [
+        "puzzle"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ]
@@ -3980,10 +4184,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "sudoku",
     "order": 49,
     "discovery": {
+      "genres": [
+        "puzzle"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ]
@@ -4060,10 +4268,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "klondike",
     "order": 50,
     "discovery": {
+      "genres": [
+        "board-card"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ]
@@ -4137,10 +4349,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "nonograms",
     "order": 51,
     "discovery": {
+      "genres": [
+        "puzzle"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ]
@@ -4214,10 +4430,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "connect-four",
     "order": 52,
     "discovery": {
+      "genres": [
+        "board-card"
+      ],
+      "online": "none",
       "audiences": [
         "duo"
       ]
@@ -4235,7 +4455,6 @@ export const GAME_MANIFESTS = [
       "description": "棋子落下后无法收回，两个人在同一台设备上争取先连成四子。需要同时进攻和封堵，完整胜负判定与重开，支持键盘操作。",
       "tags": [
         "棋类",
-        "本地双人",
         "策略",
         "中文"
       ],
@@ -4292,10 +4511,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "international-chess",
     "order": 53,
     "discovery": {
+      "genres": [
+        "board-card"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ]
@@ -4369,10 +4592,15 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "battleship",
     "order": 54,
     "discovery": {
+      "genres": [
+        "strategy",
+        "puzzle"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ]
@@ -4446,10 +4674,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "snake-classic",
     "order": 55,
     "discovery": {
+      "genres": [
+        "arcade"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ]
@@ -4524,10 +4756,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "color-lines",
     "order": 56,
     "discovery": {
+      "genres": [
+        "puzzle"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ]
@@ -4601,10 +4837,14 @@ export const GAME_MANIFESTS = [
     ]
   },
   {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "id": "tower-building",
     "order": 57,
     "discovery": {
+      "genres": [
+        "arcade"
+      ],
+      "online": "none",
       "audiences": [
         "single"
       ]

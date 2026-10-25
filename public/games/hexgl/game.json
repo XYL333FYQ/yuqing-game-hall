@@ -1,8 +1,8 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "hexgl",
   "order": 9,
-  "discovery": { "audiences": ["single"], "popularRank": 8 },
+  "discovery": { "genres": ["racing"], "online": "none", "audiences": ["single"], "popularRank": 8 },
   "theme": { "accent": "#3dcbd1", "dark": "#0d2225" },
   "presentation": {
     "title": "极速光轨",
@@ -11,7 +11,7 @@
     "category": "未来悬浮竞速",
     "tagline": "驾驶悬浮载具冲过霓虹赛道，刷新自己的纪录。",
     "description": "驾驶高速悬浮载具穿越霓虹赛道，在连续弯道和急速镜头中保持路线，挑战更快的计时成绩。",
-    "tags": ["单人", "竞速", "3D"],
+    "tags": ["竞速", "3D"],
     "play": {
       "modes": "单人计时",
       "players": "1 人",

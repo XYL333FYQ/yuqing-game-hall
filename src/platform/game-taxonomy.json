@@ -1,0 +1,18 @@
+{
+  "genres": {
+    "board-card": "棋牌",
+    "puzzle": "益智解谜",
+    "arcade": "街机",
+    "shooter": "射击",
+    "action-adventure": "动作冒险",
+    "strategy": "策略塔防",
+    "sim-survival": "经营生存",
+    "racing": "竞速",
+    "casual-collection": "休闲合集"
+  },
+  "onlineModes": {
+    "none": "单机",
+    "friend-room": "房间码/私人房间",
+    "public": "公开匹配/大房间"
+  }
+}

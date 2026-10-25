@@ -472,6 +472,15 @@
 .arcade-filter-pills {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+}
+
+.arcade-filter-group {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  max-width: 100%;
   gap: 6px;
 }
 
@@ -493,8 +502,7 @@
   color: #fff;
 }
 
-.arcade-filter-pills button.is-active,
-.arcade-filter-pills button[data-tag-pill].is-active {
+.arcade-filter-pills button.is-active {
   background: linear-gradient(135deg, #6366f1, #4f46e5);
   border-color: rgba(255, 255, 255, 0.2);
   color: #fff;
@@ -851,20 +859,6 @@
     padding: 10px;
   }
 
-  .arcade-filter-pills {
-    display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    gap: 6px;
-    padding-bottom: 2px;
-  }
-
-  .arcade-filter-pills::-webkit-scrollbar {
-    display: none;
-  }
-
   .arcade-filter-pills button {
     flex: 0 0 auto;
     white-space: nowrap;
@@ -1115,17 +1109,6 @@
   backdrop-filter: blur(20px);
 }
 
-.arcade-filter-pills {
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  scrollbar-width: none;
-  padding-bottom: 2px;
-}
-
-.arcade-filter-pills::-webkit-scrollbar {
-  display: none;
-}
-
 .arcade-filter-pills button {
   flex: 0 0 auto;
   display: inline-flex;
@@ -1147,14 +1130,6 @@
 .arcade-filter-pills button.is-active em {
   background: rgba(255, 255, 255, 0.22);
   color: #fff;
-}
-
-.arcade-filter-divider {
-  width: 1px;
-  height: 20px;
-  flex: 0 0 auto;
-  margin: 0 4px;
-  background: rgba(255, 255, 255, 0.1);
 }
 
 .arcade-game-card {

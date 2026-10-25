@@ -1,8 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "gridland",
   "order": 17,
   "discovery": {
+    "genres": ["sim-survival","puzzle"],
+    "online": "none",
     "audiences": [
       "single"
     ],

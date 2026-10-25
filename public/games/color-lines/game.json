@@ -1,8 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "color-lines",
   "order": 56,
   "discovery": {
+    "genres": ["puzzle"],
+    "online": "none",
     "audiences": [
       "single"
     ]

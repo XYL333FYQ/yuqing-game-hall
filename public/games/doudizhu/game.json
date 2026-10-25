@@ -1,8 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "doudizhu",
   "order": 12,
   "discovery": {
+    "genres": ["board-card"],
+    "online": "friend-room",
     "audiences": [
       "single",
       "duo",
@@ -23,9 +25,7 @@
     "description": "经典三人斗地主与二人对决，支持癞子和不洗牌玩法。邀请朋友用房间码加入，也可以让 AI 陪你单机练习。",
     "tags": [
       "棋牌",
-      "斗地主",
-      "好友联机",
-      "单人"
+      "斗地主"
     ],
     "play": {
       "modes": "经典三人 / 二人对决 / 癞子 / 不洗牌",

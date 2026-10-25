@@ -1,8 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "a-dark-room",
   "order": 16,
   "discovery": {
+    "genres": ["sim-survival"],
+    "online": "none",
     "audiences": [
       "single"
     ],

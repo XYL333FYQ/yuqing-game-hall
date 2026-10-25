@@ -673,8 +673,8 @@ html[data-theme] .arcade-home.arcade-shell {
     box-shadow: var(--theme-shadow);
     backdrop-filter: blur(18px);
   }
-  & .arcade-filter-pills { min-width: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-block: 2px; padding-inline-end: 16px; mask-image: linear-gradient(90deg, #000 calc(100% - 18px), transparent); }
-  & .arcade-filter-pills::-webkit-scrollbar, & .arcade-trending-grid::-webkit-scrollbar { display: none; }
+  & .arcade-filter-pills { min-width: 0; padding-block: 2px; }
+  & .arcade-trending-grid::-webkit-scrollbar { display: none; }
   & .arcade-filter-pills button { flex: 0 0 auto; min-height: 34px; padding-inline: 14px; border-radius: 99px; font-size: 12px; font-weight: 700; }
 
   & .gallery-more { display: block; margin: 36px auto 0; padding: 13px 28px; border: 1px solid var(--theme-border); border-radius: 99px; color: var(--theme-ink); background: var(--theme-surface); box-shadow: var(--theme-shadow); font-size: 13px; font-weight: 800; cursor: pointer; transition: border-color .2s, transform .2s; }
@@ -688,6 +688,7 @@ html[data-theme] .arcade-home.arcade-shell {
   }
   @media (max-width: 1024px) {
     & .arcade-featured-art { display: flex; }
+    & .arcade-filter-bar { position: static; }
   }
   @media (max-width: 960px) {
     & .arcade-featured-slide { grid-template-columns: 1fr; min-height: 0; }
@@ -717,7 +718,7 @@ html[data-theme] .arcade-home.arcade-shell {
       grid-template-columns: 1fr;
       gap: 16px;
     }
-    & .arcade-filter-bar { top: 12px; gap: 10px; flex-wrap: wrap; }
+    & .arcade-filter-bar { position: static; gap: 10px; flex-wrap: wrap; }
     & .arcade-filter-pills { flex-basis: 100%; }
     & .arcade-select { margin-left: auto; }
     & .gallery-vision { padding: 24px 20px; }

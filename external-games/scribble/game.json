@@ -1,9 +1,9 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "scribble",
   "order": 6,
   "featured": true,
-  "discovery": { "audiences": ["multi"], "popularRank": 5, "featuredRank": 4 },
+  "discovery": { "genres": ["casual-collection"], "online": "public", "audiences": ["multi"], "popularRank": 5, "featuredRank": 4 },
   "theme": { "accent": "#4ea7e8", "dark": "#102131" },
   "presentation": {
     "title": "你画我猜",
@@ -12,7 +12,7 @@
     "category": "多人派对猜词",
     "tagline": "轮流画画和猜词，把一群人的笑声聚到一起。",
     "description": "轮流画画和猜词，和朋友开一间房，在有限时间里画出提示、抢先猜中答案。",
-    "tags": ["多人", "派对", "创作"],
+    "tags": ["派对", "创作"],
     "play": {
       "modes": "多人房间",
       "players": "多人房间",
@@ -36,5 +36,6 @@
     "highlights": ["创建房间、回合轮换和计分完整", "中文词库可做成校园、网络梗和自定义主题", "低延迟要求比动作联机宽松"],
     "cautions": ["官方实例会在无流量时休眠，首次打开可能需要等待它唤醒", "原 Logo、背景与部分图标不能直接整体搬用", "自建版需要补举报、房主控制和 WebSocket 反向代理"],
     "launch": { "kind": "external", "url": "https://scribblers.bios-marcel.link/" }
-  }
+  },
+  "capabilities": ["multiplayer"]
 }

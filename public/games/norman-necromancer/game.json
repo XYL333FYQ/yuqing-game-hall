@@ -1,8 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "norman-necromancer",
   "order": 26,
   "discovery": {
+    "genres": ["action-adventure"],
+    "online": "none",
     "audiences": [
       "single"
     ],

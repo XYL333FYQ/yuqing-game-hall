@@ -1,8 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "classic-tower-defense",
   "order": 36,
   "discovery": {
+    "genres": ["strategy"],
+    "online": "none",
     "audiences": [
       "single"
     ]

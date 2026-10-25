@@ -1,8 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "mahjong",
   "order": 14,
   "discovery": {
+    "genres": ["board-card"],
+    "online": "friend-room",
     "audiences": [
       "single",
       "multi"
@@ -23,7 +25,6 @@
     "tags": [
       "棋牌",
       "麻将",
-      "好友联机",
       "休闲"
     ],
     "play": {

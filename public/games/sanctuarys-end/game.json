@@ -1,9 +1,9 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "sanctuarys-end",
   "order": 4,
   "featured": true,
-  "discovery": { "audiences": ["single"], "popularRank": 4, "featuredRank": 3 },
+  "discovery": { "genres": ["action-adventure"], "online": "none", "audiences": ["single"], "popularRank": 4, "featuredRank": 3 },
   "theme": { "accent": "#9d72e8", "dark": "#1c1428" },
   "presentation": {
     "title": "庇护所终章",
@@ -12,7 +12,7 @@
     "category": "暗黑式动作角色扮演",
     "tagline": "深入地下城，在技能与装备之间找到自己的战斗方式。",
     "description": "选择职业、组合技能与装备词条，深入地下城迎战成群怪物和首领，在一次次探索中让角色变得更强。",
-    "tags": ["单人", "打怪", "养成"],
+    "tags": ["打怪", "养成"],
     "play": {
       "modes": "单人冒险",
       "players": "1 人",
@@ -41,6 +41,6 @@
       "upstreamUrl": "https://j3vb.github.io/Sanctuarys_End/sanctuary.html"
     }
   },
-  "capabilities": ["multiplayer", "audio", "fullscreen", "storage"],
+  "capabilities": ["audio", "fullscreen", "storage"],
   "permissions": ["fullscreen", "autoplay"]
 }

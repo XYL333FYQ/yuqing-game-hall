@@ -1,9 +1,9 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "fruit-party",
   "order": 1,
   "featured": true,
-  "discovery": { "audiences": ["single", "duo"], "popularRank": 1, "featuredRank": 1 },
+  "discovery": { "genres": ["arcade"], "online": "friend-room", "audiences": ["single", "duo"], "popularRank": 1, "featuredRank": 1 },
   "theme": { "accent": "#dd5037", "dark": "#231411" },
   "presentation": {
     "title": "果切派对",
@@ -12,7 +12,7 @@
     "category": "短局动作与好友对战",
     "tagline": "切开飞舞的水果，和朋友来一场爽快对决。",
     "description": "在飞舞的水果中快速挥刀，挑战限时街机与经典无尽，也可以和朋友用房间码来一场 1v1 果切比赛。",
-    "tags": ["单人", "1v1", "街机"],
+    "tags": ["1v1", "街机"],
     "play": {
       "modes": "90 秒街机 / 经典无尽 / 好友房间",
       "players": "1–2 人",

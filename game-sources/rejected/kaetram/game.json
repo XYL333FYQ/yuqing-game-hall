@@ -1,8 +1,8 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "kaetram",
   "order": 11,
-  "discovery": { "audiences": ["multi"], "popularRank": 11 },
+  "discovery": { "genres": ["action-adventure"], "online": "public", "audiences": ["multi"], "popularRank": 11 },
   "theme": { "accent": "#b58a5a", "dark": "#271d13" },
   "presentation": {
     "title": "凯特兰冒险",
@@ -35,5 +35,6 @@
     "highlights": ["怪物、任务、成就与地图分区", "浏览器 MMO 的完整工程拆分", "可观察持续世界的产品结构"],
     "cautions": ["自定义许可明确限制 AI 相关用途", "必须保留特定署名与开放要求", "当前产品版本与开放源码已经分叉"],
     "launch": { "kind": "none" }
-  }
+  },
+  "capabilities": ["multiplayer"]
 }

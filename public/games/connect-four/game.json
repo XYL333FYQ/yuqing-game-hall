@@ -1,8 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "connect-four",
   "order": 52,
   "discovery": {
+    "genres": ["board-card"],
+    "online": "none",
     "audiences": [
       "duo"
     ]
@@ -20,7 +22,6 @@
     "description": "棋子落下后无法收回，两个人在同一台设备上争取先连成四子。需要同时进攻和封堵，完整胜负判定与重开，支持键盘操作。",
     "tags": [
       "棋类",
-      "本地双人",
       "策略",
       "中文"
     ],

@@ -1,8 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "underrun",
   "order": 21,
   "discovery": {
+    "genres": ["shooter","action-adventure"],
+    "online": "none",
     "audiences": [
       "single"
     ],

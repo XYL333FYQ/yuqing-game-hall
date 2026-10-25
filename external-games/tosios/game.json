@@ -1,8 +1,8 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "tosios",
   "order": 8,
-  "discovery": { "audiences": ["multi"], "popularRank": 9 },
+  "discovery": { "genres": ["shooter"], "online": "public", "audiences": ["multi"], "popularRank": 9 },
   "theme": { "accent": "#ef8754", "dark": "#2a170f" },
   "presentation": {
     "title": "双队乱斗",
@@ -11,7 +11,7 @@
     "category": "多人 2D 竞技射击",
     "tagline": "在紧凑地图中组队交锋，抢下属于你的胜利。",
     "description": "在紧凑地图中进行死亡竞赛或团队战，灵活走位、瞄准射击，与对手争夺每一分优势。",
-    "tags": ["多人", "团队", "射击"],
+    "tags": ["团队", "射击"],
     "play": {
       "modes": "死亡竞赛 / 团队模式",
       "players": "多人房间",
@@ -35,5 +35,6 @@
     "highlights": ["PixiJS 客户端与服务端清晰分离", "死亡竞赛和团队玩法完整", "房间状态同步结构容易阅读"],
     "cautions": ["不是生存打怪玩法", "Colyseus 服务端不能直接放入 Durable Object", "线上项目状态需在正式选择时再次确认"],
     "launch": { "kind": "external", "url": "https://tosios.online/" }
-  }
+  },
+  "capabilities": ["multiplayer"]
 }

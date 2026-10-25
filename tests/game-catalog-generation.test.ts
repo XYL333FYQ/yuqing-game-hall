@@ -13,10 +13,12 @@ afterEach(async () => {
 it("does not rewrite an unchanged catalog and still updates changed manifests", async () => {
   fixtureRoot = await mkdtemp(path.join(tmpdir(), "yuqing-catalog-test-"));
   await mkdir(path.join(fixtureRoot, "scripts"));
+  await mkdir(path.join(fixtureRoot, "src/platform"), { recursive: true });
   await mkdir(path.join(fixtureRoot, "public/games/doudizhu"), { recursive: true });
   const scriptPath = path.join(fixtureRoot, "scripts/generate-game-catalog.mjs");
   const manifestPath = path.join(fixtureRoot, "public/games/doudizhu/game.json");
   await copyFile(new URL("../scripts/generate-game-catalog.mjs", import.meta.url), scriptPath);
+  await copyFile(new URL("../src/platform/game-taxonomy.json", import.meta.url), path.join(fixtureRoot, "src/platform/game-taxonomy.json"));
   const manifest = JSON.parse(await readFile(new URL("../public/games/doudizhu/game.json", import.meta.url), "utf8"));
   await writeFile(manifestPath, JSON.stringify(manifest));
   const generate = () => execFileSync(process.execPath, [scriptPath], { cwd: fixtureRoot, stdio: "pipe" });

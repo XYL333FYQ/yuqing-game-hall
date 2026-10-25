@@ -1,8 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "klondike",
   "order": 50,
   "discovery": {
+    "genres": ["board-card"],
+    "online": "none",
     "audiences": [
       "single"
     ]

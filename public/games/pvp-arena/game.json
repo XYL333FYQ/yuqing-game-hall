@@ -1,8 +1,8 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "pvp-arena",
   "order": 7,
-  "discovery": { "audiences": ["duo", "multi"], "popularRank": 7 },
+  "discovery": { "genres": ["shooter","arcade"], "online": "friend-room", "audiences": ["duo", "multi"], "popularRank": 7 },
   "theme": { "accent": "#e45272", "dark": "#28121a" },
   "presentation": {
     "title": "像素竞技场",
@@ -11,7 +11,7 @@
     "category": "复古多人竞技场射击",
     "tagline": "拾起武器，在像素竞技场里快速决出胜负。",
     "description": "在小地图中高速移动、拾取武器，与身边的朋友或远方的对手展开一场节奏明快的短局对战。",
-    "tags": ["1–4 人", "射击", "本地对战"],
+    "tags": ["射击", "本地对战"],
     "play": {
       "modes": "本地对战 / 远程对战",
       "players": "1–4 人",
@@ -39,5 +39,6 @@
       "entry": "/games/pvp-arena/client/index.html",
       "upstreamUrl": "https://www.kesiev.com/pvp/"
     }
-  }
+  },
+  "capabilities": ["multiplayer"]
 }

@@ -1,8 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "asteroids",
   "order": 45,
   "discovery": {
+    "genres": ["shooter","arcade"],
+    "online": "none",
     "audiences": [
       "single"
     ]

@@ -1,8 +1,8 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "suroi",
   "order": 3,
-  "discovery": { "audiences": ["multi"], "popularRank": 3 },
+  "discovery": { "genres": ["shooter"], "online": "public", "audiences": ["multi"], "popularRank": 3 },
   "theme": { "accent": "#57b86b", "dark": "#102416" },
   "presentation": {
     "title": "荒野生存",
@@ -11,7 +11,7 @@
     "category": "多人俯视角生存竞技",
     "tagline": "搜集装备、躲避危险，在荒野中成为最后的幸存者。",
     "description": "搜集装备、躲避毒圈、判断枪声方向，在不断缩小的战场中寻找机会，成为最后的幸存者。",
-    "tags": ["多人", "生存", "射击"],
+    "tags": ["生存", "射击"],
     "play": {
       "modes": "单排 / 双排 / 四排",
       "players": "多人匹配",
@@ -35,5 +35,6 @@
     "highlights": ["完整匹配、毒圈、枪械、护甲与投掷物", "服务端权威结算，客户端反馈依然迅速", "活跃的线上版本，可直接检验真实战局"],
     "cautions": ["玩法偏 PvP，不是合作打怪", "GPL 代码复用会带来对应开源义务", "Bun 服务端不能原样部署到 Cloudflare Worker"],
     "launch": { "kind": "external", "url": "https://suroi.io/" }
-  }
+  },
+  "capabilities": ["multiplayer"]
 }

@@ -1,8 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "chinese-chess",
   "order": 41,
   "discovery": {
+    "genres": ["board-card"],
+    "online": "none",
     "audiences": [
       "single",
       "duo"

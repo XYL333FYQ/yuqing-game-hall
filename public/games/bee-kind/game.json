@@ -1,8 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "bee-kind",
   "order": 31,
   "discovery": {
+    "genres": ["action-adventure"],
+    "online": "none",
     "audiences": [
       "single"
     ],

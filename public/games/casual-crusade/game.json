@@ -1,8 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "casual-crusade",
   "order": 19,
   "discovery": {
+    "genres": ["board-card","strategy"],
+    "online": "none",
     "audiences": [
       "single"
     ],

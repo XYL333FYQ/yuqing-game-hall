@@ -1,8 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "backcountry",
   "order": 28,
   "discovery": {
+    "genres": ["action-adventure","shooter"],
+    "online": "none",
     "audiences": [
       "single"
     ],

@@ -1,8 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "battleship",
   "order": 54,
   "discovery": {
+    "genres": ["strategy","puzzle"],
+    "online": "none",
     "audiences": [
       "single"
     ]

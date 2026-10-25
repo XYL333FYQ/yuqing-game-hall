@@ -1,8 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "elematter",
   "order": 30,
   "discovery": {
+    "genres": ["strategy"],
+    "online": "none",
     "audiences": [
       "single"
     ],

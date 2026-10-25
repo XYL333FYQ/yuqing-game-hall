@@ -1,8 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "tower-building",
   "order": 57,
   "discovery": {
+    "genres": ["arcade"],
+    "online": "none",
     "audiences": [
       "single"
     ]

@@ -1,8 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "packabunchas",
   "order": 23,
   "discovery": {
+    "genres": ["puzzle"],
+    "online": "none",
     "audiences": [
       "single"
     ],

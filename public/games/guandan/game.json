@@ -1,8 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "guandan",
   "order": 13,
   "discovery": {
+    "genres": ["board-card"],
+    "online": "friend-room",
     "audiences": [
       "single",
       "multi"
@@ -23,8 +25,7 @@
     "tags": [
       "棋牌",
       "掼蛋",
-      "组队",
-      "好友联机"
+      "组队"
     ],
     "play": {
       "modes": "好友房间 / AI 补位 / 观战",

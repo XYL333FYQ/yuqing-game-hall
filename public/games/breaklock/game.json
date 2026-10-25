@@ -1,8 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "breaklock",
   "order": 43,
   "discovery": {
+    "genres": ["puzzle"],
+    "online": "none",
     "audiences": [
       "single"
     ]

@@ -49,7 +49,7 @@ describe("首页游戏发现规则", () => {
       id: "new-game",
       order: 1000,
       featured: false,
-      discovery: { audiences: ["single"] },
+      discovery: { genres: ["arcade"], online: "none", audiences: ["single"] },
     };
     const pool = featuredGames([...GAME_CATALOG, added], () => 0);
     expect(pool).toContain(added);

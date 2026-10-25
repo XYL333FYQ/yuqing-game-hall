@@ -1,8 +1,8 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "littlejs-arcade",
   "order": 5,
-  "discovery": { "audiences": ["single", "duo"], "popularRank": 6 },
+  "discovery": { "genres": ["casual-collection","arcade"], "online": "none", "audiences": ["single", "duo"], "popularRank": 6 },
   "theme": { "accent": "#f2b942", "dark": "#2a210e" },
   "presentation": {
     "title": "迷你街机合集",
@@ -11,7 +11,7 @@
     "category": "轻量街机合集",
     "tagline": "赛车、生存、台球和坦克，一次打开一整排小游戏。",
     "description": "从赛车、生存、防空到台球和坦克，挑一款短小直接的小游戏，随时开始一局轻松的街机时间。",
-    "tags": ["单人", "本地双人", "合集"],
+    "tags": ["合集"],
     "play": {
       "modes": "随子游戏变化",
       "players": "1–2 人，随子游戏变化",

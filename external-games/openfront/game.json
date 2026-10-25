@@ -1,8 +1,8 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "openfront",
   "order": 10,
-  "discovery": { "audiences": ["multi"], "popularRank": 10 },
+  "discovery": { "genres": ["strategy"], "online": "public", "audiences": ["multi"], "popularRank": 10 },
   "theme": { "accent": "#6d8ee8", "dark": "#121a2c" },
   "presentation": {
     "title": "世界前线",
@@ -11,7 +11,7 @@
     "category": "大规模多人领土策略",
     "tagline": "在世界地图上扩张领地，和大量玩家争夺胜利。",
     "description": "从一小片领地开始扩张，调配兵力、判断局势，与大量玩家在世界地图上争夺最终控制权。",
-    "tags": ["多人", "策略", "大地图"],
+    "tags": ["策略", "大地图"],
     "play": {
       "modes": "大规模在线对局",
       "players": "大房间多人对局",
@@ -35,5 +35,6 @@
     "highlights": ["高人数同局与确定性模拟", "地图、回放和完整产品流程", "社区活跃、真实线上压力可观察"],
     "cautions": ["官网可能先显示 Cloudflare 安全验证，这不是游戏厅加载器卡死", "AGPL 会影响后续代码发布方式", "源码与资源接近大型独立项目，不适合塞入静态小游戏构建"],
     "launch": { "kind": "external", "url": "https://openfront.io/" }
-  }
+  },
+  "capabilities": ["multiplayer"]
 }

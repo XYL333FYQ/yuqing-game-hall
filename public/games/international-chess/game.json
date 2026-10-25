@@ -1,8 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "international-chess",
   "order": 53,
   "discovery": {
+    "genres": ["board-card"],
+    "online": "none",
     "audiences": [
       "single"
     ]

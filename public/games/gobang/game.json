@@ -1,8 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "gobang",
   "order": 15,
   "discovery": {
+    "genres": ["board-card"],
+    "online": "friend-room",
     "audiences": [
       "duo",
       "multi"
@@ -22,9 +24,7 @@
     "description": "在十五路棋盘上轮流落子，横、竖或斜向连成五颗即可获胜。支持同屏双人、好友房间和旁观，重新进入房间可以继续棋局。",
     "tags": [
       "棋牌",
-      "五子棋",
-      "本地双人",
-      "好友联机"
+      "五子棋"
     ],
     "play": {
       "modes": "好友房间 / 同屏双人 / 观战",

@@ -1,8 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "hextris",
   "order": 33,
   "discovery": {
+    "genres": ["puzzle","arcade"],
+    "online": "none",
     "audiences": [
       "single"
     ],

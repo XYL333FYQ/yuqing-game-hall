@@ -1,8 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "binary-puzzle",
   "order": 46,
   "discovery": {
+    "genres": ["puzzle"],
+    "online": "none",
     "audiences": [
       "single"
     ]

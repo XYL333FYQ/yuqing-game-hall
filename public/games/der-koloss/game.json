@@ -1,9 +1,9 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "der-koloss",
   "order": 2,
   "featured": true,
-  "discovery": { "audiences": ["single", "multi"], "popularRank": 2, "featuredRank": 2 },
+  "discovery": { "genres": ["shooter","action-adventure"], "online": "friend-room", "audiences": ["single", "multi"], "popularRank": 2, "featuredRank": 2 },
   "theme": { "accent": "#f06a3d", "dark": "#251713" },
   "presentation": {
     "title": "孤堡尸潮",
@@ -12,7 +12,7 @@
     "category": "第一人称波次生存",
     "tagline": "守住孤堡，在一波又一波的尸潮中活下来。",
     "description": "守住据点、购买武器、解锁防守区域并救援队友，在越来越凶猛的尸潮中坚持更久。",
-    "tags": ["单人", "四人合作", "打怪"],
+    "tags": ["四人合作", "打怪"],
     "play": {
       "modes": "单人 / 最多四人联机",
       "players": "1–4 人",

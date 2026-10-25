@@ -9,6 +9,12 @@ const manifestRoots = [
   "game-sources/rejected",
 ];
 const FORBIDDEN_PUBLIC_TERMS = /静态版|部署|架构|技术栈|技术结构|WebSocket|Cloudflare|服务器|许可证|源码|中文化|适配|接入/i;
+const taxonomy = JSON.parse(await readFile(new URL("../src/platform/game-taxonomy.json", import.meta.url), "utf8"));
+const GENRE_IDS = Object.keys(taxonomy.genres);
+const ONLINE_MODE_IDS = Object.keys(taxonomy.onlineModes);
+/** 与结构化字段重复、禁止写进 presentation.tags 的词；人数用 audiences，联机用 discovery.online。 */
+const FORBIDDEN_TAG_WORDS = ["单人", "双人", "多人", "联机", "好友联机", "本地双人"];
+const PLAYER_COUNT_TAG = /^\d+(?:\s*[–-]\s*\d+)?\s*人$/;
 
 export async function collectGameManifests() {
   const files = [];
@@ -57,12 +63,21 @@ async function findManifests(directory, output) {
 
 function validateManifest(value, source) {
   if (!value || typeof value !== "object" || Array.isArray(value)) fail(source, "根节点必须是对象");
-  if (value.schemaVersion !== 2) fail(source, "schemaVersion 当前必须是 2");
+  if (value.schemaVersion !== 3) fail(source, "schemaVersion 当前必须是 3");
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value.id ?? "")) fail(source, "id 只能使用小写字母、数字和连字符");
   if (!Number.isInteger(value.order) || value.order < 1) fail(source, "order 必须是大于 0 的整数");
   if (!value.theme || !isColor(value.theme.accent) || !isColor(value.theme.dark)) fail(source, "theme.accent 与 theme.dark 必须是十六进制颜色");
   if (!value.discovery || typeof value.discovery !== "object") fail(source, "缺少 discovery 配置");
   requireEnumArray(value.discovery.audiences, source, "discovery.audiences", ["single", "duo", "multi"]);
+  if (!Array.isArray(value.discovery.genres) || value.discovery.genres.length < 1 || value.discovery.genres.length > 2) {
+    fail(source, "discovery.genres 必须是 1~2 个分类 id，词表见 src/platform/game-taxonomy.json");
+  }
+  if (value.discovery.genres.some((genre) => !GENRE_IDS.includes(genre))) {
+    fail(source, `discovery.genres 含词表外的 id：${value.discovery.genres.join("、")}；可用 id 为 ${GENRE_IDS.join("、")}（src/platform/game-taxonomy.json）`);
+  }
+  if (!ONLINE_MODE_IDS.includes(value.discovery.online)) {
+    fail(source, `discovery.online 必须是词表 id（${ONLINE_MODE_IDS.join("、")}），词表见 src/platform/game-taxonomy.json`);
+  }
   if (value.discovery.popularRank !== undefined && (!Number.isInteger(value.discovery.popularRank) || value.discovery.popularRank < 1)) {
     fail(source, "discovery.popularRank 必须是大于 0 的整数");
   }
@@ -124,6 +139,30 @@ function validateManifest(value, source) {
   if (value.capabilities !== undefined) requireEnumArray(value.capabilities, source, "capabilities", ["audio", "multiplayer", "vision", "fullscreen", "gamepad", "storage"]);
   if (value.permissions !== undefined) requireEnumArray(value.permissions, source, "permissions", ["camera", "microphone", "fullscreen", "autoplay", "gamepad"]);
   validateLaunch(platform.launch, value, source);
+  validateManifestSemantics(value, source);
+}
+
+/** 结构校验通过后的含义校验：genres/online/audiences/capabilities/tags 之间必须互相一致。 */
+function validateManifestSemantics(value, source) {
+  const online = value.discovery.online;
+  const hasMultiplayer = Array.isArray(value.capabilities) && value.capabilities.includes("multiplayer");
+  if (online !== "none" && !hasMultiplayer) {
+    fail(source, `discovery.online 为 "${online}" 但 capabilities 不含 "multiplayer"：联机游戏请在 capabilities 数组中加入 "multiplayer"，单机游戏请把 discovery.online 改为 "none"`);
+  }
+  if (online === "none" && hasMultiplayer) {
+    fail(source, `capabilities 含 "multiplayer" 但 discovery.online 为 "none"：请把 discovery.online 改为 "friend-room" 或 "public"（词表见 src/platform/game-taxonomy.json），或移除 capabilities 中的 "multiplayer"`);
+  }
+  if (value.discovery.audiences.includes("multi") && online === "none") {
+    fail(source, `discovery.audiences 含 "multi" 但 discovery.online 为 "none"：多人游戏必须填写联机方式，请把 discovery.online 改为 "friend-room" 或 "public"`);
+  }
+  if (value.platform.hosting === "server" && online === "none") {
+    fail(source, `platform.hosting 为 "server" 但 discovery.online 为 "none"：服务器托管的游戏必须填写联机方式，请把 discovery.online 改为 "friend-room" 或 "public"`);
+  }
+  for (const tag of value.presentation.tags) {
+    if (FORBIDDEN_TAG_WORDS.includes(tag) || PLAYER_COUNT_TAG.test(tag)) {
+      fail(source, `presentation.tags 中的 "${tag}" 与结构化字段重复：人数信息请用 discovery.audiences 表达，联机信息请用 discovery.online 表达，请删除该标签`);
+    }
+  }
 }
 
 function validateLaunch(launch, value, source) {

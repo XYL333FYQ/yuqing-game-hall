@@ -1,8 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "othello",
   "order": 42,
   "discovery": {
+    "genres": ["board-card"],
+    "online": "none",
     "audiences": [
       "duo"
     ]
@@ -20,7 +22,6 @@
     "description": "两人在同一台设备上轮流落子，用横、竖、斜方向夹住对手棋子并翻转。棋盘显示合法落点、双方数量，支持撤销、重做和回合计时。",
     "tags": [
       "棋类",
-      "本地双人",
       "策略",
       "中文"
     ],

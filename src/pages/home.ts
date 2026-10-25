@@ -1,23 +1,26 @@
 import { GAME_CATALOG } from "../platform/game-catalog";
 import { featuredGames, readSessionEngagement, recordSessionEngagement, trendingGames } from "../platform/game-discovery";
-import type { GameAudience, GameManifest } from "../platform/game-manifest";
+import { filterGames, type GameAudienceFilter, type GameGenreFilter, type GameOnlineFilter } from "../platform/game-filters";
+import type { GameManifest } from "../platform/game-manifest";
 import { siteFooter, siteHeader } from "../platform/shell";
 import { GALLERY_ART } from "../platform/gallery-art";
+import taxonomy from "../platform/game-taxonomy.json";
 
 export function renderHome(root: HTMLElement): () => void {
   const games = featuredGames(GAME_CATALOG);
   const featured = games;
   if (featured.length === 0) throw new Error("没有可展示的游戏资料。");
-  const tagCounts = new Map<string, number>();
+  const onlineModeCounts = new Map<string, number>();
+  const genreCounts = new Map<string, number>();
   for (const game of games) {
-    for (const tag of game.presentation.tags) {
-      if (["单人", "多人", "本地双人", "1–4 人"].includes(tag)) continue;
-      tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+    onlineModeCounts.set(game.discovery.online, (onlineModeCounts.get(game.discovery.online) ?? 0) + 1);
+    for (const genre of game.discovery.genres) {
+      genreCounts.set(genre, (genreCounts.get(genre) ?? 0) + 1);
     }
   }
-  const availableTags = [...tagCounts.entries()]
-    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0], "zh-CN"))
-    .slice(0, 12);
+  const genreOptions = Object.entries(taxonomy.genres)
+    .filter(([id]) => (genreCounts.get(id) ?? 0) > 0)
+    .map(([id, name]) => ({ id, name, count: genreCounts.get(id) ?? 0 }));
 
   document.title = "雨晴游戏厅 · 找一款现在想玩的游戏";
   document.body.dataset.page = "site";
@@ -60,13 +63,21 @@ export function renderHome(root: HTMLElement): () => void {
         <section class="arcade-section arcade-all-games" id="all-games" aria-labelledby="all-games-title">
           ${sectionHeading("游戏库", `<div class="arcade-heading-actions"><span class="arcade-result-count" data-result-count></span><button type="button" class="arcade-random-btn" data-random-launch title="随机挑选一款游戏">🎲 随机开一局 <span aria-hidden="true">↗</span></button></div>`, "all-games-title", "GAME LIBRARY")}
           <div class="arcade-filter-bar" aria-label="筛选游戏">
-            <div class="arcade-filter-pills" role="group" aria-label="按人数筛选">
-              <button class="is-active" type="button" data-audience="all" aria-pressed="true">全部 <em>${games.length}</em></button>
-              <button type="button" data-audience="single" aria-pressed="false">单人</button>
-              <button type="button" data-audience="duo" aria-pressed="false">双人</button>
-              <button type="button" data-audience="multi" aria-pressed="false">多人</button>
-              <span class="arcade-filter-divider" aria-hidden="true"></span>
-              ${availableTags.map(([tag, count]) => `<button type="button" data-tag-pill="${escapeHtml(tag)}" aria-pressed="false">${escapeHtml(tag)} <em>${count}</em></button>`).join("")}
+            <div class="arcade-filter-pills">
+              <div class="arcade-filter-group" role="group" aria-label="按人数筛选">
+                <button class="is-active" type="button" data-audience="all" aria-pressed="true">全部 <em>${games.length}</em></button>
+                <button type="button" data-audience="single" aria-pressed="false">单人</button>
+                <button type="button" data-audience="duo" aria-pressed="false">双人</button>
+                <button type="button" data-audience="multi" aria-pressed="false">多人</button>
+              </div>
+              <div class="arcade-filter-group" role="group" aria-label="按联机方式筛选">
+                <button class="is-active" type="button" data-online="all" aria-pressed="true">全部</button>
+                <button type="button" data-online="friend-room" aria-pressed="false">好友联机 <em>${onlineModeCounts.get("friend-room") ?? 0}</em></button>
+                <button type="button" data-online="public" aria-pressed="false">公开联机 <em>${onlineModeCounts.get("public") ?? 0}</em></button>
+              </div>
+              <div class="arcade-filter-group" role="group" aria-label="按分类筛选">
+                ${genreOptions.map(({ id, name, count }) => `<button type="button" data-genre="${id}" aria-pressed="false">${escapeHtml(name)} <em>${count}</em></button>`).join("")}
+              </div>
             </div>
             <div class="arcade-select" data-sort-control>
               <span>排序</span>
@@ -122,12 +133,14 @@ export function renderHome(root: HTMLElement): () => void {
   const searchInputs = root.querySelectorAll<HTMLInputElement>("[data-game-search]");
   const searchClearButtons = root.querySelectorAll<HTMLButtonElement>("[data-search-clear]");
   const audienceButtons = root.querySelectorAll<HTMLButtonElement>("[data-audience]");
-  const tagButtons = root.querySelectorAll<HTMLButtonElement>("[data-tag-pill]");
+  const onlineButtons = root.querySelectorAll<HTMLButtonElement>("[data-online]");
+  const genreButtons = root.querySelectorAll<HTMLButtonElement>("[data-genre]");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   let featuredIndex = 0;
   let trendCycle = 0;
-  let audience: GameAudience | "all" = "all";
-  let selectedTag = "";
+  let audience: GameAudienceFilter = "all";
+  let online: GameOnlineFilter = "all";
+  let genre: GameGenreFilter = "all";
   let query = "";
   let sortValue = "popular";
   let libraryLimit = 12;
@@ -212,11 +225,7 @@ export function renderHome(root: HTMLElement): () => void {
     if (trendingGrid) trendingGrid.innerHTML = trendingGames(games, readSessionEngagement(), { limit: 4, cycle: trendCycle }).map((game, idx) => gameCard(game, "trending", idx)).join("");
   };
   const updateList = (): void => {
-    const matched = games
-      .filter((game) => audience === "all" || game.discovery.audiences.includes(audience))
-      .filter((game) => !selectedTag || game.presentation.tags.includes(selectedTag))
-      .filter((game) => matchesSearch(game, query))
-      .sort(sortGames(sortValue));
+    const matched = filterGames(games, { audience, online, genre, query }).sort(sortGames(sortValue));
     if (gameList) gameList.innerHTML = matched.slice(0, libraryLimit).map((game, idx) => gameCard(game, "library", idx)).join("");
     if (libraryMore) {
       libraryMore.hidden = matched.length <= libraryLimit;
@@ -247,22 +256,24 @@ export function renderHome(root: HTMLElement): () => void {
     syncSearchClear();
     updateList();
   };
+  const setActiveFilterButton = (buttons: NodeListOf<HTMLButtonElement>, group: "audience" | "online" | "genre", value: string): void => {
+    buttons.forEach((button) => {
+      const active = button.dataset[group] === value;
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+  };
   const resetAllFilters = (): void => {
     libraryLimit = 12;
     query = "";
     audience = "all";
-    selectedTag = "";
+    online = "all";
+    genre = "all";
     searchInputs.forEach((input) => { input.value = ""; });
     syncSearchClear();
-    audienceButtons.forEach((button) => {
-      const active = button.dataset.audience === "all";
-      button.classList.toggle("is-active", active);
-      button.setAttribute("aria-pressed", String(active));
-    });
-    tagButtons.forEach((button) => {
-      button.classList.remove("is-active");
-      button.setAttribute("aria-pressed", "false");
-    });
+    setActiveFilterButton(audienceButtons, "audience", "all");
+    setActiveFilterButton(onlineButtons, "online", "all");
+    setActiveFilterButton(genreButtons, "genre", "all");
     updateList();
   };
   const onKeyDown = (event: KeyboardEvent): void => {
@@ -395,33 +406,21 @@ export function renderHome(root: HTMLElement): () => void {
   };
   const onAudienceClick = (event: Event): void => {
     libraryLimit = 12;
-    audience = (event.currentTarget as HTMLButtonElement).dataset.audience as GameAudience | "all";
-    selectedTag = "";
-    tagButtons.forEach((button) => {
-      button.classList.remove("is-active");
-      button.setAttribute("aria-pressed", "false");
-    });
-    audienceButtons.forEach((button) => {
-      const active = button.dataset.audience === audience;
-      button.classList.toggle("is-active", active);
-      button.setAttribute("aria-pressed", String(active));
-    });
+    audience = (event.currentTarget as HTMLButtonElement).dataset.audience as GameAudienceFilter;
+    setActiveFilterButton(audienceButtons, "audience", audience);
     updateList();
   };
-  const onTagClick = (event: Event): void => {
+  const onOnlineClick = (event: Event): void => {
+    libraryLimit = 12;
+    online = (event.currentTarget as HTMLButtonElement).dataset.online as GameOnlineFilter;
+    setActiveFilterButton(onlineButtons, "online", online);
+    updateList();
+  };
+  const onGenreClick = (event: Event): void => {
     libraryLimit = 12;
     const button = event.currentTarget as HTMLButtonElement;
-    audience = "all";
-    selectedTag = button.dataset.tagPill ?? "";
-    audienceButtons.forEach((item) => {
-      item.classList.remove("is-active");
-      item.setAttribute("aria-pressed", "false");
-    });
-    tagButtons.forEach((item) => {
-      const active = item === button;
-      item.classList.toggle("is-active", active);
-      item.setAttribute("aria-pressed", String(active));
-    });
+    genre = button.dataset.genre === genre ? "all" : button.dataset.genre as GameGenreFilter;
+    setActiveFilterButton(genreButtons, "genre", genre);
     updateList();
   };
   root.addEventListener("click", onRootClick);
@@ -433,7 +432,8 @@ export function renderHome(root: HTMLElement): () => void {
   carousel?.addEventListener("focusout", playCarousel);
   searchInputs.forEach((input) => input.addEventListener("input", onSearch));
   audienceButtons.forEach((button) => button.addEventListener("click", onAudienceClick));
-  tagButtons.forEach((button) => button.addEventListener("click", onTagClick));
+  onlineButtons.forEach((button) => button.addEventListener("click", onOnlineClick));
+  genreButtons.forEach((button) => button.addEventListener("click", onGenreClick));
   renderFeatured();
   renderRecent();
   renderTrending();
@@ -459,7 +459,8 @@ export function renderHome(root: HTMLElement): () => void {
     carousel?.removeEventListener("focusout", playCarousel);
     searchInputs.forEach((input) => input.removeEventListener("input", onSearch));
     audienceButtons.forEach((button) => button.removeEventListener("click", onAudienceClick));
-    tagButtons.forEach((button) => button.removeEventListener("click", onTagClick));
+    onlineButtons.forEach((button) => button.removeEventListener("click", onOnlineClick));
+    genreButtons.forEach((button) => button.removeEventListener("click", onGenreClick));
   };
 }
 
@@ -514,7 +515,7 @@ function sectionHeading(title: string, aside: string, id: string, kicker = ""): 
 
 function gameCard(game: GameManifest, variant: "trending" | "people" | "library", index = 0): string {
   const presentation = game.presentation;
-  const visibleTags = presentation.tags.filter((t) => t !== "单人").slice(0, 2);
+  const visibleTags = presentation.tags.slice(0, 2);
   return `<article class="arcade-game-card arcade-game-card-${variant}" style="--game-accent:${game.theme.accent};--game-dark:${game.theme.dark};--card-index:${Math.min(index, 15)}">
     <a class="arcade-game-art" href="/library/${game.id}" data-nav data-game-interest="${game.id}" data-interest-kind="detail" aria-label="查看 ${escapeHtml(presentation.title)}">
       ${gameArt(game, "cover")}
@@ -559,12 +560,6 @@ function launchAction(game: GameManifest, label: string, className: string): str
 
 function actionLabel(game: GameManifest, fallback: string): string {
   return game.presentation.actionLabel || fallback;
-}
-
-function matchesSearch(game: GameManifest, query: string): boolean {
-  if (!query) return true;
-  const presentation = game.presentation;
-  return [presentation.title, presentation.originalTitle ?? "", presentation.category, presentation.tagline, presentation.description, presentation.mark, ...presentation.tags].join(" ").toLocaleLowerCase("zh-CN").includes(query.toLocaleLowerCase("zh-CN"));
 }
 
 function byPopularity(left: GameManifest, right: GameManifest): number {

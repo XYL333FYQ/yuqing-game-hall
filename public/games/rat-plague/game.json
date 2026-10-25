@@ -1,8 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "rat-plague",
   "order": 32,
   "discovery": {
+    "genres": ["action-adventure"],
+    "online": "none",
     "audiences": [
       "single"
     ],
