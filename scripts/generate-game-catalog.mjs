@@ -240,7 +240,8 @@ export async function generateGameCatalog() {
   } catch (error) {
     if (error?.code !== "ENOENT") throw error;
   }
-  if (previous === output) {
+  // Windows 的 autocrlf 会把工作区文件换成 CRLF；忽略换行差异，避免内容没变却被重写成“已修改”。
+  if (previous?.replace(/\r\n/g, "\n") === output) {
     console.log(`游戏目录未变化：${entries.length} 款，保留现有生成文件。`);
     return;
   }
