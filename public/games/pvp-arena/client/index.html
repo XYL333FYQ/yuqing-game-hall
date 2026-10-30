@@ -540,6 +540,8 @@ function onl() {
 		MAINMENU.initialize();
 
 		SETTINGS.reindexMenu();
+		// Reindex reloads saved defaults, so apply invitation parameters afterward.
+		NETPLAY.initializeConfig();
 
 		var start=0;		
 		GAMESTATE.run(start);

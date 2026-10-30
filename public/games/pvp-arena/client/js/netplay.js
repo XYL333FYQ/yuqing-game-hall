@@ -62,6 +62,9 @@ function Netplay(protocols,master) {
 			obj.addOptions(netModes,netModesOptions);
 		}
 	})
+	this.initializeConfig=function() {
+		netProtocols.forEach(protocol=>protocol.initializeConfig());
+	};
 
 	if (netModes.length) {
 
@@ -322,11 +325,6 @@ function Netplay(protocols,master) {
 					notes[1]
 				);
 			});
-
-			// Initialize protocols configuration
-			netProtocols.forEach(protocol=>{
-				protocol.initializeConfig();
-			})
 
 		};
 

@@ -233,8 +233,11 @@
             }
           }
         } else if (type === 'AddPlayer') {
-          if (!game.visiting && data.ready && game.black === true) {
-            game.ready = true;
+          game.ready = !!data.ready;
+          if (!game.visiting && !game.ready) {
+            game.waiting = true;
+            Message('对手已离开，等待新玩家加入。');
+          } else if (!game.visiting && game.ready && game.black === true) {
             Message('您执黑棋，下棋后即开局，无法更换黑白和对手。');
             game.waiting = false;
           }

@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
 import { roomRequest } from "../games/fruit-party/src/network/roomRequest";
 import {
   multiplayerWebSocketUrl,
@@ -9,6 +10,22 @@ import { isRoomCredentials, isValidRoomCode } from "../games/fruit-party/src/sha
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
 
 describe("room API errors", () => {
+  it("首次读取运行时配置失败后，点击建房会重试并使用服务地址", async () => {
+    const payload = { code: "ABC234", mode: "score90", playerId: "player", token: "token", nickname: "玩家甲" };
+    vi.stubGlobal("window", { location: { href: "https://games.example/games/fruit-party/" }, setTimeout, clearTimeout });
+    const fetchMock = vi.fn()
+      .mockRejectedValueOnce(new DOMException("aborted", "AbortError"))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ fruitPartyServiceUrl: "https://rooms.example/" }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify(payload), { status: 201, headers: { "content-type": "application/json" } }));
+    vi.stubGlobal("fetch", fetchMock);
+    const configScript = readFileSync(new URL("../games/fruit-party/src/public/fruit-party.config.js", import.meta.url), "utf8");
+    new Function(configScript)();
+    await window.FRUIT_PARTY_CONFIG_READY;
+
+    await expect(roomRequest("/api/rooms", { mode: "score90", nickname: "玩家甲" })).resolves.toEqual(payload);
+    expect(fetchMock).toHaveBeenNthCalledWith(3, "https://rooms.example/api/rooms", expect.objectContaining({ method: "POST" }));
+  });
+
   it("replaces a non-JSON backend response with a useful Chinese message", async () => {
     stubGameWindow("http://127.0.0.1:8790");
     vi.stubGlobal("fetch", vi.fn(async () => new Response("", { status: 404 })));

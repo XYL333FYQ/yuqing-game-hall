@@ -10,7 +10,7 @@ import { assets } from './assets.js';
 import { PERSONAS, drawPortrait } from './personas.js';
 import { WEAPONS } from './weapons.js';
 import { getMenuMusicOffset, keepMenuMusicClock } from './site-audio.js?v=6';
-import { shouldRefreshLobbyUi, shouldShowGameplayCanvas } from './multiplayer-contracts.js';
+import { buildInviteLink as makeInviteLink, shouldRefreshLobbyUi, shouldShowGameplayCanvas } from './multiplayer-contracts.js';
 
 const $ = (id) => document.getElementById(id);
 const DEBUG = /^(localhost|127\.0\.0\.1)$/.test(location.hostname)
@@ -351,11 +351,8 @@ function getName() {
   return n;
 }
 
-const PUBLIC_SITE_URL = 'https://www.derkoloss.com';
 function buildInviteLink(code, inviter = getName()) {
-  const safeCode = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
-  const safeInviter = String(inviter || '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 14);
-  return `${PUBLIC_SITE_URL}/invite/${encodeURIComponent(safeCode)}${safeInviter ? `?from=${encodeURIComponent(safeInviter)}` : ''}`;
+  return makeInviteLink(code, inviter, location.href);
 }
 
 // ---------------- app state ----------------

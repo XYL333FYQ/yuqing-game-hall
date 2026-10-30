@@ -11,6 +11,7 @@ declare global {
   interface Window {
     FRUIT_PARTY_CONFIG?: FruitPartyRuntimeConfig;
     FRUIT_PARTY_CONFIG_READY?: Promise<FruitPartyRuntimeConfig>;
+    FRUIT_PARTY_CONFIG_REFRESH?: () => Promise<FruitPartyRuntimeConfig>;
   }
 }
 
@@ -19,6 +20,11 @@ export async function waitForMultiplayerServiceConfig(): Promise<void> {
     await window.FRUIT_PARTY_CONFIG_READY;
   } catch {
     // 第三方独立部署若提供了会 reject 的配置 Promise，仍沿用现有 fallback/错误提示。
+  }
+  const hostname = new URL(window.location.href).hostname;
+  if (!window.FRUIT_PARTY_CONFIG?.multiplayerServiceUrl?.trim()
+    && hostname !== "localhost" && hostname !== "127.0.0.1" && hostname !== "[::1]") {
+    await window.FRUIT_PARTY_CONFIG_REFRESH?.();
   }
 }
 

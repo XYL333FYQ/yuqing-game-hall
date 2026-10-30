@@ -41,6 +41,7 @@ export function renderRoom(root: HTMLElement, rawCode: string): () => void {
         <div class="toolbar-actions room-toolbar-actions">
           <button type="button" data-action="mute" aria-pressed="false">声音</button>
           <div class="connection-pill" data-state="connecting"><i></i><span>正在连接</span></div>
+          <button type="button" data-action="reconnect" hidden>重新连接</button>
         </div>
       </header>
 
@@ -126,6 +127,7 @@ export function renderRoom(root: HTMLElement, rawCode: string): () => void {
       reconnecting: "正在重连",
       offline: "连接已断开",
     }[state];
+    root.querySelector<HTMLButtonElement>("[data-action=reconnect]")!.hidden = state !== "offline";
   });
   client.connect();
 
@@ -230,6 +232,7 @@ export function renderRoom(root: HTMLElement, rawCode: string): () => void {
   const clickHandler = async (event: MouseEvent): Promise<void> => {
     const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>("[data-action]") : null;
     if (!button) return;
+    if (button.dataset.action === "reconnect") client.retry();
     if (button.dataset.action === "ready") {
       audio.unlock();
       client.setReady(!ready);

@@ -37,6 +37,13 @@ export class MultiplayerClient {
     void this.connectWhenConfigured();
   }
 
+  retry(): void {
+    if (this.closed || this.socket?.readyState === WebSocket.OPEN) return;
+    if (this.reconnectTimer !== undefined) window.clearTimeout(this.reconnectTimer);
+    this.reconnectStartedAt = 0;
+    this.connect();
+  }
+
   private async connectWhenConfigured(): Promise<void> {
     await waitForMultiplayerServiceConfig();
     if (this.closed) return;

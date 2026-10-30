@@ -54,3 +54,29 @@ it("reports normal disconnects and reconnects while the room is active", async (
   expect(states).toHaveBeenLastCalledWith("online");
   client.close();
 });
+
+it("allows a player to restart reconnecting after the automatic window expires", async () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(1_000);
+  vi.stubGlobal("WebSocket", Socket);
+  vi.stubGlobal("window", { setInterval, clearInterval, setTimeout, clearTimeout });
+  const states = vi.fn();
+  const client = new MultiplayerClient({ code: "ABC234", playerId: "p", token: "t", nickname: "玩家甲" }, vi.fn(), states);
+  client.connect();
+  await Promise.resolve();
+  Socket.instances[0].dispatchEvent(new Event("open"));
+  Socket.instances[0].readyState = 3;
+  Socket.instances[0].dispatchEvent(new Event("close"));
+  await vi.advanceTimersByTimeAsync(15_000);
+  Socket.instances[1].readyState = 3;
+  Socket.instances[1].dispatchEvent(new Event("close"));
+  expect(states).toHaveBeenLastCalledWith("offline");
+
+  client.retry();
+  await Promise.resolve();
+  expect(Socket.instances).toHaveLength(3);
+  Socket.instances[2].readyState = 3;
+  Socket.instances[2].dispatchEvent(new Event("close"));
+  expect(states).toHaveBeenLastCalledWith("reconnecting");
+  client.close();
+});

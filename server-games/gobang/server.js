@@ -77,7 +77,15 @@ export function createGobangService({ host = '127.0.0.1', port = 8792, allowedOr
     });
     socket.on('close', () => {
       clearTimeout(joinTimer);
-      if (room?.clients.get(userId) === socket) { room.clients.delete(userId); room.updated = Date.now(); }
+      if (room?.clients.get(userId) === socket) {
+        room.clients.delete(userId);
+        room.updated = Date.now();
+        if (!room.pieces.length && (room.black === userId || room.white === userId)) {
+          if (room.black === userId) room.black = null;
+          if (room.white === userId) room.white = null;
+          for (const peer of room.clients.values()) send(peer, { type: 'AddPlayer', ready: false });
+        }
+      }
     });
     socket.on('error', () => {});
   });

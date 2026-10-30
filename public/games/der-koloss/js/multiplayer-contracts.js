@@ -1,5 +1,15 @@
 // Pure multiplayer rules shared by runtime code and deterministic Node tests.
 
+export function buildInviteLink(code, inviter, pageUrl) {
+  const url = new URL(pageUrl);
+  url.search = '';
+  url.hash = '';
+  url.searchParams.set('join', String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6));
+  const name = String(inviter || '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 14);
+  if (name) url.searchParams.set('from', name);
+  return url.href;
+}
+
 // Bound untrusted structured-clone payloads before gameplay code sees them.
 // PeerJS performs the clone/allocation before delivery, but this still caps the
 // traversal work and prevents oversized nested data from reaching hot paths.

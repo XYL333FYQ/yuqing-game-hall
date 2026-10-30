@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import { once } from 'node:events';
 import WebSocket from 'ws';
 import { createGobangService } from '../server.js';
 
@@ -68,5 +69,44 @@ test('好友落子、非法回合、胜负、观战、重连和来源限制', as
   } finally {
     clients.forEach(ws => ws.terminate());
     await service?.close();
+  }
+});
+
+test('开局前离开的白棋玩家会释放座位，好友可补位', async () => {
+  const service = createGobangService({ port: 0 });
+  const url = `ws://127.0.0.1:${await service.listen()}/socket`;
+  const room = randomUUID().replaceAll('-', '');
+  const clients = [];
+  const next = (socket, stage) => new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error(`等待${stage}超时`)), 1000);
+    socket.once('message', bytes => { clearTimeout(timeout); resolve(JSON.parse(bytes)); });
+  });
+  const join = async () => {
+    const socket = new WebSocket(url);
+    clients.push(socket);
+    await once(socket, 'open');
+    const initial = next(socket, '初始化');
+    socket.send(JSON.stringify({ type: 'EnterRoom', id: randomUUID(), room }));
+    return { socket, initial: await initial };
+  };
+  try {
+    const black = await join();
+    const joined = next(black.socket, '玩家加入');
+    const white = await join();
+    assert.equal(white.initial.visiting, false);
+    assert.deepEqual(await joined, { type: 'AddPlayer', ready: true });
+
+    const left = next(black.socket, '玩家离开');
+    white.socket.close();
+    await once(white.socket, 'close');
+    assert.deepEqual(await left, { type: 'AddPlayer', ready: false });
+
+    const replacement = await join();
+    assert.equal(replacement.initial.visiting, false);
+    assert.equal(replacement.initial.black, false);
+    assert.equal(replacement.initial.ready, true);
+  } finally {
+    clients.forEach(socket => socket.terminate());
+    await service.close();
   }
 });
