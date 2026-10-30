@@ -98,17 +98,17 @@ describe("游戏目录一致性", () => {
     }
   });
 
-  it("已知联机游戏标注了正确的联机方式，可玩的联机游戏共 11 款", async () => {
+  it("已知联机游戏标注了正确的联机方式，可玩的联机游戏共 12 款", async () => {
     const entries = await collectManifests();
     const onlineById = new Map(entries.map(({ manifest }) => [manifest.id as string, manifest]));
-    const friendRoom = ["gobang", "mahjong", "guandan", "doudizhu", "fruit-party", "der-koloss", "pvp-arena"];
+    const friendRoom = ["gobang", "mahjong", "guandan", "doudizhu", "fruit-party", "der-koloss", "pvp-arena", "gamenest"];
     const publicMatch = ["tosios", "suroi", "scribble", "openfront", "kaetram"];
     for (const id of friendRoom) expect(onlineById.get(id)?.discovery.online, id).toBe("friend-room");
     for (const id of publicMatch) expect(onlineById.get(id)?.discovery.online, id).toBe("public");
     const playableOnline = entries
       .filter(({ manifest }) => manifest.discovery.online !== "none" && manifest.platform.launch.kind !== "none")
       .map(({ manifest }) => manifest.id);
-    expect(playableOnline).toHaveLength(11);
+    expect(playableOnline).toHaveLength(12);
     expect(playableOnline).toEqual(expect.arrayContaining([...friendRoom, "tosios", "suroi", "scribble", "openfront"]));
   });
 });

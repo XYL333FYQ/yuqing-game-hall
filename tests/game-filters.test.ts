@@ -9,9 +9,9 @@ const ids = (games: ReturnType<typeof filterGames>) => games.map((game) => game.
 describe("首页游戏筛选 filterGames", () => {
   it("好友联机筛出全部 online=friend-room 的游戏", () => {
     const expected = playable.filter((game) => game.discovery.online === "friend-room").map((game) => game.id).sort();
-    expect(expected).toHaveLength(7);
+    expect(expected).toHaveLength(8);
     expect(ids(filterGames(playable, { online: "friend-room" }))).toEqual(expected);
-    expect(expected).toEqual(["der-koloss", "doudizhu", "fruit-party", "gobang", "guandan", "mahjong", "pvp-arena"]);
+    expect(expected).toEqual(["der-koloss", "doudizhu", "fruit-party", "gamenest", "gobang", "guandan", "mahjong", "pvp-arena"]);
   });
 
   it("公开联机筛出全部 online=public 的可玩游戏", () => {
@@ -29,8 +29,8 @@ describe("首页游戏筛选 filterGames", () => {
   });
 
   it("人数、联机、分类与关键词可任意组合", () => {
-    expect(ids(filterGames(playable, { online: "friend-room", genre: "board-card" }))).toEqual(["doudizhu", "gobang", "guandan", "mahjong"]);
-    expect(ids(filterGames(playable, { audience: "multi", online: "friend-room", genre: "board-card" }))).toEqual(["doudizhu", "gobang", "guandan", "mahjong"]);
+    expect(ids(filterGames(playable, { online: "friend-room", genre: "board-card" }))).toEqual(["doudizhu", "gamenest", "gobang", "guandan", "mahjong"]);
+    expect(ids(filterGames(playable, { audience: "multi", online: "friend-room", genre: "board-card" }))).toEqual(["doudizhu", "gamenest", "gobang", "guandan", "mahjong"]);
     expect(ids(filterGames(playable, { online: "friend-room", genre: "board-card", query: "五子棋" }))).toEqual(["gobang"]);
   });
 

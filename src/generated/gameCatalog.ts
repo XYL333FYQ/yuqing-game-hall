@@ -56,6 +56,7 @@
 // - public/games/snake-classic/game.json
 // - public/games/color-lines/game.json
 // - public/games/tower-building/game.json
+// - external-games/gamenest/game.json
 import type { GameManifest } from "../platform/game-manifest";
 
 export const GAME_MANIFESTS = [
@@ -4912,5 +4913,88 @@ export const GAME_MANIFESTS = [
       "fullscreen",
       "autoplay"
     ]
+  },
+  {
+    "schemaVersion": 3,
+    "id": "gamenest",
+    "order": 58,
+    "discovery": {
+      "genres": [
+        "casual-collection",
+        "board-card"
+      ],
+      "online": "friend-room",
+      "audiences": [
+        "single",
+        "duo",
+        "multi"
+      ]
+    },
+    "theme": {
+      "accent": "#e59d54",
+      "dark": "#242039"
+    },
+    "presentation": {
+      "title": "GameNest 联机桌游",
+      "originalTitle": "GameNest",
+      "mark": "桌游",
+      "category": "好友桌游合集",
+      "tagline": "和朋友挑一款桌游，开房一起玩。",
+      "description": "从棋类、纸牌和派对游戏中选择喜欢的玩法，创建房间后把房间号分享给朋友。部分游戏支持 AI 补位。",
+      "tags": [
+        "桌游",
+        "派对",
+        "合集"
+      ],
+      "play": {
+        "modes": "好友房间 / 部分游戏 AI 陪玩",
+        "players": "人数因游戏而异，部分游戏支持 6 人以上",
+        "controls": "鼠标点击或触屏操作",
+        "inputs": [
+          "mouse",
+          "touch"
+        ],
+        "devices": [
+          "desktop",
+          "mobile"
+        ],
+        "vision": false
+      },
+      "highlights": [
+        "棋类、纸牌和派对游戏汇聚一处",
+        "通过房间号邀请朋友",
+        "部分游戏可以添加 AI 陪玩"
+      ],
+      "art": {},
+      "availability": {
+        "state": "external",
+        "label": "在线体验"
+      },
+      "actionLabel": "前往体验"
+    },
+    "platform": {
+      "hosting": "server",
+      "technology": "Node.js · Express · WebSocket · JavaScript",
+      "license": "Apache-2.0",
+      "sourceUrl": "https://github.com/absswds/GameNest",
+      "localization": "上游提供中文与英文界面；当前链接到上游公开试玩站。",
+      "fit": "作为第三方桌游合集入口，玩家在上游大厅选游戏和创建房间。",
+      "highlights": [
+        "浏览器大厅提供房间码和邀请入口",
+        "多种桌游及部分 AI 陪玩"
+      ],
+      "cautions": [
+        "公开试玩站及房间服务由上游维护，可用性和联机体验可能变化",
+        "各游戏人数和设备支持情况不同"
+      ],
+      "launch": {
+        "kind": "external",
+        "url": "https://gamenest-4kww.onrender.com/"
+      }
+    },
+    "capabilities": [
+      "multiplayer"
+    ],
+    "permissions": []
   }
 ] as const satisfies readonly GameManifest[];
